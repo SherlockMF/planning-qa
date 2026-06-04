@@ -12,10 +12,10 @@ npm-debug.log*
 next-env.d.ts
 
 # 表格调试输出（P1）
-debug/
+/debug/
 
 # Tesseract 训练数据（大文件，本地）
-tessdata/
+/tessdata/
 
 # dev server log
 .dev.log

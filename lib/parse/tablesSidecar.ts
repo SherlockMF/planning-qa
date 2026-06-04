@@ -18,8 +18,10 @@ import type { Block, TableModel } from "@/lib/types";
 import { buildTableModelFromMatrix } from "@/lib/rag/tableModel";
 import { extractBlocks } from "@/lib/parse/ir";
 import { headerFingerprint, fingerprintSimilar } from "@/lib/parse/headerFingerprint";
+import { extractTablesFromCoords } from "@/lib/parse/coordTables";
+import { summarizeTableComparison } from "@/lib/debug/coordTableCompare";
 
-interface RawTable {
+export interface RawTable {
   page: number;
   bbox: number[] | null;
   title: string | null;
@@ -30,7 +32,16 @@ interface RawTable {
   ocrText?: string;
 }
 
-const PY_CANDIDATES = ["py", "python", "python3"];
+const BUNDLED_PYTHON = path.join(
+  os.homedir(),
+  ".cache",
+  "codex-runtimes",
+  "codex-primary-runtime",
+  "dependencies",
+  "python",
+  "python.exe"
+);
+const PY_CANDIDATES = ["py", "python", "python3", BUNDLED_PYTHON];
 const SCRIPT = path.join(process.cwd(), "scripts", "extract_tables.py");
 
 /** 尝试用某个 python 解释器运行脚本。返回 "ENOENT" 表示该解释器不存在（可换下一个）。 */
@@ -101,6 +112,58 @@ export async function extractTablesViaPython(
       /* ignore */
     }
   }
+}
+
+type TableExtractorMode = "coords" | "python" | "auto";
+
+function getTableExtractorMode(): TableExtractorMode {
+  const value = process.env.TABLE_EXTRACTOR?.toLowerCase();
+  if (value === "coords" || value === "python" || value === "auto") return value;
+  return "python";
+}
+
+async function extractRawTables(buffer: Buffer): Promise<RawTable[]> {
+  const mode = getTableExtractorMode();
+  if (mode === "coords") {
+    try {
+      return await extractTablesFromCoords(buffer);
+    } catch {
+      return [];
+    }
+  }
+  if (mode === "auto") {
+    let coordTables: RawTable[] = [];
+    try {
+      coordTables = await extractTablesFromCoords(buffer);
+    } catch {
+      coordTables = [];
+    }
+    const pythonTables = await extractTablesViaPython(buffer);
+    if (!pythonTables.length) return coordTables;
+    if (coordTables.length && coordComparableToPython(coordTables, pythonTables)) {
+      return coordTables;
+    }
+    return pythonTables;
+  }
+  try {
+    return await extractTablesViaPython(buffer);
+  } catch {
+    return [];
+  }
+}
+
+function coordComparableToPython(
+  coordTables: RawTable[],
+  pythonTables: RawTable[]
+): boolean {
+  const summary = summarizeTableComparison(coordTables, pythonTables);
+  const coord = summary.coord;
+  const python = summary.python;
+  if (coord.tableCount < Math.max(1, python.tableCount * 0.8)) return false;
+  if (coord.totalRows < python.totalRows * 0.8) return false;
+  if (coord.maxEffectiveColumns < python.maxEffectiveColumns * 0.8) return false;
+  if (coord.emptyCellRate > python.emptyCellRate + 0.15) return false;
+  return true;
 }
 
 // ── 续表合并：相邻页 + 同列数 + 无标题（或"续表"）→ 归入同一逻辑表 ──
@@ -262,12 +325,7 @@ function mergeByPage(textBlocks: Block[], tableBlocks: Block[]): Block[] {
  */
 export async function extractBlocksWithTables(buffer: Buffer): Promise<Block[]> {
   const geom = await extractBlocks(buffer);
-  let rawTables: RawTable[] = [];
-  try {
-    rawTables = await extractTablesViaPython(buffer);
-  } catch {
-    rawTables = [];
-  }
+  let rawTables = await extractRawTables(buffer);
   // 扫描页 OCR 文本 → 段落 block（使扫描内容可检索）。
   const ocrBlocks: Block[] = rawTables
     .filter((t) => t.scanned && t.ocrText && t.ocrText.trim().length > 0)

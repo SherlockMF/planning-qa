@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start -p 3100",
     "lint": "next lint",
-    "test": "node --experimental-strip-types tests/index.ts"
+    "test": "node --experimental-strip-types tests/index.ts",
+    "compare:tables": "node --experimental-strip-types scripts/compare_coord_tables.mjs"
   },
   "dependencies": {
     "@radix-ui/react-dialog": "1.1.2",

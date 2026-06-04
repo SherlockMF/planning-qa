@@ -3,3 +3,4 @@
 // 运行：npm test
 import "./tableConfidence.test.ts";
 import "./p1Parse.test.ts";
+import "./coordTables.test.ts";
