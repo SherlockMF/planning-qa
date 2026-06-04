@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["next", "dev", "-p", "3200"],
+      "port": 3200
+    }
+  ]
+}

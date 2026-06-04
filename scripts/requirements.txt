@@ -1,0 +1,4 @@
+# 表格抽取 sidecar 依赖（scripts/extract_tables.py）
+# 安装：py -m pip install -r scripts/requirements.txt
+# 缺失时系统自动回退到纯几何表格解析（质量下降但不报错）。
+pdfplumber>=0.11

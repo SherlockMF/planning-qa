@@ -1,0 +1,94 @@
+// ============================================================================
+// Chunk 数据访问层
+// ============================================================================
+
+import type { Block, Chunk, Document } from "@/lib/types";
+import { ensureSeeded, getStore } from "./store";
+import { getEmbeddingProvider } from "@/lib/ai/embedding";
+import { buildChunks, placeholderChunk, type DraftChunk } from "@/lib/rag/chunk";
+import { buildRagTablesFromChunks } from "@/lib/rag/ragTable";
+import { replaceRagTablesForDoc } from "./ragTables";
+import { saveChunks } from "./persist";
+import { writeAllTableDebug, tableDebugEnabled } from "@/lib/debug/tableDebug";
+
+/** 仅返回参与检索（enabled 且 indexed）文档对应的 chunks。 */
+export async function listSearchableChunks(city?: string): Promise<Chunk[]> {
+  await ensureSeeded();
+  const store = getStore();
+  const enabledDocIds = new Set(
+    store.documents
+      .filter((d) => d.enabled && d.status === "indexed")
+      .map((d) => d.id)
+  );
+  return store.chunks.filter((c) => {
+    if (!enabledDocIds.has(c.documentId)) return false;
+    if (city && c.city !== city) return false;
+    return true;
+  });
+}
+
+export async function listChunksByDocument(
+  documentId: string
+): Promise<Chunk[]> {
+  await ensureSeeded();
+  return getStore().chunks.filter((c) => c.documentId === documentId);
+}
+
+/**
+ * 处理文档：结构化切片 + 生成 embedding + 入库。
+ * 入参 input 提供 blocks（PDF IR）或 text（DOCX/TXT/MD）；都没有则生成占位 chunk。
+ */
+export async function processDocument(
+  doc: Document,
+  input: { blocks?: Block[]; text?: string } = {}
+): Promise<number> {
+  await ensureSeeded();
+  const store = getStore();
+
+  // 移除该文档旧 chunks（支持重新解析）
+  store.chunks = store.chunks.filter((c) => c.documentId !== doc.id);
+
+  let drafts: DraftChunk[] = buildChunks(doc, input);
+  if (drafts.length === 0) drafts = [placeholderChunk(doc)];
+
+  const embedder = getEmbeddingProvider();
+  // 检索文本融合：章节路径 + 条款/表名 + 正文，提升召回
+  const embeddings = await embedder.embedBatch(
+    drafts.map(
+      (p) =>
+        `${p.sectionPath ?? ""} ${p.clauseNo ?? ""} ${p.tableTitle ?? ""} ${p.content}`
+    )
+  );
+
+  const chunks: Chunk[] = drafts.map((p, i) => ({
+    ...p,
+    fileName: doc.fileName,
+    city: doc.city,
+    embedding: embeddings[i],
+    createdAt: new Date().toISOString(),
+    // 向后兼容派生字段（旧 UI/检索仍读 articleNo/pageNumber）
+    articleNo: p.clauseNo ?? p.tableTitle,
+    pageNumber: p.pageStart,
+  }));
+
+  // 表格一级对象：从本文档 chunk 合成 RagTable，并就地回填 chunk.rowId/tableType。
+  // 必须在 saveChunks 之前，使落盘的 chunk 已带 rowId（与 RagTable 绑定一致）。
+  const ragTables = buildRagTablesFromChunks(
+    chunks,
+    () => doc.fileName.replace(/\.(pdf|docx|txt|md)$/i, "")
+  );
+
+  store.chunks.push(...chunks);
+  saveChunks(store.chunks);
+  replaceRagTablesForDoc(doc.id, ragTables);
+
+  // 调试输出：每张表 json/html/txt，供人工定位错列漏行（DEBUG_TABLES=0 关闭）
+  if (tableDebugEnabled() && ragTables.length) {
+    try {
+      writeAllTableDebug(ragTables);
+    } catch (e) {
+      console.error("[processDocument] table debug write failed:", e);
+    }
+  }
+  return chunks.length;
+}

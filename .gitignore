@@ -1,0 +1,22 @@
+/node_modules
+/.next
+/out
+/build
+/.data
+.DS_Store
+*.pem
+npm-debug.log*
+.env*.local
+.vercel
+*.tsbuildinfo
+next-env.d.ts
+
+# 表格调试输出（P1）
+debug/
+
+# Tesseract 训练数据（大文件，本地）
+tessdata/
+
+# dev server log
+.dev.log
+.env
