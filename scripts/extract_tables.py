@@ -49,6 +49,53 @@ QA_TESSDATA = os.environ.get(
 )
 OCR_LANG = os.environ.get("OCR_LANG", "chi_sim+eng")
 
+# ── 扫描页视觉识别（P3 #4，Level 3）。设 VISION_SCANNED=1 启用，需 ZHIPU_API_KEY。
+# 用智谱 GLM-4V 转写扫描图（中文表格质量远高于 Tesseract）。优先级高于 OCR。
+# 输出带「视觉识别·需核对」前缀，避免被当作权威结构化表（守住"不让 LLM 编表"原则）。
+VISION_ENABLED = os.environ.get("VISION_SCANNED") == "1"
+ZHIPU_KEY = os.environ.get("ZHIPU_API_KEY")
+VISION_MODEL = os.environ.get("VISION_MODEL", "glm-4v-flash")
+VISION_URL = os.environ.get(
+    "ZHIPU_API_URL", "https://open.bigmodel.cn/api/paas/v4/chat/completions"
+)
+VISION_MARK = "【视觉识别·需核对】"
+
+
+def vision_page(fpage):
+    """用 GLM-4V 转写一页扫描图，返回带前缀的文本（失败返回 ""）。"""
+    if not ZHIPU_KEY:
+        return ""
+    try:
+        import base64
+        import json as _json
+        import urllib.request
+        pix = fpage.get_pixmap(dpi=150)
+        b64 = base64.b64encode(pix.tobytes("png")).decode()
+        prompt = (
+            "这是一张中文规划/法规文档的扫描页。请忠实转写页面文字内容；"
+            "若包含表格，逐行用 | 分隔各列、首行为表头。只输出内容，不要解释、不要编造。"
+        )
+        body = _json.dumps({
+            "model": VISION_MODEL,
+            "temperature": 0,
+            "messages": [{"role": "user", "content": [
+                {"type": "text", "text": prompt},
+                {"type": "image_url",
+                 "image_url": {"url": "data:image/png;base64," + b64}},
+            ]}],
+        }).encode()
+        req = urllib.request.Request(
+            VISION_URL, data=body,
+            headers={"Authorization": "Bearer " + ZHIPU_KEY,
+                     "Content-Type": "application/json"})
+        r = urllib.request.urlopen(req, timeout=90)
+        d = _json.load(r)
+        txt = (d.get("choices") or [{}])[0].get("message", {}).get("content", "")
+        txt = (txt or "").strip()
+        return (VISION_MARK + "\n" + txt) if txt else ""
+    except Exception:
+        return ""
+
 
 def ocr_page(fpage):
     """对一页（fitz page）渲染并 OCR，返回识别文本（失败返回 ""）。"""
@@ -341,11 +388,14 @@ def main():
                         "scanned": False,
                     })
 
-                # 扫描页：可选 OCR 出文本（供上层转可检索段落）。
+                # 扫描页：视觉识别(GLM-4V)优先，否则 Tesseract OCR（供上层转可检索段落）。
                 if scanned:
                     ocr_text = ""
-                    if OCR_ENABLED and fdoc is not None and idx < fdoc.page_count:
-                        ocr_text = ocr_page(fdoc[idx])
+                    if fdoc is not None and idx < fdoc.page_count:
+                        if VISION_ENABLED:
+                            ocr_text = vision_page(fdoc[idx])
+                        if not ocr_text and OCR_ENABLED:
+                            ocr_text = ocr_page(fdoc[idx])
                     out.append({
                         "page": idx + 1,
                         "bbox": None,
