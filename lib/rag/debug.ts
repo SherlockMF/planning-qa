@@ -115,6 +115,8 @@ function renderRetrievalPreview(
       lines.push(
         `- ${item.title ?? item.id} | page=${item.sourcePageStart ?? "?"}-${item.sourcePageEnd ?? item.sourcePageStart ?? "?"} | confidence=${item.confidence.toFixed(2)}`
       );
+      lines.push(`  - source: ${sourceOf(item)}`);
+      lines.push(`  - reason: ${reasonOf(item)}`);
       if (item.warnings?.length) lines.push(`  - warnings: ${item.warnings.join(", ")}`);
       lines.push(`  - ${item.content.slice(0, 160).replace(/\n/g, " ")}`);
     }
@@ -125,4 +127,53 @@ function renderRetrievalPreview(
     lines.push(`- ${entry.key} -> ${entry.objectType}/${entry.field} (${entry.boost})`);
   }
   return lines.join("\n");
+}
+
+function sourceOf(item: KnowledgeObject): string {
+  return [
+    item.sourceBlockIds?.length ? `blocks=${item.sourceBlockIds.join(",")}` : undefined,
+    item.sourceTableId ? `table=${item.sourceTableId}` : undefined,
+    item.sourceRowIndex != null ? `row=${item.sourceRowIndex}` : undefined,
+    item.sectionPathText ? `section=${item.sectionPathText}` : undefined,
+  ]
+    .filter(Boolean)
+    .join(" | ") || "unknown";
+}
+
+function reasonOf(item: KnowledgeObject): string {
+  switch (item.objectType) {
+    case "regulation_clause":
+      return [
+        item.clauseNo ? `clauseNo=${item.clauseNo}` : "clause pattern",
+        item.normativeLevel ? `normative=${item.normativeLevel}` : undefined,
+        item.obligationKeywords?.length ? `keywords=${item.obligationKeywords.join(",")}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(" | ");
+    case "classification_code":
+      return `code=${item.code} | name=${item.name}`;
+    case "indicator_item":
+      return [
+        `item=${item.itemName}`,
+        item.indicatorValues.length ? `values=${item.indicatorValues.map((value) => value.raw).join(",")}` : undefined,
+      ]
+        .filter(Boolean)
+        .join(" | ");
+    case "structured_table":
+      return `tableType=${item.tableType} | headers=${item.headers.map((header) => header.name).join("|")}`;
+    case "structured_table_row":
+      return `rowKey=${item.rowKey ?? ""} | fields=${Object.keys(item.fields).join("|")}`;
+    case "definition":
+      return `term=${item.term}`;
+    case "deliverable_requirement":
+      return `deliverableType=${item.deliverableType} | mandatory=${String(item.mandatory)}`;
+    case "drawing_requirement":
+      return `drawing=${item.drawingName ?? ""} | mandatory=${String(item.mandatory)}`;
+    case "checklist_item":
+      return `list=${item.listName ?? ""} | item=${item.itemTitle ?? ""}`;
+    case "procedure_step":
+      return `procedure=${item.procedureName ?? ""} | step=${item.stepNo ?? ""}`;
+    default:
+      return item.keywords?.length ? `keywords=${item.keywords.slice(0, 8).join(",")}` : "fallback";
+  }
 }

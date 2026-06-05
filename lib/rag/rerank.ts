@@ -76,10 +76,13 @@ export function rerank(
   const phrases = queryPhrases(ctx.question);
   const hays = results.map((r) => {
     const c = r.chunk;
-    return `${c.content} ${c.rowKey ?? ""} ${(c.aliases ?? []).join(" ")} ${
+    return `${c.bm25Text ?? c.content} ${c.rowKey ?? ""} ${(c.aliases ?? []).join(" ")} ${
       c.tableTitle ?? ""
     } ${(c.keywords ?? []).join(" ")} ${c.sectionPath ?? ""}`;
   });
+  const hasStructuredCandidates = results.some(
+    (r) => r.chunk.objectType && r.chunk.objectType !== "plain_section"
+  );
   const N = results.length;
   // 短语在候选集中的文档频率 → IDF
   const phraseIdf = new Map<string, number>();
@@ -98,6 +101,7 @@ export function rerank(
 
     score += WEIGHTS.keyword * r.keywordScore;
     score += WEIGHTS.vector * Math.max(0, r.vectorScore);
+    if (r.source === "exact") score += 0.32;
 
     // 短语命中加分（按 IDF 加权）：命中越稀有的短语，得分越高。
     // focus 衰减：稀有短语若只是在长段落里被「顺带提到一次」，证据力弱；
@@ -148,6 +152,10 @@ export function rerank(
     score += WEIGHTS.chunkType * (CHUNKTYPE_PRIORITY[c.chunkType] ?? 0.3);
     score += WEIGHTS.queryIntent * queryIntentScore(c, signals);
     score += WEIGHTS.version * versionPriority(c.versionInfo);
+    if (c.chunkRole === "atomic") score += 0.04;
+    else if (c.chunkRole === "summary") score -= 0.02;
+    else if (c.chunkRole === "fallback") score -= 0.08;
+    if (hasStructuredCandidates && c.objectType === "plain_section") score -= 0.22;
 
     r.rerankScore = Number(score.toFixed(4));
   }
@@ -183,6 +191,7 @@ function versionPriority(versionInfo: RetrievedChunk["chunk"]["versionInfo"]): n
     current: 1,
     reference: 0.7,
     unknown: 0.55,
+    possibly_superseded: 0.35,
     internal: 0.45,
     draft: 0.35,
     superseded: 0.05,

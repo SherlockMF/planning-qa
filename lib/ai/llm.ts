@@ -305,7 +305,7 @@ export function toContextChunk(chunk: Chunk, index: number): ContextChunk {
     articleNo: chunk.articleNo,
     pageNumber: chunk.pageNumber,
     structuredContext: buildStructuredContext(chunk),
-    content: chunk.content,
+    content: chunk.displayText ?? chunk.content,
   };
 }
 
@@ -314,6 +314,7 @@ function buildStructuredContext(chunk: Chunk): string | undefined {
   add(lines, "objectId", chunk.objectId);
   add(lines, "objectType", chunk.objectType);
   add(lines, "chunkType", chunk.chunkType);
+  add(lines, "chunkRole", chunk.chunkRole);
   add(lines, "clauseNo", chunk.clauseNo);
   add(lines, "normativeLevel", chunk.normativeLevel);
   add(lines, "mandatory", chunk.mandatory == null ? undefined : String(chunk.mandatory));

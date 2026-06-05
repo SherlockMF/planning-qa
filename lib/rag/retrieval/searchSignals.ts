@@ -59,3 +59,15 @@ export function analyzeQuery(query: string): QuerySignals {
     rawKeywords: [...rawKeywords],
   };
 }
+
+export function topKForQuerySignals(signals: QuerySignals): number {
+  if (signals.asksDeliverable || signals.asksChecklist || signals.asksAttachmentOrDatabase) {
+    return 30;
+  }
+  if (signals.asksTableNo) return 20;
+  if (signals.asksIndicator) return 12;
+  if (signals.asksObligation || signals.asksConfiguration) return 10;
+  if (signals.asksClause) return 8;
+  if (signals.asksCode || signals.asksDefinition) return 5;
+  return 5;
+}

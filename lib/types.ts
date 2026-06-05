@@ -220,6 +220,15 @@ export type ChunkType =
   | "figure"
   | "image_page";
 
+export type ChunkRole = "atomic" | "parent" | "summary" | "fallback";
+
+export type ContextRole =
+  | "direct_hit"
+  | "expanded_parent"
+  | "expanded_sibling"
+  | "expanded_explanation"
+  | "expanded_requirement";
+
 /** 知识库文档元数据 */
 export interface Document {
   id: string;
@@ -242,6 +251,8 @@ export interface Chunk {
   // ── 知识单元类型与来源 ──
   /** 知识单元类型 */
   chunkType: ChunkType;
+  /** 由 KnowledgeObject 派生后的 chunk 角色：原子、父级、摘要或兜底 */
+  chunkRole?: ChunkRole;
   /** 文档标题（docProfile.docTitle） */
   docTitle?: string;
   /** 文档结构类型（主候选） */
@@ -298,6 +309,12 @@ export interface Chunk {
   nextChunkId?: string;
 
   // ── 检索内容 ──
+  /** embedding 专用文本：短而语义化，避免直接塞入大字段 JSON */
+  embeddingText?: string;
+  /** BM25 专用文本：可包含 key/alias/字段值，服务精确词面召回 */
+  bm25Text?: string;
+  /** 展示/LLM 原文文本：尽量保持人可读原文 */
+  displayText?: string;
   content: string;
   keywords: string[];
   /** 别名/同义表达（代码、简称、英文名等），用于精确召回 */
@@ -326,6 +343,10 @@ export interface RetrievedChunk {
   source: "exact" | "keyword" | "vector" | "hybrid";
   /** 命中的关键词列表 */
   matchedKeywords: string[];
+  /** 当前结果在答案上下文中的角色 */
+  contextRole?: ContextRole;
+  /** 本 direct hit 附带展开了哪些上下文角色 */
+  expandedContextRoles?: ContextRole[];
 }
 
 /** 相关度等级 */

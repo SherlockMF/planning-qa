@@ -8,7 +8,7 @@
 // toCitation 无需改动即可受益。
 // ============================================================================
 
-import type { Chunk, RetrievedChunk } from "@/lib/types";
+import type { Chunk, ContextRole, RetrievedChunk } from "@/lib/types";
 
 /** 对单条命中做上下文扩展，返回（可能替换了 chunk 的）新 RetrievedChunk。 */
 export function expandHit(
@@ -27,9 +27,9 @@ export function expandHit(
     if (headers && headers.length)
       prefixParts.push(`表头：${headers.filter(Boolean).join(" | ")}`);
     if (prefixParts.length) {
-      return withContent(r, `【${prefixParts.join("；")}】\n${c.content}`);
+      return withContent(r, `【${prefixParts.join("；")}】\n${c.content}`, ["expanded_parent"]);
     }
-    return r;
+    return asDirectHit(r);
   }
 
   // ── 条款/条文说明：补章节路径 + 父标题 ──
@@ -44,15 +44,30 @@ export function expandHit(
       if (parent) parts.push(`对应条款：${parent.content.slice(0, 40)}`);
     }
     if (parts.length) {
-      return withContent(r, `【所属章节：${parts.join(" / ")}】\n${c.content}`);
+      const roles: ContextRole[] =
+        c.chunkType === "clause_explanation" ? ["expanded_explanation"] : ["expanded_parent"];
+      return withContent(r, `【所属章节：${parts.join(" / ")}】\n${c.content}`, roles);
     }
-    return r;
+    return asDirectHit(r);
   }
 
-  return r;
+  return asDirectHit(r);
 }
 
 /** 浅拷贝 RetrievedChunk，仅替换 chunk.content（保留 id/embedding 等）。 */
-function withContent(r: RetrievedChunk, content: string): RetrievedChunk {
-  return { ...r, chunk: { ...r.chunk, content } };
+function withContent(
+  r: RetrievedChunk,
+  content: string,
+  expandedContextRoles: ContextRole[]
+): RetrievedChunk {
+  return {
+    ...r,
+    contextRole: "direct_hit",
+    expandedContextRoles,
+    chunk: { ...r.chunk, content },
+  };
+}
+
+function asDirectHit(r: RetrievedChunk): RetrievedChunk {
+  return { ...r, contextRole: r.contextRole ?? "direct_hit" };
 }

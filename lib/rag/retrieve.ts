@@ -9,8 +9,9 @@ import { rerank } from "./rerank";
 import { BM25Index, tokenize } from "./bm25";
 import { expandHit } from "./expand";
 import { exactSearchChunks } from "./retrieval/exactIndex.ts";
+import { analyzeQuery, topKForQuerySignals } from "./retrieval/searchSignals.ts";
 
-const TOP_K = 5;
+const MAX_CONTEXT_CHARS = 12000;
 
 /** 从用户问题中提取关键词：用地代码、指标名称、数值、条款号、专业术语。 */
 export function extractQueryKeywords(question: string): string[] {
@@ -121,6 +122,7 @@ export async function retrieve(
 ): Promise<RetrieveResult> {
   const chunks = await listSearchableChunks(city);
   const extractedKeywords = extractQueryKeywords(question);
+  const topK = topKForQuerySignals(analyzeQuery(question));
   const exactResults = exactSearchChunks(chunks, question);
 
   // BM25 索引（每次查询基于当前可检索 chunk 集合构建）
@@ -160,13 +162,30 @@ export async function retrieve(
   // 命中扩展：table_row/code 补表头+表名；clause 补父标题/章节路径。
   // 在 chunk 全集上查父块（table_full / 同序列），浅拷贝注入 content。
   const byId = new Map(chunks.map((c) => [c.id, c]));
-  const topExpanded = reranked.slice(0, TOP_K).map((r) => expandHit(r, byId));
+  const topExpanded = limitContextBudget(
+    reranked.slice(0, topK).map((r) => expandHit(r, byId)),
+    MAX_CONTEXT_CHARS
+  );
 
   return {
     extractedKeywords,
-    exactResults: exactResults.slice(0, TOP_K * 2),
-    keywordResults: keywordResults.slice(0, TOP_K * 2),
-    vectorResults: vectorResults.slice(0, TOP_K * 2),
+    exactResults: exactResults.slice(0, topK * 2),
+    keywordResults: keywordResults.slice(0, topK * 2),
+    vectorResults: vectorResults.slice(0, topK * 2),
     mergedTop: topExpanded,
   };
 }
+
+function limitContextBudget(results: RetrievedChunk[], maxChars: number): RetrievedChunk[] {
+  const kept: RetrievedChunk[] = [];
+  let used = 0;
+  for (const result of results) {
+    const len = result.chunk.content.length;
+    if (kept.length >= 5 && used + len > maxChars) continue;
+    kept.push(result);
+    used += len;
+  }
+  return kept;
+}
+
+export { topKForQuerySignals } from "./retrieval/searchSignals.ts";

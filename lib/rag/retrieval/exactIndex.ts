@@ -31,42 +31,45 @@ export function buildExactIndex(objects: KnowledgeObject[]): ExactIndexEntry[] {
 
     switch (obj.objectType) {
       case "regulation_clause":
-        add(obj.clauseNo, "clauseNo", 2.2);
+        add(obj.clauseNo, "clauseNo", 3.0);
         add(obj.clauseTitle, "clauseTitle", 1.6);
         for (const keyword of obj.obligationKeywords ?? []) {
           add(keyword, "obligationKeyword", 1.1);
         }
         break;
       case "structured_table":
-        add(obj.tableNo, "tableNo", 2);
-        add(obj.tableTitle, "tableTitle", 1.8);
+        add(obj.tableNo, "tableNo", 2.8);
+        add(obj.tableTitle, "tableTitle", 2.2);
         break;
       case "structured_table_row":
-        add(obj.tableNo, "tableNo", 1.5);
+        add(obj.tableNo, "tableNo", 2.2);
         add(obj.tableTitle, "tableTitle", 1.3);
-        add(obj.rowKey, "rowKey", 1.8);
+        add(obj.rowKey, "rowKey", 2.6);
         break;
       case "classification_code":
-        add(obj.code, "code", 2.4);
-        add(obj.name, "name", 2);
+        add(obj.code, "code", 3.2);
+        add(obj.name, "name", 2.6);
         add(obj.parentCode, "parentCode", 1.3);
         break;
       case "indicator_item":
-        add(obj.itemName, "itemName", 2);
+        add(obj.itemName, "itemName", 2.8);
         add(obj.indicatorName, "indicatorName", 1.7);
         break;
       case "definition":
-        add(obj.term, "term", 2.2);
+        add(obj.term, "term", 2.8);
         break;
       case "deliverable_requirement":
-        add(obj.itemTitle, "itemTitle", 1.8);
+        add(obj.itemTitle, "itemTitle", 2.4);
+        if (obj.mandatory === true) add("必选 mandatory", "mandatory", 2.4);
         break;
       case "drawing_requirement":
-        add(obj.drawingName, "drawingName", 1.9);
+        add(obj.drawingName, "drawingName", 2.4);
+        if (obj.mandatory === true) add("必选 mandatory", "mandatory", 2.4);
         break;
       case "checklist_item":
         add(obj.listName, "listName", 1.5);
-        add(obj.itemTitle, "itemTitle", 1.8);
+        add(obj.itemTitle, "itemTitle", 2.4);
+        if (obj.mandatory === true) add("必选 mandatory", "mandatory", 2.4);
         break;
       default:
         break;
@@ -89,7 +92,7 @@ export function normalizeExactKey(key: string): string {
 export function buildExactIndexFromChunks(chunks: Chunk[]): ExactIndexEntry[] {
   const entries: ExactIndexEntry[] = [];
   for (const chunk of chunks) {
-    const objectId = chunk.objectId ?? chunk.id;
+    const objectId = chunk.id;
     const objectType = chunk.objectType ?? chunk.chunkType;
     const add = (key: string | undefined, field: string, boost: number) => {
       if (!key || !key.trim()) return;
@@ -103,19 +106,26 @@ export function buildExactIndexFromChunks(chunks: Chunk[]): ExactIndexEntry[] {
       });
     };
 
-    add(chunk.clauseNo, "clauseNo", 2.2);
-    add(chunk.articleNo, "articleNo", 2.0);
-    add(chunk.tableId, "tableId", 1.7);
-    add(chunk.tableTitle, "tableTitle", 1.5);
-    add(chunk.code, "code", 2.4);
+    add(chunk.clauseNo, "clauseNo", 3.0);
+    add(chunk.articleNo, "articleNo", 2.6);
+    add(chunk.tableId, "tableId", 2.3);
+    add(chunk.tableTitle, "tableTitle", 2.0);
+    add(chunk.code, "code", 3.2);
     add(chunk.parentCode, "parentCode", 1.3);
-    add(chunk.itemName, "itemName", 2.0);
-    add(chunk.rowKey, "rowKey", 1.8);
+    add(chunk.itemName, "itemName", 2.8);
+    add(chunk.rowKey, "rowKey", 2.6);
+    if (chunk.mandatory === true) {
+      add("必选", "mandatory", 2.4);
+      add("mandatory", "mandatory", 2.4);
+    } else if (chunk.mandatory === false) {
+      add("选做", "mandatory", 1.6);
+      add("optional", "mandatory", 1.6);
+    }
     for (const alias of chunk.aliases ?? []) add(alias, "alias", 1.5);
     for (const keyword of chunk.keywords ?? []) add(keyword, "keyword", 1.1);
     if (chunk.fields) {
       for (const [field, value] of Object.entries(chunk.fields)) {
-        const boost = /代码|编号|名称|设施|项目|事项|图纸|成果|术语/.test(field) ? 1.7 : 1.1;
+        const boost = /代码|编号|名称|设施|项目|事项|图纸|成果|术语/.test(field) ? 2.2 : 1.1;
         add(value, `field.${field}`, boost);
       }
     }
@@ -127,7 +137,7 @@ export function exactSearchChunks(chunks: Chunk[], query: string): RetrievedChun
   const normalizedQuery = normalizeExactKey(query);
   if (!normalizedQuery) return [];
 
-  const byId = new Map(chunks.map((chunk) => [chunk.objectId ?? chunk.id, chunk]));
+  const byId = new Map(chunks.map((chunk) => [chunk.id, chunk]));
   const scores = new Map<string, { score: number; matched: string[] }>();
 
   for (const entry of buildExactIndexFromChunks(chunks)) {

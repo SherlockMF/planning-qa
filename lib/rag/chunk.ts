@@ -540,54 +540,61 @@ export function buildRetrievalChunksFromObjects(
   profile: DocProfile,
   versionInfo?: SourceVersionInfo
 ): DraftChunk[] {
-  const drafts = objects.map((obj) => {
-    const chunkType = chunkTypeForObject(obj);
-    const draft: DraftChunk = {
-      id: `chunk-${obj.id}`,
-      documentId: doc.id,
-      docTitle: profile.docTitle,
-      docType: profile.docTypeCandidates[0],
-      chunkType,
-      sectionPath: obj.sectionPathText || undefined,
-      headingText: obj.sectionPath.at(-1),
-      clauseNo: obj.objectType === "regulation_clause" ? obj.clauseNo : undefined,
-      tableId: tableIdForObject(obj),
-      tableTitle: tableTitleForObject(obj),
-      tableHeaders: tableHeadersForObject(obj),
-      rowKey: rowKeyForObject(obj),
-      fields: fieldsForObject(obj),
-      code: obj.objectType === "classification_code" ? obj.code : undefined,
-      parentCode: obj.objectType === "classification_code" ? obj.parentCode : undefined,
-      pageStart: obj.sourcePageStart,
-      pageEnd: obj.sourcePageEnd,
-      parentChunkId: obj.parentObjectId ? `chunk-${obj.parentObjectId}` : undefined,
-      prevChunkId: obj.prevObjectId ? `chunk-${obj.prevObjectId}` : undefined,
-      nextChunkId: obj.nextObjectId ? `chunk-${obj.nextObjectId}` : undefined,
-      content: makeEmbeddingText(obj),
-      keywords: obj.keywords ?? extractKeywords(obj.content),
-      aliases: obj.aliases,
-      objectId: obj.id,
-      objectType: obj.objectType,
-      sourceTableId: obj.sourceTableId,
-      sourceRowIndex: obj.sourceRowIndex,
-      itemName: obj.objectType === "indicator_item" ? obj.itemName : undefined,
-      normativeLevel:
-        "normativeLevel" in obj ? String(obj.normativeLevel ?? "") || undefined : undefined,
-      mandatory: "mandatory" in obj ? obj.mandatory : undefined,
-      versionInfo: versionInfo as unknown as Record<string, unknown> | undefined,
-    };
-    return draft;
-  });
+  const drafts: DraftChunk[] = [];
+  for (const obj of objects) {
+    if (obj.objectType === "structured_table") {
+      drafts.push(makeObjectDraft(doc, obj, profile, versionInfo, {
+        chunkRole: "parent",
+        displayText: tableParentText(obj),
+      }));
+      if (obj.rows.length) {
+        drafts.push(makeObjectDraft(doc, obj, profile, versionInfo, {
+          idSuffix: "summary",
+          chunkRole: "summary",
+          displayText: tableSummaryText(obj),
+        }));
+      }
+      continue;
+    }
+
+    const pieces = shouldSplitObject(obj) ? splitLong(obj.content) : [obj.content];
+    if (pieces.length <= 1) {
+      drafts.push(makeObjectDraft(doc, obj, profile, versionInfo, {
+        chunkRole: chunkRoleForObject(obj),
+        displayText: pieces[0] ?? obj.content,
+      }));
+      continue;
+    }
+
+    const parent = makeObjectDraft(doc, obj, profile, versionInfo, {
+      chunkRole: "parent",
+      displayText: objectSummaryText(obj),
+    });
+    drafts.push(parent);
+    for (let i = 0; i < pieces.length; i++) {
+      drafts.push(makeObjectDraft(doc, obj, profile, versionInfo, {
+        idSuffix: `part-${i + 1}`,
+        chunkRole: obj.objectType === "plain_section" ? "fallback" : "atomic",
+        displayText: pieces[i],
+        parentChunkId: parent.id,
+      }));
+    }
+  }
   return drafts.filter((draft) => draft.content.trim().length > 0);
 }
 
 /** 占位 chunk（无可解析正文时）。 */
 export function placeholderChunk(doc: Document): DraftChunk {
+  const displayText = `（演示占位）文档「${doc.fileName}」已登记为${doc.fileType}，但尚未提供可解析的正文内容。请在接入真实解析后重新处理。`;
   return {
     id: `chunk-${doc.id}-0`,
     documentId: doc.id,
     chunkType: "note",
-    content: `（演示占位）文档「${doc.fileName}」已登记为${doc.fileType}，但尚未提供可解析的正文内容。请在接入真实解析后重新处理。`,
+    chunkRole: "fallback",
+    content: displayText,
+    displayText,
+    embeddingText: displayText,
+    bm25Text: displayText,
     keywords: [doc.fileType, doc.city],
   };
 }
@@ -600,13 +607,141 @@ function resolveInputBlocks(input: { blocks?: Block[]; text?: string }): Block[]
   return [];
 }
 
-function makeEmbeddingText(obj: KnowledgeObject): string {
+function makeObjectDraft(
+  doc: Document,
+  obj: KnowledgeObject,
+  profile: DocProfile,
+  versionInfo: SourceVersionInfo | undefined,
+  options: {
+    idSuffix?: string;
+    chunkRole: DraftChunk["chunkRole"];
+    displayText: string;
+    parentChunkId?: string;
+  }
+): DraftChunk {
+  const chunkType = chunkTypeForObject(obj);
+  const displayText = options.displayText || obj.content;
+  const embeddingText = makeEmbeddingText(obj, displayText);
+  const bm25Text = makeBm25Text(obj, displayText, embeddingText);
+  return {
+    id: `chunk-${obj.id}${options.idSuffix ? `-${options.idSuffix}` : ""}`,
+    documentId: doc.id,
+    docTitle: profile.docTitle,
+    docType: profile.docTypeCandidates[0],
+    chunkType,
+    chunkRole: options.chunkRole,
+    sectionPath: obj.sectionPathText || undefined,
+    headingText: obj.sectionPath.at(-1),
+    clauseNo: obj.objectType === "regulation_clause" ? obj.clauseNo : undefined,
+    tableId: tableIdForObject(obj),
+    tableTitle: tableTitleForObject(obj),
+    tableHeaders: tableHeadersForObject(obj),
+    rowKey: rowKeyForObject(obj),
+    fields: fieldsForObject(obj),
+    code: obj.objectType === "classification_code" ? obj.code : undefined,
+    parentCode: obj.objectType === "classification_code" ? obj.parentCode : undefined,
+    pageStart: obj.sourcePageStart,
+    pageEnd: obj.sourcePageEnd,
+    parentChunkId:
+      options.parentChunkId ?? (obj.parentObjectId ? `chunk-${obj.parentObjectId}` : undefined),
+    prevChunkId: obj.prevObjectId ? `chunk-${obj.prevObjectId}` : undefined,
+    nextChunkId: obj.nextObjectId ? `chunk-${obj.nextObjectId}` : undefined,
+    content: displayText,
+    displayText,
+    embeddingText,
+    bm25Text,
+    keywords: obj.keywords ?? extractKeywords(displayText),
+    aliases: obj.aliases,
+    objectId: obj.id,
+    objectType: obj.objectType,
+    sourceTableId: obj.sourceTableId,
+    sourceRowIndex: obj.sourceRowIndex,
+    itemName: obj.objectType === "indicator_item" ? obj.itemName : undefined,
+    normativeLevel:
+      "normativeLevel" in obj ? String(obj.normativeLevel ?? "") || undefined : undefined,
+    mandatory: "mandatory" in obj ? obj.mandatory : undefined,
+    versionInfo: versionInfo as unknown as Record<string, unknown> | undefined,
+  };
+}
+
+function makeEmbeddingText(obj: KnowledgeObject, displayText = obj.content): string {
   return [
     obj.objectType,
     obj.sectionPathText,
     obj.title,
-    obj.content,
+    displayText,
     objectSpecificFieldsText(obj),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function makeBm25Text(
+  obj: KnowledgeObject,
+  displayText: string,
+  embeddingText: string
+): string {
+  const fieldText =
+    obj.objectType === "structured_table_row" ||
+    obj.objectType === "classification_code" ||
+    obj.objectType === "indicator_item"
+      ? Object.entries(obj.fields)
+          .map(([key, value]) => `${key} ${value}`)
+          .join(" ")
+      : "";
+  return [
+    embeddingText,
+    displayText,
+    obj.keywords?.join(" "),
+    obj.aliases?.join(" "),
+    fieldText,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function chunkRoleForObject(obj: KnowledgeObject): DraftChunk["chunkRole"] {
+  if (obj.objectType === "plain_section") return "fallback";
+  if (obj.objectType === "structured_table") return "parent";
+  return "atomic";
+}
+
+function shouldSplitObject(obj: KnowledgeObject): boolean {
+  return (
+    (obj.objectType === "regulation_clause" || obj.objectType === "plain_section") &&
+    obj.content.length > HARD_MAX
+  );
+}
+
+function objectSummaryText(obj: KnowledgeObject): string {
+  const title = obj.title ?? obj.sectionPath.at(-1) ?? obj.objectType;
+  return [title, obj.sectionPathText, obj.content.slice(0, 260)]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function tableParentText(obj: Extract<KnowledgeObject, { objectType: "structured_table" }>): string {
+  return [
+    obj.tableTitle ?? obj.title,
+    obj.tableNo ? `表号：${obj.tableNo}` : undefined,
+    `表格类型：${obj.tableType}`,
+    `表头：${obj.headers.map((header) => header.name).join(" | ")}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function tableSummaryText(obj: Extract<KnowledgeObject, { objectType: "structured_table" }>): string {
+  const rowKeys = obj.rows
+    .map((row) => row.rowKey)
+    .filter(Boolean)
+    .slice(0, 12)
+    .join("；");
+  return [
+    obj.tableTitle ?? obj.title,
+    `表格摘要：共${obj.rows.length}行`,
+    `表头：${obj.headers.map((header) => header.name).join(" | ")}`,
+    rowKeys ? `主要行：${rowKeys}` : undefined,
   ]
     .filter(Boolean)
     .join("\n");

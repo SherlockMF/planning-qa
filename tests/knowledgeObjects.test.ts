@@ -9,14 +9,15 @@ import {
   buildExactIndex,
   exactSearchChunks,
 } from "../lib/rag/retrieval/exactIndex.ts";
-import { analyzeQuery } from "../lib/rag/retrieval/searchSignals.ts";
+import { analyzeQuery, topKForQuerySignals } from "../lib/rag/retrieval/searchSignals.ts";
 import {
   renderChunkAnswerContext,
   renderTableSubset,
 } from "../lib/rag/retrieval/renderAnswerContext.ts";
 import { extractSourceVersionInfo } from "../lib/rag/version.ts";
 import { rerank } from "../lib/rag/rerank.ts";
-import { buildRagTablesFromChunks } from "../lib/rag/ragTable.ts";
+import { buildRagTablesFromChunks, buildRagTablesFromObjects } from "../lib/rag/ragTable.ts";
+import { expandHit } from "../lib/rag/expand.ts";
 import type { Chunk, RetrievedChunk } from "../lib/types.ts";
 import { buildContextBlock, MockLLMProvider, toContextChunk } from "../lib/ai/llm.ts";
 
@@ -153,6 +154,10 @@ test("extracts government-rag knowledge objects before retrieval chunks", () => 
   assert.ok(chunks.length >= objects.length);
   assert.ok(chunks.some((c) => c.objectType === "classification_code" && c.code === "A1"));
   assert.ok(chunks.some((c) => c.objectType === "indicator_item" && c.itemName === "社区服务站"));
+  assert.ok(chunks.some((c) => c.objectType === "structured_table" && c.chunkRole === "parent"));
+  assert.ok(chunks.some((c) => c.objectType === "structured_table" && c.chunkRole === "summary"));
+  assert.ok(chunks.some((c) => c.objectType === "structured_table_row" && c.chunkRole === "atomic"));
+  assert.ok(chunks.every((c) => c.embeddingText && c.bm25Text && c.displayText));
 
   const exact = buildExactIndex(objects);
   assert.ok(exact.some((entry) => entry.normalizedKey === "a1"));
@@ -288,6 +293,31 @@ test("derived object chunks bind to structured table rows without duplicating Ra
   assert.equal(codeChunk?.tableType, "code_table");
 });
 
+test("builds RagTable directly from structured table objects", () => {
+  const sectionTree = buildSectionTree(blocks);
+  const objects = extractKnowledgeObjects({
+    docId: doc.id,
+    blocks,
+    sectionTree,
+    tables: [],
+    profile,
+  });
+  const chunks: Chunk[] = buildRetrievalChunksFromObjects(doc, objects, profile).map((draft) => ({
+    ...draft,
+    fileName: doc.fileName,
+    city: doc.city,
+    createdAt: "2026-06-04T00:00:00.000Z",
+  }));
+
+  const tables = buildRagTablesFromObjects(objects, profile.docTitle, chunks);
+  const codeTable = tables.find((table) => table.tableId === "tbl-code");
+
+  assert.equal(codeTable?.rows.length, 2);
+  assert.deepEqual(codeTable?.columns.map((column) => column.header), ["代码", "名称", "内容"]);
+  assert.equal(codeTable?.rows[0]?.cells["代码"], "A1");
+  assert.ok(chunks.some((item) => item.objectType === "classification_code" && item.rowId === codeTable?.rows[0]?.rowId));
+});
+
 test("LLM context carries structured object metadata without polluting mock conclusion", async () => {
   const c = chunk("code-context", {
     chunkType: "code",
@@ -343,6 +373,18 @@ test("renders structured answer context from retrieved object chunks", () => {
   assert.match(renderChunkAnswerContext(indicator) ?? "", /建筑面积\(平方米\/处\)：1200-1500/);
   assert.match(renderChunkAnswerContext(clause) ?? "", /条文：第1条/);
   assert.match(renderChunkAnswerContext(clause) ?? "", /约束等级：shall/);
+
+  const row = chunk("row-context", {
+    chunkType: "table_row",
+    objectType: "structured_table_row",
+    tableTitle: "表1 分类代码表",
+    rowKey: "A1",
+    fields: { code: "A1", name: "Public management" },
+    content: "row text",
+  });
+  const rowContext = renderChunkAnswerContext(row) ?? "";
+  assert.match(rowContext, /\| code \| name \|/);
+  assert.match(rowContext, /\| A1 \| Public management \|/);
 });
 
 test("exact search recalls chunks by structured metadata keys", () => {
@@ -361,6 +403,14 @@ test("exact search recalls chunks by structured metadata keys", () => {
     itemName: "社区服务站",
     content: "配置指标行。",
   });
+  const mandatoryChunk = chunk("mandatory-deliverable", {
+    chunkType: "deliverable",
+    objectId: "obj-mandatory",
+    objectType: "deliverable_requirement",
+    mandatory: true,
+    rowKey: "application form",
+    content: "deliverable row",
+  });
 
   const byCode = exactSearchChunks([indicatorChunk, codeChunk], "A11是什么意思？");
   assert.equal(byCode[0]?.chunk.id, "code-a11");
@@ -369,6 +419,66 @@ test("exact search recalls chunks by structured metadata keys", () => {
 
   const byItem = exactSearchChunks([codeChunk, indicatorChunk], "社区服务站配置要求");
   assert.equal(byItem[0]?.chunk.id, "indicator-service");
+
+  const byMandatory = exactSearchChunks([codeChunk, mandatoryChunk], "mandatory application form");
+  assert.equal(byMandatory[0]?.chunk.id, "mandatory-deliverable");
+});
+
+test("dynamic TopK follows query intent and expansion keeps direct hit role", () => {
+  assert.equal(topKForQuerySignals(analyzeQuery("A11代码是什么意思？")), 5);
+  assert.equal(topKForQuerySignals(analyzeQuery("第1条规定了什么？")), 8);
+  assert.equal(topKForQuerySignals(analyzeQuery("是否必须配置社区服务站？")), 10);
+  assert.equal(topKForQuerySignals(analyzeQuery("社区服务站指标是多少？")), 12);
+  assert.equal(topKForQuerySignals(analyzeQuery("表1中A1和A11两行是什么？")), 20);
+  assert.equal(topKForQuerySignals(analyzeQuery("成果清单包括哪些？")), 30);
+
+  const parent = chunk("table-parent", {
+    chunkType: "table_full",
+    tableId: "tbl",
+    tableTitle: "table parent",
+    tableHeaders: ["code", "name"],
+    content: "parent",
+  });
+  const seed = retrieved(chunk("table-row", {
+    chunkType: "table_row",
+    tableId: "tbl",
+    tableTitle: "table parent",
+    tableHeaders: ["code", "name"],
+    parentChunkId: "table-parent",
+    content: "A1 row",
+  }));
+  const expanded = expandHit(seed, new Map([[parent.id, parent], [seed.chunk.id, seed.chunk]]));
+  assert.equal(expanded.contextRole, "direct_hit");
+  assert.ok(expanded.expandedContextRoles?.includes("expanded_parent"));
+});
+
+test("plain sections are demoted unless structured hits are absent", () => {
+  const plain = retrieved(chunk("plain", {
+    chunkType: "section",
+    objectType: "plain_section",
+    content: "社区服务站配置要求",
+  }));
+  const structured = retrieved(chunk("structured", {
+    chunkType: "requirement",
+    objectType: "requirement",
+    content: "社区服务站配置要求",
+  }));
+
+  const ranked = rerank([plain, structured], {
+    question: "社区服务站配置要求",
+    keywords: ["社区服务站", "配置要求"],
+  });
+
+  assert.equal(ranked[0].chunk.id, "structured");
+});
+
+test("version info does not mark referenced deprecated material as current document superseded", () => {
+  const version = extractSourceVersionInfo([
+    block("paragraph", "本文件引用的旧标准已废止，仅作为历史参考。", { pageStart: 1 }),
+  ], "现行文件");
+
+  assert.notEqual(version.status, "superseded");
+  assert.ok(version.warnings?.some((warning) => warning.includes("version")));
 });
 
 test("extracts classification and indicator objects from real UTF-8 Chinese headers", () => {

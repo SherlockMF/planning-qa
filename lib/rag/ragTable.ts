@@ -18,6 +18,11 @@ import type {
   TableRow,
   TableType,
 } from "@/lib/types";
+import type {
+  KnowledgeObject,
+  StructuredTableObject,
+  StructuredTableRowObject,
+} from "@/lib/rag/objects";
 
 // ── tableType 分类（P0 基础版，按表名 + 表头 + 行内信号；P1 增强） ──
 
@@ -190,6 +195,88 @@ function classifyRowType(rowKey: string | undefined, content: string): TableRow[
 
 const ROW_CHUNK_TYPES = new Set(["table_row", "code", "indicator", "requirement", "deliverable"]);
 
+export function buildRagTablesFromObjects(
+  objects: KnowledgeObject[],
+  docTitle: string,
+  chunks: Chunk[] = []
+): RagTable[] {
+  const tables = objects.filter(
+    (obj): obj is StructuredTableObject => obj.objectType === "structured_table"
+  );
+  const rowsByTable = new Map<string, StructuredTableRowObject[]>();
+  for (const row of objects) {
+    if (row.objectType !== "structured_table_row") continue;
+    const key = tableKey(row.sourceTableId ?? row.tableObjectId ?? "");
+    const list = rowsByTable.get(key) ?? [];
+    list.push(row);
+    rowsByTable.set(key, list);
+  }
+
+  const ragTables: RagTable[] = [];
+  for (const table of tables) {
+    const tableId = table.sourceTableId ?? table.id;
+    const objectRows = (table.rows.length ? table.rows : rowsByTable.get(tableKey(tableId)) ?? [])
+      .slice()
+      .sort((a, b) => a.rowIndex - b.rowIndex);
+    if (!objectRows.length) continue;
+
+    const headers = table.headers.map((header) => header.name);
+    const columns = buildColumns(headers.length ? headers : deriveHeadersFromObjects(objectRows));
+    const tableType = tableTypeFromStructured(table.tableType);
+    const rows: TableRow[] = objectRows.map((row, index) => {
+      const cells = normalizeCells(row.fields, columns);
+      const rowId = `${table.docId}_${tableId}_row_${row.rowIndex ?? index}`;
+      return {
+        rowId,
+        tableId,
+        rowIndex: row.rowIndex ?? index,
+        rowType: classifyRowType(row.rowKey, row.content),
+        rowKey: row.rowKey,
+        aliases: row.aliases,
+        cells,
+        pageStart: row.sourcePageStart ?? table.sourcePageStart ?? 0,
+        pageEnd: row.sourcePageEnd ?? table.sourcePageEnd ?? row.sourcePageStart ?? 0,
+        searchText: row.content,
+      };
+    });
+
+    for (const chunk of chunks) {
+      if ((chunk.tableId ?? chunk.sourceTableId) !== tableId) continue;
+      chunk.tableType = chunk.tableType ?? tableType;
+      chunk.tableTitle = chunk.tableTitle ?? table.tableTitle ?? table.title;
+      chunk.tableHeaders = chunk.tableHeaders ?? columns.map((column) => column.header);
+      const sourceRow =
+        chunk.sourceRowIndex != null
+          ? rows.find((row) => row.rowIndex === chunk.sourceRowIndex)
+          : undefined;
+      const rowMatch =
+        sourceRow ??
+        rows.find((row) => row.rowKey && chunk.rowKey && chunk.rowKey.includes(row.rowKey));
+      if (rowMatch && ROW_CHUNK_TYPES.has(chunk.chunkType)) {
+        chunk.rowId = rowMatch.rowId;
+        chunk.rowType = rowMatch.rowType;
+      }
+    }
+
+    ragTables.push({
+      tableId,
+      docId: table.docId,
+      docTitle,
+      tableTitle: table.tableTitle ?? table.title ?? "未命名表格",
+      tableType,
+      sectionPath: table.sectionPath,
+      pageStart: Math.min(...rows.map((row) => row.pageStart || Infinity)),
+      pageEnd: Math.max(...rows.map((row) => row.pageEnd || 0)),
+      columns,
+      rows,
+      markdownFull: renderMarkdown(columns.map((column) => column.header), rows),
+      confidence: table.confidence,
+      warnings: table.warnings ?? [],
+    });
+  }
+  return ragTables;
+}
+
 /**
  * 从一组 chunk（可跨多文档/多表）合成 RagTable[]，并就地回填 row chunk 的
  * rowId / tableType / rowType。按 (documentId, tableId) 分组。
@@ -343,6 +430,44 @@ export function buildRagTablesFromChunks(
   }
 
   return tables;
+}
+
+function tableKey(id: string): string {
+  return id.trim();
+}
+
+function deriveHeadersFromObjects(rows: StructuredTableRowObject[]): string[] {
+  const headers: string[] = [];
+  for (const row of rows) {
+    for (const key of Object.keys(row.fields)) {
+      if (!headers.includes(key)) headers.push(key);
+    }
+  }
+  return headers;
+}
+
+function tableTypeFromStructured(type: StructuredTableObject["tableType"]): TableType {
+  switch (type) {
+    case "classification_code_table":
+      return "code_table";
+    case "indicator_table":
+      return "indicator_table";
+    case "requirement_table":
+      return "requirement_table";
+    case "deliverable_table":
+    case "checklist_table":
+      return "deliverable_table";
+    default:
+      return "generic_table";
+  }
+}
+
+function renderMarkdown(headers: string[], rows: TableRow[]): string {
+  return [
+    `| ${headers.join(" | ")} |`,
+    `| ${headers.map(() => "---").join(" | ")} |`,
+    ...rows.map((row) => `| ${headers.map((header) => row.cells[header] ?? "").join(" | ")} |`),
+  ].join("\n");
 }
 
 /** 无 table_full 时，从行 chunk 的 fields 推断列名（取并集，保序）。 */

@@ -10,7 +10,7 @@ import {
   placeholderChunk,
   type DraftChunk,
 } from "@/lib/rag/chunk";
-import { buildRagTablesFromChunks } from "@/lib/rag/ragTable";
+import { buildRagTablesFromChunks, buildRagTablesFromObjects } from "@/lib/rag/ragTable";
 import { replaceRagTablesForDoc } from "./ragTables";
 import { saveChunks } from "./persist";
 import { writeAllTableDebug, tableDebugEnabled } from "@/lib/debug/tableDebug";
@@ -62,7 +62,7 @@ export async function processDocument(
   const embeddings = await embedder.embedBatch(
     drafts.map(
       (p) =>
-        `${p.sectionPath ?? ""} ${p.clauseNo ?? ""} ${p.tableTitle ?? ""} ${p.content}`
+        p.embeddingText ?? `${p.sectionPath ?? ""} ${p.clauseNo ?? ""} ${p.tableTitle ?? ""} ${p.content}`
     )
   );
 
@@ -79,10 +79,11 @@ export async function processDocument(
 
   // 表格一级对象：从本文档 chunk 合成 RagTable，并就地回填 chunk.rowId/tableType。
   // 必须在 saveChunks 之前，使落盘的 chunk 已带 rowId（与 RagTable 绑定一致）。
-  const ragTables = buildRagTablesFromChunks(
-    chunks,
-    () => doc.fileName.replace(/\.(pdf|docx|txt|md)$/i, "")
-  );
+  const docTitle = doc.fileName.replace(/\.(pdf|docx|txt|md)$/i, "");
+  let ragTables = buildRagTablesFromObjects(buildResult.knowledgeObjects, docTitle, chunks);
+  if (!ragTables.length) {
+    ragTables = buildRagTablesFromChunks(chunks, () => docTitle);
+  }
 
   store.chunks.push(...chunks);
   saveChunks(store.chunks);

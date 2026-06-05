@@ -7,7 +7,14 @@ export interface SourceVersionInfo {
   effectiveDate?: string;
   revisionDate?: string;
   issuer?: string;
-  status?: "current" | "superseded" | "reference" | "draft" | "internal" | "unknown";
+  status?:
+    | "current"
+    | "possibly_superseded"
+    | "superseded"
+    | "reference"
+    | "draft"
+    | "internal"
+    | "unknown";
   supersedes?: string[];
   sourceConfidence: number;
   warnings?: string[];
@@ -27,9 +34,10 @@ export function extractSourceVersionInfo(
     .map((m) => m[1]?.trim())
     .filter(Boolean) as string[];
   const warnings: string[] = [];
-  if (/废止|代替|修订/.test(allText) && status === "unknown") {
-    warnings.push("possible_version_conflict_mentions");
+  if (/废止|代替|修订/.test(allText) && status !== "superseded") {
+    warnings.push("version_signal_requires_source_review");
   }
+  if (status === "possibly_superseded") warnings.push("version_possible_superseded_not_explicit");
 
   const info: SourceVersionInfo = {
     docTitle,
@@ -55,8 +63,14 @@ export function extractSourceVersionInfo(
 function inferStatus(text: string): SourceVersionInfo["status"] {
   if (/征求意见|征求意见稿/.test(text)) return "draft";
   if (/内部资料|内部使用/.test(text)) return "internal";
-  if (/本(?:标准|办法|规定|指南|导则|文件|通知).{0,12}(废止|停止执行)/.test(text)) {
+  if (
+    /本(?:标准|办法|规定|指南|导则|文件|通知)(?:自[^。；;]{0,20})?(?:废止|停止执行)/.test(text) ||
+    /(?:废止|停止执行)本(?:标准|办法|规定|指南|导则|文件|通知)/.test(text)
+  ) {
     return "superseded";
+  }
+  if (/引用的[^。；;]{0,20}(废止|停止执行)|历史参考|旧标准已废止/.test(text)) {
+    return "possibly_superseded";
   }
   if (/试行|暂行|参考|指南|导则/.test(text)) return "reference";
   if (/发布|实施|施行|现行/.test(text)) return "current";

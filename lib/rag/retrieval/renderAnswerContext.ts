@@ -142,7 +142,7 @@ export function renderChunkAnswerContext(chunk: Chunk): string | undefined {
         "【结构化表格行】",
         chunk.tableTitle ? `来源表格：${chunk.tableTitle}` : undefined,
         chunk.rowKey ? `行主键：${chunk.rowKey}` : undefined,
-        renderFields(chunk.fields),
+        renderFieldsAsMarkdown(chunk.fields),
       ]);
     default:
       return undefined;
@@ -174,6 +174,19 @@ function renderFields(fields: Record<string, string> | undefined): string | unde
     .slice(0, 16)
     .map(([key, value]) => `${key}：${value.trim()}`);
   return pairs.length ? pairs.join("\n") : undefined;
+}
+
+function renderFieldsAsMarkdown(fields: Record<string, string> | undefined): string | undefined {
+  if (!fields) return undefined;
+  const entries = Object.entries(fields).filter(([, value]) => value.trim());
+  if (!entries.length) return undefined;
+  const headers = entries.map(([key]) => key).slice(0, 12);
+  const values = headers.map((header) => escapeCell(fields[header] ?? ""));
+  return [
+    `| ${headers.join(" | ")} |`,
+    `| ${headers.map(() => "---").join(" | ")} |`,
+    `| ${values.join(" | ")} |`,
+  ].join("\n");
 }
 
 function lines(values: Array<string | undefined>): string | undefined {
