@@ -8,6 +8,7 @@ import { listSearchableChunks } from "@/lib/db/chunks";
 import { rerank } from "./rerank";
 import { BM25Index, tokenize } from "./bm25";
 import { expandHit } from "./expand";
+import { exactSearchChunks } from "./retrieval/exactIndex.ts";
 
 const TOP_K = 5;
 
@@ -104,6 +105,7 @@ export async function vectorSearch(
 
 export interface RetrieveResult {
   extractedKeywords: string[];
+  exactResults: RetrievedChunk[];
   keywordResults: RetrievedChunk[];
   vectorResults: RetrievedChunk[];
   mergedTop: RetrievedChunk[];
@@ -119,6 +121,7 @@ export async function retrieve(
 ): Promise<RetrieveResult> {
   const chunks = await listSearchableChunks(city);
   const extractedKeywords = extractQueryKeywords(question);
+  const exactResults = exactSearchChunks(chunks, question);
 
   // BM25 索引（每次查询基于当前可检索 chunk 集合构建）
   const bm25 = new BM25Index(chunks);
@@ -127,7 +130,17 @@ export async function retrieve(
 
   // 合并：以 chunk.id 去重，保留关键词与向量两路得分
   const merged = new Map<string, RetrievedChunk>();
-  for (const r of keywordResults) merged.set(r.chunk.id, { ...r });
+  for (const r of exactResults) merged.set(r.chunk.id, { ...r });
+  for (const r of keywordResults) {
+    const existing = merged.get(r.chunk.id);
+    if (existing) {
+      existing.keywordScore = Math.max(existing.keywordScore, r.keywordScore);
+      existing.source = "hybrid";
+      existing.matchedKeywords = [...new Set([...existing.matchedKeywords, ...r.matchedKeywords])];
+    } else {
+      merged.set(r.chunk.id, { ...r });
+    }
+  }
   for (const r of vectorResults) {
     const existing = merged.get(r.chunk.id);
     if (existing) {
@@ -151,6 +164,7 @@ export async function retrieve(
 
   return {
     extractedKeywords,
+    exactResults: exactResults.slice(0, TOP_K * 2),
     keywordResults: keywordResults.slice(0, TOP_K * 2),
     vectorResults: vectorResults.slice(0, TOP_K * 2),
     mergedTop: topExpanded,

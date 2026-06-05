@@ -5,11 +5,16 @@
 import type { Block, Chunk, Document } from "@/lib/types";
 import { ensureSeeded, getStore } from "./store";
 import { getEmbeddingProvider } from "@/lib/ai/embedding";
-import { buildChunks, placeholderChunk, type DraftChunk } from "@/lib/rag/chunk";
+import {
+  buildChunksWithObjects,
+  placeholderChunk,
+  type DraftChunk,
+} from "@/lib/rag/chunk";
 import { buildRagTablesFromChunks } from "@/lib/rag/ragTable";
 import { replaceRagTablesForDoc } from "./ragTables";
 import { saveChunks } from "./persist";
 import { writeAllTableDebug, tableDebugEnabled } from "@/lib/debug/tableDebug";
+import { writeRagPipelineDebug } from "@/lib/rag/debug";
 
 /** 仅返回参与检索（enabled 且 indexed）文档对应的 chunks。 */
 export async function listSearchableChunks(city?: string): Promise<Chunk[]> {
@@ -48,7 +53,8 @@ export async function processDocument(
   // 移除该文档旧 chunks（支持重新解析）
   store.chunks = store.chunks.filter((c) => c.documentId !== doc.id);
 
-  let drafts: DraftChunk[] = buildChunks(doc, input);
+  const buildResult = buildChunksWithObjects(doc, input);
+  let drafts: DraftChunk[] = buildResult.drafts;
   if (drafts.length === 0) drafts = [placeholderChunk(doc)];
 
   const embedder = getEmbeddingProvider();
@@ -89,6 +95,24 @@ export async function processDocument(
     } catch (e) {
       console.error("[processDocument] table debug write failed:", e);
     }
+  }
+  try {
+    writeRagPipelineDebug({
+      docId: doc.id,
+      blocks: buildResult.blocks,
+      cleanedBlocks: buildResult.cleanedBlocks,
+      profile: buildResult.profile,
+      sectionTree: buildResult.sectionTree,
+      knowledgeObjects: buildResult.knowledgeObjects,
+      retrievalChunks: drafts,
+      versionInfo: buildResult.versionInfo,
+      warnings: [
+        ...buildResult.warnings,
+        ...(buildResult.fallbackUsed ? ["fallback_to_legacy_chunkBlocks"] : []),
+      ],
+    });
+  } catch (e) {
+    console.error("[processDocument] rag debug write failed:", e);
   }
   return chunks.length;
 }

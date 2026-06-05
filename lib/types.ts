@@ -271,6 +271,16 @@ export interface Chunk {
   /** 行类型（data/summary/note/header_continuation），summary/note 不优先召回 */
   rowType?: TableRow["rowType"];
 
+  // ── KnowledgeObject 派生元数据（新结构化对象层，可选，旧 chunk 兼容） ──
+  objectId?: string;
+  objectType?: string;
+  sourceTableId?: string;
+  sourceRowIndex?: number;
+  itemName?: string;
+  normativeLevel?: string;
+  mandatory?: boolean;
+  versionInfo?: Record<string, unknown>;
+
   // ── 代码相关（用地/分类代码） ──
   code?: string;
   parentCode?: string;
@@ -313,7 +323,7 @@ export interface RetrievedChunk {
   /** 重排序后的综合得分 */
   rerankScore: number;
   /** 命中来源 */
-  source: "keyword" | "vector" | "hybrid";
+  source: "exact" | "keyword" | "vector" | "hybrid";
   /** 命中的关键词列表 */
   matchedKeywords: string[];
 }

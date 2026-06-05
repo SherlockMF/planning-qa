@@ -188,7 +188,7 @@ function classifyRowType(rowKey: string | undefined, content: string): TableRow[
 
 // ── 主入口：从 chunk 合成 RagTable，并回填 rowId/tableType/rowType ──
 
-const ROW_CHUNK_TYPES = new Set(["table_row", "code", "requirement", "deliverable"]);
+const ROW_CHUNK_TYPES = new Set(["table_row", "code", "indicator", "requirement", "deliverable"]);
 
 /**
  * 从一组 chunk（可跨多文档/多表）合成 RagTable[]，并就地回填 row chunk 的
@@ -214,7 +214,13 @@ export function buildRagTablesFromChunks(
   const tables: RagTable[] = [];
   for (const [, group] of groups) {
     const full = group.find((c) => c.chunkType === "table_full");
-    const rowChunks = group.filter((c) => ROW_CHUNK_TYPES.has(c.chunkType));
+    const rowCandidates = group.filter((c) => ROW_CHUNK_TYPES.has(c.chunkType));
+    const rowChunks = rowCandidates.filter(
+      (c) => !c.objectType || c.objectType === "structured_table_row"
+    );
+    const derivedRowChunks = rowCandidates.filter(
+      (c) => c.objectType && c.objectType !== "structured_table_row"
+    );
     if (rowChunks.length === 0) continue; // 无数据行，跳过（仅整表无意义）
 
     const sample = full ?? rowChunks[0];
@@ -293,6 +299,25 @@ export function buildRagTablesFromChunks(
     }
 
     if (rows.length === 0) continue;
+
+    for (const dc of derivedRowChunks) {
+      const sourceRow =
+        dc.sourceRowIndex != null
+          ? rows.find((row) => row.rowIndex === dc.sourceRowIndex)
+          : undefined;
+      const fallbackRow =
+        sourceRow ??
+        rows.find((row) => row.rowKey && dc.rowKey && dc.rowKey.includes(row.rowKey));
+      if (!fallbackRow) {
+        warnings.add("derived_object_row_binding_missing");
+        continue;
+      }
+      dc.rowId = fallbackRow.rowId;
+      dc.rowType = fallbackRow.rowType;
+      dc.tableType = tableType;
+      dc.tableHeaders = dc.tableHeaders ?? headers;
+      dc.tableTitle = dc.tableTitle ?? tableTitle;
+    }
 
     // 回填 tableType 到尚未赋值的 chunk（table_full 等）
     for (const c of group) if (!c.tableType) c.tableType = tableType;

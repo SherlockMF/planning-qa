@@ -18,10 +18,14 @@ import type {
   DocProfile,
   ChunkType,
 } from "@/lib/types";
-import { detectHeading } from "@/lib/rag/headings";
-import { expandRow, rowFields, rowKeyOf } from "@/lib/rag/tableModel";
-import { cleanBlocks } from "@/lib/rag/clean";
-import { buildDocProfile } from "@/lib/rag/profile";
+import type { KnowledgeObject } from "@/lib/rag/objects";
+import { detectHeading } from "./headings.ts";
+import { expandRow, rowFields, rowKeyOf } from "./tableModel.ts";
+import { cleanBlocks } from "./clean.ts";
+import { buildDocProfile } from "./profile.ts";
+import { buildSectionTree, type SectionTree } from "./sectionTree.ts";
+import { extractKnowledgeObjects } from "./normalizers/index.ts";
+import { extractSourceVersionInfo, type SourceVersionInfo } from "./version.ts";
 
 /** chunkDocument 产出：除 fileName/city/embedding/createdAt 及派生字段外的完整 chunk。 */
 export type DraftChunk = Omit<
@@ -31,6 +35,18 @@ export type DraftChunk = Omit<
 
 /** chunk 公共上下文字段（documentId 必填，确保拼装后满足 DraftChunk）。 */
 type ChunkBase = Omit<DraftChunk, "id" | "chunkType" | "content" | "keywords">;
+
+export interface BuildChunksResult {
+  drafts: DraftChunk[];
+  blocks: Block[];
+  cleanedBlocks: Block[];
+  profile?: DocProfile;
+  sectionTree?: SectionTree;
+  knowledgeObjects: KnowledgeObject[];
+  versionInfo?: SourceVersionInfo;
+  fallbackUsed: boolean;
+  warnings: string[];
+}
 
 const TARGET_MAX = 900; // 正文 chunk 目标上限
 const HARD_MAX = 1200; // 绝对上限
@@ -445,16 +461,124 @@ export function buildChunks(
   doc: Document,
   input: { blocks?: Block[]; text?: string }
 ): DraftChunk[] {
-  if (input.blocks && input.blocks.length) {
-    const profile = buildDocProfile(input.blocks, doc.fileName);
-    return chunkBlocks(doc, input.blocks, profile);
+  return buildChunksWithObjects(doc, input).drafts;
+}
+
+/** 顶层增强：优先 KnowledgeObject → retrieval chunks，失败时回退旧 chunkBlocks。 */
+export function buildChunksWithObjects(
+  doc: Document,
+  input: { blocks?: Block[]; text?: string }
+): BuildChunksResult {
+  const blocks = resolveInputBlocks(input);
+  if (!blocks.length) {
+    return {
+      drafts: [],
+      blocks: [],
+      cleanedBlocks: [],
+      knowledgeObjects: [],
+      fallbackUsed: false,
+      warnings: ["no_parseable_blocks"],
+    };
   }
-  if (input.text && input.text.trim().length > 0) {
-    const blocks = blocksFromPlainText(input.text);
-    const profile = buildDocProfile(blocks, doc.fileName);
-    return chunkBlocks(doc, blocks, profile);
+
+  const warnings: string[] = [];
+  const cleaned = cleanBlocks(blocks).blocks;
+  const profile = buildDocProfile(cleaned, doc.fileName);
+  const versionInfo = extractSourceVersionInfo(cleaned, profile.docTitle);
+  let sectionTree: SectionTree | undefined;
+  let knowledgeObjects: KnowledgeObject[] = [];
+
+  try {
+    sectionTree = buildSectionTree(cleaned);
+    knowledgeObjects = extractKnowledgeObjects({
+      docId: doc.id,
+      blocks: cleaned,
+      sectionTree,
+      tables: [],
+      profile,
+    });
+    const objectDrafts = buildRetrievalChunksFromObjects(
+      doc,
+      knowledgeObjects,
+      profile,
+      versionInfo
+    );
+    if (objectDrafts.length) {
+      return {
+        drafts: objectDrafts,
+        blocks,
+        cleanedBlocks: cleaned,
+        profile,
+        sectionTree,
+        knowledgeObjects,
+        versionInfo,
+        fallbackUsed: false,
+        warnings,
+      };
+    }
+    warnings.push("knowledge_objects_produced_no_chunks");
+  } catch (error) {
+    warnings.push(`knowledge_object_pipeline_failed: ${String(error)}`);
   }
-  return [];
+
+  return {
+    drafts: chunkBlocks(doc, blocks, profile),
+    blocks,
+    cleanedBlocks: cleaned,
+    profile,
+    sectionTree,
+    knowledgeObjects,
+    versionInfo,
+    fallbackUsed: true,
+    warnings,
+  };
+}
+
+export function buildRetrievalChunksFromObjects(
+  doc: Document,
+  objects: KnowledgeObject[],
+  profile: DocProfile,
+  versionInfo?: SourceVersionInfo
+): DraftChunk[] {
+  const drafts = objects.map((obj) => {
+    const chunkType = chunkTypeForObject(obj);
+    const draft: DraftChunk = {
+      id: `chunk-${obj.id}`,
+      documentId: doc.id,
+      docTitle: profile.docTitle,
+      docType: profile.docTypeCandidates[0],
+      chunkType,
+      sectionPath: obj.sectionPathText || undefined,
+      headingText: obj.sectionPath.at(-1),
+      clauseNo: obj.objectType === "regulation_clause" ? obj.clauseNo : undefined,
+      tableId: tableIdForObject(obj),
+      tableTitle: tableTitleForObject(obj),
+      tableHeaders: tableHeadersForObject(obj),
+      rowKey: rowKeyForObject(obj),
+      fields: fieldsForObject(obj),
+      code: obj.objectType === "classification_code" ? obj.code : undefined,
+      parentCode: obj.objectType === "classification_code" ? obj.parentCode : undefined,
+      pageStart: obj.sourcePageStart,
+      pageEnd: obj.sourcePageEnd,
+      parentChunkId: obj.parentObjectId ? `chunk-${obj.parentObjectId}` : undefined,
+      prevChunkId: obj.prevObjectId ? `chunk-${obj.prevObjectId}` : undefined,
+      nextChunkId: obj.nextObjectId ? `chunk-${obj.nextObjectId}` : undefined,
+      content: makeEmbeddingText(obj),
+      keywords: obj.keywords ?? extractKeywords(obj.content),
+      aliases: obj.aliases,
+      objectId: obj.id,
+      objectType: obj.objectType,
+      sourceTableId: obj.sourceTableId,
+      sourceRowIndex: obj.sourceRowIndex,
+      itemName: obj.objectType === "indicator_item" ? obj.itemName : undefined,
+      normativeLevel:
+        "normativeLevel" in obj ? String(obj.normativeLevel ?? "") || undefined : undefined,
+      mandatory: "mandatory" in obj ? obj.mandatory : undefined,
+      versionInfo: versionInfo as unknown as Record<string, unknown> | undefined,
+    };
+    return draft;
+  });
+  return drafts.filter((draft) => draft.content.trim().length > 0);
 }
 
 /** 占位 chunk（无可解析正文时）。 */
@@ -466,6 +590,156 @@ export function placeholderChunk(doc: Document): DraftChunk {
     content: `（演示占位）文档「${doc.fileName}」已登记为${doc.fileType}，但尚未提供可解析的正文内容。请在接入真实解析后重新处理。`,
     keywords: [doc.fileType, doc.city],
   };
+}
+
+function resolveInputBlocks(input: { blocks?: Block[]; text?: string }): Block[] {
+  if (input.blocks && input.blocks.length) return input.blocks;
+  if (input.text && input.text.trim().length > 0) {
+    return blocksFromPlainText(input.text);
+  }
+  return [];
+}
+
+function makeEmbeddingText(obj: KnowledgeObject): string {
+  return [
+    obj.objectType,
+    obj.sectionPathText,
+    obj.title,
+    obj.content,
+    objectSpecificFieldsText(obj),
+  ]
+    .filter(Boolean)
+    .join("\n");
+}
+
+function objectSpecificFieldsText(obj: KnowledgeObject): string {
+  switch (obj.objectType) {
+    case "classification_code":
+      return [
+        obj.code,
+        obj.name,
+        obj.parentCode ? `父级：${obj.parentCode}` : undefined,
+        obj.description,
+        obj.tableObjectId,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    case "indicator_item":
+      return [
+        obj.itemName,
+        obj.indicatorName,
+        obj.indicatorValues.map((value) => value.raw).join("；"),
+        obj.unit,
+        obj.serviceScale,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    case "requirement":
+      return [obj.subject, obj.normativeLevel, obj.condition, obj.requirementText]
+        .filter(Boolean)
+        .join("\n");
+    case "deliverable_requirement":
+      return [
+        obj.stage,
+        obj.deliverableType,
+        obj.mandatory == null ? undefined : obj.mandatory ? "必选" : "选做",
+        obj.requirementText,
+      ]
+        .filter(Boolean)
+        .join("\n");
+    case "drawing_requirement":
+      return [obj.drawingName, obj.drawingType, obj.requirementText].filter(Boolean).join("\n");
+    case "regulation_clause":
+      return [obj.clauseNo, obj.clauseTitle, obj.normativeLevel].filter(Boolean).join("\n");
+    case "definition":
+      return [obj.term, obj.definition, ...(obj.aliases ?? [])].filter(Boolean).join("\n");
+    case "structured_table_row":
+      return Object.entries(obj.fields)
+        .map(([key, value]) => `${key}：${value}`)
+        .join("\n");
+    case "structured_table":
+      return [
+        obj.tableNo,
+        obj.tableTitle,
+        obj.tableType,
+        obj.headers.map((header) => header.name).join(" | "),
+      ]
+        .filter(Boolean)
+        .join("\n");
+    default:
+      return "";
+  }
+}
+
+function chunkTypeForObject(obj: KnowledgeObject): ChunkType {
+  switch (obj.objectType) {
+    case "regulation_clause":
+      return "clause";
+    case "clause_explanation":
+      return "clause_explanation";
+    case "definition":
+      return "definition";
+    case "structured_table":
+      return "table_full";
+    case "structured_table_row":
+      return "table_row";
+    case "classification_code":
+      return "code";
+    case "indicator_item":
+      return "indicator";
+    case "requirement":
+      return "requirement";
+    case "deliverable_requirement":
+    case "drawing_requirement":
+      return "deliverable";
+    case "procedure_step":
+      return "procedure";
+    case "checklist_item":
+      return "list_item";
+    default:
+      return "section";
+  }
+}
+
+function tableIdForObject(obj: KnowledgeObject): string | undefined {
+  if (obj.objectType === "structured_table") return obj.sourceTableId;
+  if (obj.objectType === "structured_table_row") return obj.sourceTableId;
+  if (obj.objectType === "classification_code" || obj.objectType === "indicator_item") {
+    return obj.sourceTableId;
+  }
+  return undefined;
+}
+
+function tableTitleForObject(obj: KnowledgeObject): string | undefined {
+  if (obj.objectType === "structured_table") return obj.tableTitle ?? obj.title;
+  if (obj.objectType === "structured_table_row") return obj.tableTitle;
+  return undefined;
+}
+
+function tableHeadersForObject(obj: KnowledgeObject): string[] | undefined {
+  if (obj.objectType === "structured_table") return obj.headers.map((header) => header.name);
+  if (obj.objectType === "structured_table_row") return Object.keys(obj.fields);
+  if (obj.objectType === "classification_code" || obj.objectType === "indicator_item") {
+    return Object.keys(obj.fields);
+  }
+  return undefined;
+}
+
+function rowKeyForObject(obj: KnowledgeObject): string | undefined {
+  if (obj.objectType === "structured_table_row") return obj.rowKey;
+  if (obj.objectType === "classification_code") return `${obj.code} ${obj.name}`;
+  if (obj.objectType === "indicator_item") return obj.itemName;
+  if (obj.objectType === "definition") return obj.term;
+  if (obj.objectType === "checklist_item") return obj.itemTitle;
+  return undefined;
+}
+
+function fieldsForObject(obj: KnowledgeObject): Record<string, string> | undefined {
+  if (obj.objectType === "structured_table_row") return obj.fields;
+  if (obj.objectType === "classification_code" || obj.objectType === "indicator_item") {
+    return obj.fields;
+  }
+  return undefined;
 }
 
 // ────────────────────────────────────────────────────────────────────────────

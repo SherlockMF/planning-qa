@@ -16,6 +16,7 @@ export interface ContextChunk {
   sectionPath?: string;
   articleNo?: string;
   pageNumber?: number;
+  structuredContext?: string;
   content: string;
 }
 
@@ -72,7 +73,10 @@ export function buildContextBlock(chunks: ContextChunk[]): string {
         .replace(/[ \t]{2,}/g, " ")
         .replace(/\n{3,}/g, "\n\n")
         .trim();
-      return `${meta}\n原文：${clean}`;
+      const structured = c.structuredContext
+        ? `\nstructured_metadata:\n${c.structuredContext}`
+        : "";
+      return `${meta}${structured}\n原文：${clean}`;
     })
     .join("\n\n---\n\n");
 }
@@ -126,11 +130,15 @@ function hasStrongOverlap(
  */
 export class RemoteLLMProvider implements LLMProvider {
   readonly name = "remote-llm";
-  constructor(
-    private url: string,
-    private apiKey: string,
-    private model: string
-  ) {}
+  private url: string;
+  private apiKey: string;
+  private model: string;
+
+  constructor(url: string, apiKey: string, model: string) {
+    this.url = url;
+    this.apiKey = apiKey;
+    this.model = model;
+  }
 
   async synthesizeConclusion(input: SynthesizeInput): Promise<string> {
     const context = buildContextBlock(input.chunks);
@@ -177,11 +185,13 @@ export class ZhipuLLMProvider implements LLMProvider {
     "https://open.bigmodel.cn/api/paas/v4/chat/completions";
   /** GLM 返回空时自动降级为抽取式 mock，避免误拒答。 */
   private readonly fallback = new MockLLMProvider();
+  private apiKey: string;
+  private model: string;
 
-  constructor(
-    private apiKey: string,
-    private model: string
-  ) {}
+  constructor(apiKey: string, model: string) {
+    this.apiKey = apiKey;
+    this.model = model;
+  }
 
   async synthesizeConclusion(input: SynthesizeInput): Promise<string> {
     const context = buildContextBlock(input.chunks);
@@ -294,6 +304,46 @@ export function toContextChunk(chunk: Chunk, index: number): ContextChunk {
     sectionPath: chunk.sectionPath,
     articleNo: chunk.articleNo,
     pageNumber: chunk.pageNumber,
+    structuredContext: buildStructuredContext(chunk),
     content: chunk.content,
   };
+}
+
+function buildStructuredContext(chunk: Chunk): string | undefined {
+  const lines: string[] = [];
+  add(lines, "objectId", chunk.objectId);
+  add(lines, "objectType", chunk.objectType);
+  add(lines, "chunkType", chunk.chunkType);
+  add(lines, "clauseNo", chunk.clauseNo);
+  add(lines, "normativeLevel", chunk.normativeLevel);
+  add(lines, "mandatory", chunk.mandatory == null ? undefined : String(chunk.mandatory));
+  add(lines, "code", chunk.code);
+  add(lines, "parentCode", chunk.parentCode);
+  add(lines, "itemName", chunk.itemName);
+  add(lines, "tableId", chunk.tableId ?? chunk.sourceTableId);
+  add(lines, "tableTitle", chunk.tableTitle);
+  add(lines, "tableType", chunk.tableType);
+  add(lines, "sourceRowIndex", chunk.sourceRowIndex == null ? undefined : String(chunk.sourceRowIndex));
+  add(lines, "rowKey", chunk.rowKey);
+
+  if (chunk.fields) {
+    for (const [key, value] of Object.entries(chunk.fields)) {
+      add(lines, `field.${key}`, value);
+    }
+  }
+
+  if (chunk.versionInfo) {
+    for (const [key, value] of Object.entries(chunk.versionInfo)) {
+      if (typeof value === "string" || typeof value === "number" || typeof value === "boolean") {
+        add(lines, `version.${key}`, String(value));
+      }
+    }
+  }
+
+  return lines.length ? lines.join("\n") : undefined;
+}
+
+function add(lines: string[], key: string, value: string | undefined): void {
+  const clean = value?.trim();
+  if (clean) lines.push(`${key}=${clean}`);
 }

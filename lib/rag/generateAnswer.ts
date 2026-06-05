@@ -17,6 +17,7 @@ import { checkEvidence, checkScope } from "./refusal";
 import { relevanceLabel } from "./rerank";
 import { assembleTableSlices } from "./tableAssembly";
 import { getLLMProvider, toContextChunk } from "@/lib/ai/llm";
+import { renderChunkAnswerContext } from "./retrieval/renderAnswerContext.ts";
 
 // LLM 可见的上下文窗口（要覆盖到依据判断所用的 Top-N，避免“能搜到却答不出”）
 const LLM_CONTEXT = 5;
@@ -74,7 +75,16 @@ export async function generateAnswer(
   const conclusion = await llm.synthesizeConclusion({
     question: q,
     city,
-    chunks: context.map((r, i) => toContextChunk(r.chunk, i + 1)),
+    chunks: context.map((r, i) => {
+      const chunk = toContextChunk(r.chunk, i + 1);
+      const structured = renderChunkAnswerContext(r.chunk);
+      return structured
+        ? {
+            ...chunk,
+            content: `${structured}\n\n原文：\n${chunk.content}`,
+          }
+        : chunk;
+    }),
   });
 
   if (!conclusion.trim()) {

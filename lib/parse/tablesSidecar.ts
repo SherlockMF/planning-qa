@@ -14,12 +14,12 @@ import { spawn } from "child_process";
 import os from "os";
 import fs from "fs";
 import path from "path";
-import type { Block, TableModel } from "@/lib/types";
-import { buildTableModelFromMatrix } from "@/lib/rag/tableModel";
-import { extractBlocks } from "@/lib/parse/ir";
-import { headerFingerprint, fingerprintSimilar } from "@/lib/parse/headerFingerprint";
-import { extractTablesFromCoords } from "@/lib/parse/coordTables";
-import { summarizeTableComparison } from "@/lib/debug/coordTableCompare";
+import type { Block, TableModel } from "../types";
+import { buildTableModelFromMatrix } from "../rag/tableModel.ts";
+import { extractBlocks } from "./ir.ts";
+import { headerFingerprint, fingerprintSimilar } from "./headerFingerprint.ts";
+import { extractTablesFromCoords } from "./coordTables.ts";
+import { summarizeTableComparison } from "../debug/coordTableCompare.ts";
 
 export interface RawTable {
   page: number;

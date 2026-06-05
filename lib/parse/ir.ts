@@ -7,11 +7,11 @@
 // chunk 阶段以 Block[] 为输入，不再面对裸字符串。
 // ============================================================================
 
-import type { Block, TableModel } from "@/lib/types";
-import { extractPdfPages } from "./extractText";
-import { detectHeading, detectTableCaption, isContinuedTable } from "@/lib/rag/headings";
-import { buildTableModel } from "@/lib/rag/tableModel";
-import { scoreTableRegion, shouldKeepAsTable } from "@/lib/rag/tableConfidence";
+import type { Block, TableModel } from "../types";
+import { extractPdfPages } from "./extractText.ts";
+import { detectHeading, detectTableCaption, isContinuedTable } from "../rag/headings.ts";
+import { buildTableModel } from "../rag/tableModel.ts";
+import { scoreTableRegion, shouldKeepAsTable } from "../rag/tableConfidence.ts";
 
 const TABLE_MARK = "[[T]]";
 

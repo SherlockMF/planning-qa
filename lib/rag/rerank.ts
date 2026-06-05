@@ -11,7 +11,8 @@
 // ============================================================================
 
 import type { RetrievedChunk } from "@/lib/types";
-import { containsNumeric, LAND_USE_RE, queryPhrases } from "./patterns";
+import { containsNumeric, LAND_USE_RE, queryPhrases } from "./patterns.ts";
+import { analyzeQuery } from "./retrieval/searchSignals.ts";
 
 export interface RerankContext {
   question: string;
@@ -32,6 +33,8 @@ const WEIGHTS = {
   landUseMatch: 0.1,
   hasStructure: 0.05,
   chunkType: 0.12,
+  queryIntent: 0.18,
+  version: 0.16,
 };
 
 /**
@@ -62,6 +65,7 @@ export function rerank(
   results: RetrievedChunk[],
   ctx: RerankContext
 ): RetrievedChunk[] {
+  const signals = analyzeQuery(ctx.question);
   const questionLandUse = new Set(
     (ctx.question.match(LAND_USE_RE) ?? []).map((s) => s.toUpperCase())
   );
@@ -142,11 +146,54 @@ export function rerank(
 
     // chunkType 优先级
     score += WEIGHTS.chunkType * (CHUNKTYPE_PRIORITY[c.chunkType] ?? 0.3);
+    score += WEIGHTS.queryIntent * queryIntentScore(c, signals);
+    score += WEIGHTS.version * versionPriority(c.versionInfo);
 
     r.rerankScore = Number(score.toFixed(4));
   }
 
   return results.sort((a, b) => b.rerankScore - a.rerankScore);
+}
+
+function queryIntentScore(
+  chunk: RetrievedChunk["chunk"],
+  signals: ReturnType<typeof analyzeQuery>
+): number {
+  const objectType = chunk.objectType ?? "";
+  let score = 0;
+  if (signals.asksCode && (chunk.chunkType === "code" || objectType === "classification_code")) score += 1;
+  if (signals.asksDefinition && chunk.chunkType === "definition") score += 1;
+  if (signals.asksIndicator && (chunk.chunkType === "indicator" || objectType === "indicator_item")) score += 1;
+  if (signals.asksConfiguration && /indicator|requirement|structured_table_row/.test(objectType)) score += 0.8;
+  if (signals.asksObligation && /requirement|regulation_clause/.test(objectType)) score += 0.9;
+  if (signals.asksDeliverable && /deliverable_requirement|drawing_requirement/.test(objectType)) score += 1;
+  if (signals.asksDrawing && objectType === "drawing_requirement") score += 1;
+  if (signals.asksProcedure && objectType === "procedure_step") score += 1;
+  if (signals.asksChecklist && objectType === "checklist_item") score += 1;
+  if (signals.asksClause && chunk.chunkType === "clause") score += 0.9;
+  if (signals.hasNumericFilter && containsNumeric(chunk.content)) score += 0.4;
+  if (signals.asksObligation && chunk.normativeLevel && chunk.normativeLevel !== "unknown") score += 0.4;
+  return Math.min(1, score);
+}
+
+function versionPriority(versionInfo: RetrievedChunk["chunk"]["versionInfo"]): number {
+  if (!versionInfo) return 0.35;
+  const status = typeof versionInfo.status === "string" ? versionInfo.status : "unknown";
+  const statusScore: Record<string, number> = {
+    current: 1,
+    reference: 0.7,
+    unknown: 0.55,
+    internal: 0.45,
+    draft: 0.35,
+    superseded: 0.05,
+  };
+  const effectiveDate =
+    typeof versionInfo.effectiveDate === "string" ? Date.parse(versionInfo.effectiveDate) : NaN;
+  const recency =
+    Number.isFinite(effectiveDate)
+      ? Math.min(0.2, Math.max(0, (effectiveDate - Date.parse("2000-01-01")) / (1000 * 60 * 60 * 24 * 365 * 100)))
+      : 0;
+  return Math.min(1, (statusScore[status] ?? 0.55) + recency);
 }
 
 /** 将 rerankScore 映射为相关度等级，用于引用卡片展示。 */

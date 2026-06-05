@@ -4,3 +4,4 @@
 import "./tableConfidence.test.ts";
 import "./p1Parse.test.ts";
 import "./coordTables.test.ts";
+import "./knowledgeObjects.test.ts";
