@@ -28,21 +28,29 @@ export async function POST(
 
   try {
     const buf = getStore().rawBuffers[doc.id];
+    if (!buf) {
+      // 没有原始文件就没有可解析内容；以前会落"占位 chunk"并标 indexed，
+      // 让用户误以为入库成功 —— 改为明确失败。
+      await updateDocument(doc.id, { status: "failed" });
+      return NextResponse.json(
+        { error: "原始文件缺失，无法解析。请删除该记录后重新上传文件。" },
+        { status: 400 }
+      );
+    }
+
     let blocks: Block[] | undefined;
     let text: string | undefined;
     let extractedChars = 0;
 
-    if (buf) {
-      if (doc.fileName.toLowerCase().endsWith(".pdf")) {
-        blocks = await extractBlocksWithTables(buf);
-        extractedChars = blocks.reduce(
-          (s, b) => s + b.normalizedText.length,
-          0
-        );
-      } else {
-        text = await extractText(buf, doc.fileName);
-        extractedChars = text.length;
-      }
+    if (doc.fileName.toLowerCase().endsWith(".pdf")) {
+      blocks = await extractBlocksWithTables(buf);
+      extractedChars = blocks.reduce(
+        (s, b) => s + b.normalizedText.length,
+        0
+      );
+    } else {
+      text = await extractText(buf, doc.fileName);
+      extractedChars = text.length;
     }
 
     const count = await processDocument(doc, { blocks, text });

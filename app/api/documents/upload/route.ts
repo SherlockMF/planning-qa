@@ -32,6 +32,11 @@ export async function POST(req: NextRequest) {
   const files = getUploadFiles(form);
   const city = (form.get("city") as string | null)?.trim();
   const fileTypeRaw = (form.get("fileType") as string | null)?.trim();
+  const effectiveDateRaw = (form.get("effectiveDate") as string | null)?.trim();
+  // 仅接受 YYYY-MM-DD；格式不对静默忽略（可选字段）
+  const effectiveDate = /^\d{4}-\d{2}-\d{2}$/.test(effectiveDateRaw ?? "")
+    ? effectiveDateRaw!
+    : undefined;
 
   if (files.length === 0) {
     return NextResponse.json({ error: "缺少文件" }, { status: 400 });
@@ -44,24 +49,39 @@ export async function POST(req: NextRequest) {
   ) as FileType;
 
   const documents: Document[] = [];
+  const failed: string[] = [];
 
   for (const file of files) {
+    // 先读二进制再建档：读取失败时不留下"已登记却无内容"的空文档
+    let buf: Buffer;
+    try {
+      buf = Buffer.from(await file.arrayBuffer());
+    } catch {
+      failed.push(file.name);
+      continue;
+    }
+
     const doc = await createDocument({
       fileName: file.name,
       city,
       fileType,
+      effectiveDate,
     });
+    getStore().rawBuffers[doc.id] = buf;
+    saveRawBuffer(doc.id, buf);
     documents.push(doc);
-
-    // 保存原始二进制（内存 + 磁盘），供 /process 阶段提取正文并切片
-    try {
-      const buf = Buffer.from(await file.arrayBuffer());
-      getStore().rawBuffers[doc.id] = buf;
-      saveRawBuffer(doc.id, buf);
-    } catch {
-      // 忽略读取失败，处理阶段会回退到占位切片
-    }
   }
 
-  return NextResponse.json({ document: documents[0], documents });
+  if (documents.length === 0) {
+    return NextResponse.json(
+      { error: `读取文件内容失败：${failed.join("、")}` },
+      { status: 400 }
+    );
+  }
+
+  return NextResponse.json({
+    document: documents[0],
+    documents,
+    ...(failed.length > 0 ? { failed } : {}),
+  });
 }

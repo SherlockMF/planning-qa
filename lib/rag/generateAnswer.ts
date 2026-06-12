@@ -21,8 +21,9 @@ import { renderChunkAnswerContext } from "./retrieval/renderAnswerContext.ts";
 
 // LLM 可见的上下文窗口（要覆盖到依据判断所用的 Top-N，避免“能搜到却答不出”）
 const LLM_CONTEXT = 5;
-// 展示给用户的引用条数上限
-const MAX_CITATIONS = 4;
+// 展示给用户的引用条数上限。必须 ≥ LLM_CONTEXT：
+// 否则结论可能基于第 5 条片段而依据卡片不展示它（"看不见的依据"）。
+const MAX_CITATIONS = LLM_CONTEXT;
 
 const NOTICE_TEXT =
   "该回答仅适用于当前知识库已收录文件及对应城市。如具体地块规划条件、已批控规图则或更新文件另有规定，应以具体文件为准。";
@@ -72,7 +73,7 @@ export async function generateAnswer(
   // 4. LLM 生成结论（仅基于传入 chunks）。上下文给到 Top-N，确保依据可见。
   const context = top.slice(0, LLM_CONTEXT);
   const llm = getLLMProvider();
-  const conclusion = await llm.synthesizeConclusion({
+  const rawConclusion = await llm.synthesizeConclusion({
     question: q,
     city,
     chunks: context.map((r, i) => {
@@ -86,6 +87,7 @@ export async function generateAnswer(
         : chunk;
     }),
   });
+  const conclusion = stripInternalMarkers(rawConclusion);
 
   if (!conclusion.trim()) {
     return {
@@ -203,17 +205,41 @@ function buildAnswerText(conclusion: string, citations: Citation[]): string {
   ].join("\n");
 }
 
-/** 检测 LLM 输出是否为自拒答（含"抱歉""没有依据""无法回答"等模式）。 */
+/**
+ * 检测 LLM 输出是否为自拒答（含"抱歉""没有依据""无法回答"等模式）。
+ * 只检查开头第一句：自拒答总是开门见山；法规原文中段常见的
+ * "无法确定的，按下列规定执行"等措辞不应把有效回答误判为拒答
+ * （mock LLM 逐字复述原文，整段匹配的误杀率很高）。
+ */
 function isLLMSelfRefusal(text: string): boolean {
   const t = text.trim();
+  if (t.startsWith("抱歉")) return true;
+  const lead = t.split(/[。\n]/, 1)[0].slice(0, 80);
   return (
-    t.startsWith("抱歉") ||
-    /没有.{0,20}依据/.test(t) ||
-    /知识库.{0,20}(没有|未包含|不包含|无法)/.test(t) ||
-    /无法.{0,10}(回答|确定|作答|给出)/.test(t) ||
-    /未.{0,10}(检索到|找到).{0,20}(依据|条文|内容)/.test(t) ||
-    /片段.{0,20}(没有|不包含|未包含)/.test(t)
+    /没有.{0,20}依据/.test(lead) ||
+    /知识库.{0,20}(没有|未包含|不包含|无法)/.test(lead) ||
+    /无法.{0,10}(回答|作答|给出)/.test(lead) ||
+    /未.{0,10}(检索到|找到).{0,20}(依据|条文|内容)/.test(lead) ||
+    /片段.{0,20}(没有|不包含|未包含)/.test(lead)
   );
+}
+
+/**
+ * 剥离 LLM 结论中残留的内部结构化标记。
+ * 主要场景：mock LLM 直接返回 renderChunkAnswerContext 前缀（【结构化XX】…原文：…），
+ * 真实 LLM 偶尔在结论中回显这些标记。
+ */
+function stripInternalMarkers(text: string): string {
+  // Mock LLM 场景：内容以「【结构化XX】…\n原文：\n…」格式开头，只保留原文部分
+  if (/^【结构化/.test(text.trimStart())) {
+    const m = text.match(/\n原文[：:]\n?([\s\S]+)/);
+    if (m) return m[1].replace(/\n{3,}/g, "\n\n").trim();
+  }
+  // 真实 LLM 偶发回显：去掉散落的结构化标记
+  return text
+    .replace(/【结构化[^】]+】/g, "")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
 }
 
 function buildRefusal(reason: string, reasonCode: string): ChatResponse {

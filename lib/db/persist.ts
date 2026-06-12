@@ -12,6 +12,7 @@
 import fs from "fs";
 import path from "path";
 import type { Chunk, Document, EvaluationItem, RagTable } from "@/lib/types";
+import { getEmbeddingProvider } from "../ai/embedding.ts";
 
 const DATA_DIR = path.join(process.cwd(), ".data");
 const RAW_DIR = path.join(DATA_DIR, "raw");
@@ -34,20 +35,35 @@ function ensureDirs() {
   fs.mkdirSync(RAW_DIR, { recursive: true });
 }
 
-function readSchemaVersion(): number {
+interface SchemaInfo {
+  version: number;
+  /** 写入 chunks 时使用的 embedding 提供方指纹（provider:model）。 */
+  embedding?: string;
+}
+
+function readSchemaInfo(): SchemaInfo {
   try {
-    if (!fs.existsSync(SCHEMA_FILE)) return 1; // 无版本文件 → 旧数据
+    if (!fs.existsSync(SCHEMA_FILE)) return { version: 1 }; // 无版本文件 → 旧数据
     const j = JSON.parse(fs.readFileSync(SCHEMA_FILE, "utf8"));
-    return typeof j.version === "number" ? j.version : 1;
+    return {
+      version: typeof j.version === "number" ? j.version : 1,
+      embedding: typeof j.embedding === "string" ? j.embedding : undefined,
+    };
   } catch {
-    return 1;
+    return { version: 1 };
   }
 }
 
 function writeSchemaVersion() {
   try {
     ensureDirs();
-    fs.writeFileSync(SCHEMA_FILE, JSON.stringify({ version: SCHEMA_VERSION }));
+    fs.writeFileSync(
+      SCHEMA_FILE,
+      JSON.stringify({
+        version: SCHEMA_VERSION,
+        embedding: getEmbeddingProvider().signature,
+      })
+    );
   } catch (e) {
     console.error("[persist] writeSchemaVersion failed:", e);
   }
@@ -80,7 +96,20 @@ export function loadFromDisk(): PersistedData | null {
       fs.readFileSync(DOCS_FILE, "utf8")
     );
 
-    const schemaStale = readSchemaVersion() < SCHEMA_VERSION;
+    const info = readSchemaInfo();
+    // 结构版本过期，或 embedding 提供方/模型已切换（向量维度/语义空间不再兼容，
+    // cosine 相似度会静默归零）→ 都视为 chunk 失效，走重建流程。
+    // 旧数据无 embedding 字段时不判失效（无从比较），下次落盘补记指纹。
+    const currentEmbedding = getEmbeddingProvider().signature;
+    const embeddingStale =
+      info.embedding != null && info.embedding !== currentEmbedding;
+    if (embeddingStale) {
+      console.warn(
+        `[persist] embedding 提供方已切换（${info.embedding} → ${currentEmbedding}），` +
+          "已落盘的向量失效，将重建索引（上传文档需重新解析）"
+      );
+    }
+    const schemaStale = info.version < SCHEMA_VERSION || embeddingStale;
 
     // 版本过期：丢弃旧扁平 chunk（不加载），由上层重新解析/重新播种
     const chunks: Chunk[] =

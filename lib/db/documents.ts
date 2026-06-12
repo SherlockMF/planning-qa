@@ -26,6 +26,8 @@ export interface CreateDocumentInput {
   fileName: string;
   city: string;
   fileType: FileType;
+  /** 文件生效日期（YYYY-MM-DD），可手动填写，用于多版本优先级判断 */
+  effectiveDate?: string;
 }
 
 export async function createDocument(
@@ -40,6 +42,7 @@ export async function createDocument(
     enabled: true,
     status: "pending",
     createdAt: new Date().toISOString(),
+    ...(input.effectiveDate ? { effectiveDate: input.effectiveDate } : {}),
   };
   getStore().documents.unshift(doc);
   saveDocuments(getStore().documents);

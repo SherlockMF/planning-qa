@@ -6,10 +6,14 @@
 // getEmbeddingProvider() 中切换即可，上层 RAG 代码无需改动。
 // ============================================================================
 
+import { addApiUsage, addEstimatedTokens, isTracking } from "./usage.ts";
+
 export const EMBEDDING_DIM = 256;
 
 export interface EmbeddingProvider {
   readonly name: string;
+  /** 提供方+模型指纹。落盘 chunk 时记录，加载时不一致则视为向量失效需重建。 */
+  readonly signature: string;
   embed(text: string): Promise<number[]>;
   embedBatch(texts: string[]): Promise<number[][]>;
 }
@@ -51,8 +55,21 @@ function hashToken(token: string): number {
  */
 export class MockEmbeddingProvider implements EmbeddingProvider {
   readonly name = "mock-local-embedding";
+  readonly signature = `mock-local-embedding:${EMBEDDING_DIM}`;
 
   async embed(text: string): Promise<number[]> {
+    const vec = this.compute(text);
+    if (isTracking()) addEstimatedTokens(text);
+    return vec;
+  }
+
+  async embedBatch(texts: string[]): Promise<number[][]> {
+    const out = texts.map((t) => this.compute(t));
+    if (isTracking()) addEstimatedTokens(...texts);
+    return out;
+  }
+
+  private compute(text: string): number[] {
     const vec = new Array<number>(EMBEDDING_DIM).fill(0);
     const tokens = tokenize(text);
     for (const t of tokens) {
@@ -60,15 +77,10 @@ export class MockEmbeddingProvider implements EmbeddingProvider {
       const sign = (hashToken(t + "#") & 1) === 0 ? 1 : -1;
       vec[idx] += sign;
     }
-    // L2 归一化
     let norm = 0;
     for (const v of vec) norm += v * v;
     norm = Math.sqrt(norm) || 1;
     return vec.map((v) => v / norm);
-  }
-
-  async embedBatch(texts: string[]): Promise<number[][]> {
-    return Promise.all(texts.map((t) => this.embed(t)));
   }
 }
 
@@ -78,11 +90,14 @@ export class MockEmbeddingProvider implements EmbeddingProvider {
  */
 export class RemoteEmbeddingProvider implements EmbeddingProvider {
   readonly name = "remote-embedding";
+  readonly signature: string;
   constructor(
     private url: string,
     private apiKey: string,
     private model: string
-  ) {}
+  ) {
+    this.signature = `remote-embedding:${model}`;
+  }
 
   async embed(text: string): Promise<number[]> {
     const [v] = await this.embedBatch([text]);
@@ -102,6 +117,7 @@ export class RemoteEmbeddingProvider implements EmbeddingProvider {
       throw new Error(`Embedding API error: ${res.status}`);
     }
     const data = await res.json();
+    addApiUsage(data.usage);
     return data.data.map((d: { embedding: number[] }) => d.embedding);
   }
 }
@@ -113,6 +129,7 @@ export class RemoteEmbeddingProvider implements EmbeddingProvider {
  */
 export class ZhipuEmbeddingProvider implements EmbeddingProvider {
   readonly name = "zhipu-embedding";
+  readonly signature: string;
   private url =
     process.env.ZHIPU_EMBEDDING_API_URL ??
     "https://open.bigmodel.cn/api/paas/v4/embeddings";
@@ -120,7 +137,9 @@ export class ZhipuEmbeddingProvider implements EmbeddingProvider {
   constructor(
     private apiKey: string,
     private model: string
-  ) {}
+  ) {
+    this.signature = `zhipu-embedding:${model}`;
+  }
 
   // 智谱 embeddings 单次请求的 input 数量上限，分批发送以支持大文档
   private static readonly BATCH = 16;
@@ -170,6 +189,7 @@ export class ZhipuEmbeddingProvider implements EmbeddingProvider {
       throw new Error(`Zhipu Embedding API error: ${res.status} ${detail}`);
     }
     const data = await res.json();
+    addApiUsage(data.usage);
     // 按 index 排序，确保与输入顺序一致
     const items = (data.data ?? []) as { index: number; embedding: number[] }[];
     return items

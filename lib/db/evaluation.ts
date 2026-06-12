@@ -7,6 +7,8 @@
 // ============================================================================
 
 import type { EvaluationItem, EvaluationStats } from "@/lib/types";
+import { DEFAULT_CITY } from "../city.ts";
+import { withUsageTracking } from "@/lib/ai/usage";
 import { ensureSeeded, getStore } from "./store";
 import { generateAnswer } from "@/lib/rag/generateAnswer";
 import { MOCK_EVALUATION } from "./mockEvaluation";
@@ -34,8 +36,14 @@ export async function saveEvaluation(
   return items;
 }
 
-/** 对全部题目真实运行问答链路并回填结果。 */
-export async function runEvaluation(): Promise<EvaluationItem[]> {
+/**
+ * 对题目真实运行问答链路并回填结果。
+ * @param ids 仅运行指定 id 的题目（用于「运行所选」）；未传则运行全部。
+ *            未被选中的题目保留其既有结果，不重新运行。
+ */
+export async function runEvaluation(
+  ids?: string[]
+): Promise<EvaluationItem[]> {
   await ensureSeeded();
   const store = getStore();
 
@@ -43,17 +51,24 @@ export async function runEvaluation(): Promise<EvaluationItem[]> {
   // 单题失败也不影响整体：捕获后标记该题错误原因，继续其它题。
   const CONCURRENCY = 3;
   const items = store.evaluation;
-  const updated: EvaluationItem[] = new Array(items.length);
+  const idSet = ids && ids.length > 0 ? new Set(ids) : null;
+  const targets = items
+    .map((item, idx) => ({ item, idx }))
+    .filter(({ item }) => !idSet || idSet.has(item.id));
+
+  const updated: EvaluationItem[] = [...items];
 
   let cursor = 0;
   async function worker() {
-    while (cursor < items.length) {
-      const idx = cursor++;
-      updated[idx] = await scoreItem(items[idx]);
+    while (cursor < targets.length) {
+      const { item, idx } = targets[cursor++];
+      updated[idx] = await scoreItem(item);
     }
   }
   await Promise.all(
-    Array.from({ length: Math.min(CONCURRENCY, items.length) }, () => worker())
+    Array.from({ length: Math.min(CONCURRENCY, targets.length) }, () =>
+      worker()
+    )
   );
 
   store.evaluation = updated;
@@ -62,11 +77,15 @@ export async function runEvaluation(): Promise<EvaluationItem[]> {
 }
 
 async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
-  let result;
-  try {
-    result = await generateAnswer(item.question);
-  } catch (err) {
-    // 运行期异常（接口报错/限流等）：保留题目，标记错误，不中断整体评测
+  // 与问答页同城市运行，保证评测结果反映线上真实行为
+  const tracked = await withUsageTracking(() =>
+    generateAnswer(item.question, DEFAULT_CITY)
+  );
+  const { usage, durationMs: answerDurationMs } = tracked;
+  const tokensUsed = usage.totalTokens;
+
+  if (tracked.error) {
+    const err = tracked.error;
     return {
       ...item,
       systemAnswer: undefined,
@@ -74,9 +93,13 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
       citationCorrect: undefined,
       refusedCorrectly: undefined,
       answerScore: undefined,
+      answerDurationMs,
+      tokensUsed,
       errorReason: "运行异常：" + String(err instanceof Error ? err.message : err),
     };
   }
+
+  const result = tracked.value!;
   const { response, retrieval } = result;
 
   const answered = response.foundEvidence;
@@ -85,6 +108,20 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
   //  · 若指定了条款，条款需匹配；
   //  · 否则若指定了页码，页码需匹配（适配按页而非按条编号的文件，如多数 PDF 标准）。
   const norm = (s?: string | number | null) => String(s ?? "").trim();
+  // 文件名模糊匹配：题库"答案来源"多为《文件名称》而 chunk.fileName 带扩展名，
+  // 严格等值几乎必不中 → 去扩展名/书名号/空白后做双向包含
+  const normFile = (s?: string | null) =>
+    String(s ?? "")
+      .trim()
+      .toLowerCase()
+      .replace(/\.(pdf|docx?|txt|md|markdown)$/i, "")
+      .replace(/[《》【】\s]/g, "");
+  const targetFile = normFile(item.correctFile);
+  const fileMatches = (chunkFileName: string): boolean => {
+    const a = normFile(chunkFileName);
+    if (!a || !targetFile) return false;
+    return a === targetFile || a.includes(targetFile) || targetFile.includes(a);
+  };
   const hasArticle = !!item.correctArticle && item.correctArticle !== "—";
   const hasPage = !!item.correctPage && item.correctPage !== "—";
   const hasTarget = !!item.correctFile && item.correctFile !== "—";
@@ -105,7 +142,7 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     pageNumber?: number;
     text: string;
   }) => {
-    if (norm(c.fileName) !== norm(item.correctFile)) return false;
+    if (!fileMatches(c.fileName)) return false;
     if (hasArticle && norm(c.articleNo) === norm(item.correctArticle)) return true;
     if (
       hasPage &&
@@ -128,13 +165,12 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
       : undefined;
 
   // 引用是否正确：
-  //  · 应拒答题 → 引用概念无意义，留 undefined
-  //  · 应作答题 + 有答案 → 检查引用是否命中目标；否则 false
-  const citationCorrect: boolean | undefined = item.shouldRefuse
-    ? undefined
-    : answered && hasTarget
-      ? response.citations.some((c) => matchesTarget({ ...c, text: c.excerpt }))
-      : false;
+  //  · 应拒答题 / 未作答 / 未标注正确文件 → 无从判定，留 undefined
+  //  · 应作答题 + 有答案 + 有标注 → 检查引用是否命中目标
+  const citationCorrect: boolean | undefined =
+    item.shouldRefuse || !answered || !hasTarget
+      ? undefined
+      : response.citations.some((c) => matchesTarget({ ...c, text: c.excerpt }));
 
   // 是否正确拒答（仅对应拒答题有意义）
   const refusedCorrectly = item.shouldRefuse ? !answered : undefined;
@@ -154,11 +190,24 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     if (!answered) {
       answerScore = 0;
       errorReason = "召回不足 / 误拒答";
-    } else if (citationCorrect) {
-      answerScore = 2;
+    } else if (hasTarget) {
+      if (citationCorrect) {
+        answerScore = 2;
+      } else {
+        answerScore = 1;
+        errorReason = "引用未命中标准条文";
+      }
+    } else if (stdTokens.length > 0) {
+      // 未标注正确文件 → 按回答与标准答案的内容重叠判分，不再一律封顶 1 分
+      if (overlapsStdAnswer(response.answer)) {
+        answerScore = 2;
+      } else {
+        answerScore = 1;
+        errorReason = "回答与标准答案重叠不足";
+      }
     } else {
       answerScore = 1;
-      errorReason = "引用未命中标准条文";
+      errorReason = "缺少标注（标准答案/正确文件），无法自动核对";
     }
   }
 
@@ -170,6 +219,8 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     refusedCorrectly,
     answerScore,
     errorReason,
+    answerDurationMs,
+    tokensUsed,
   };
 }
 

@@ -65,6 +65,8 @@ export async function ensureSeeded(): Promise<void> {
   if (store.seeded) return;
   if (seedPromise) return seedPromise;
 
+  // 失败时重置 seedPromise：否则首启时一次 embedding 接口故障（限流/断网）
+  // 会让所有后续请求永远复用同一个 rejected promise，直到重启进程。
   seedPromise = (async () => {
     // 1. 优先从磁盘恢复（服务重启后数据不丢）
     const persisted = loadFromDisk();
@@ -84,7 +86,7 @@ export async function ensureSeeded(): Promise<void> {
         const embedder = getEmbeddingProvider();
         const embeddings = await embedder.embedBatch(
           MOCK_CHUNKS.map(
-            (c) => `${c.sectionPath ?? ""} ${c.clauseNo ?? ""} ${c.content}`
+            (c) => `${c.sectionPath ?? ""} ${c.articleNo ?? c.clauseNo ?? ""} ${c.content}`
           )
         );
         store.chunks = MOCK_CHUNKS.map((c, i) => ({
@@ -121,7 +123,9 @@ export async function ensureSeeded(): Promise<void> {
     store.documents = [...MOCK_DOCUMENTS];
 
     const embeddings = await embedder.embedBatch(
-      MOCK_CHUNKS.map((c) => `${c.sectionPath ?? ""} ${c.articleNo ?? ""} ${c.content}`)
+      MOCK_CHUNKS.map(
+        (c) => `${c.sectionPath ?? ""} ${c.articleNo ?? c.clauseNo ?? ""} ${c.content}`
+      )
     );
     store.chunks = MOCK_CHUNKS.map((c, i) => ({
       ...c,
@@ -137,7 +141,10 @@ export async function ensureSeeded(): Promise<void> {
     saveChunks(store.chunks);
     saveRagTables(store.ragTables);
     saveEvaluationFile(store.evaluation);
-  })();
+  })().catch((err) => {
+    seedPromise = null;
+    throw err;
+  });
 
   return seedPromise;
 }

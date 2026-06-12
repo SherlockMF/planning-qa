@@ -33,7 +33,11 @@ export async function POST(req: NextRequest) {
       if (Array.isArray(body?.items)) {
         await saveEvaluation(body.items as EvaluationItem[]);
       }
-      const items = await runEvaluation();
+      // runIds 非空 → 仅运行所选题目，其余保留既有结果
+      const runIds = Array.isArray(body?.runIds)
+        ? (body.runIds as string[])
+        : undefined;
+      const items = await runEvaluation(runIds);
       return NextResponse.json({ items, stats: computeStats(items) });
     }
 

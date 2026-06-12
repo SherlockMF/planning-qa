@@ -23,7 +23,11 @@ interface FileItem {
   file: File;
   city: string;
   fileType: FileType;
-  status: "pending" | "uploading" | "done" | "error";
+  /** 生效日期（YYYY-MM-DD，可选），用于多版本文件的优先级排序 */
+  effectiveDate: string;
+  status: "pending" | "uploading" | "processing" | "done" | "error";
+  /** 上传成功后记录文档 id：解析失败重试时只重跑解析，不重复建档 */
+  docId?: string;
   error?: string;
 }
 
@@ -53,7 +57,8 @@ export function DocumentUploader({
           file: f,
           city: defaultCity,
           fileType: defaultType,
-          status: "pending",
+          effectiveDate: "",
+          status: "pending" as const,
         }));
       return [...prev, ...fresh];
     });
@@ -65,7 +70,10 @@ export function DocumentUploader({
     setItems((prev) => prev.filter((i) => i.key !== key));
   }
 
-  function updateItem(key: string, patch: Partial<Pick<FileItem, "city" | "fileType">>) {
+  function updateItem(
+    key: string,
+    patch: Partial<Pick<FileItem, "city" | "fileType" | "effectiveDate">>
+  ) {
     setItems((prev) => prev.map((i) => (i.key === key ? { ...i, ...patch } : i)));
   }
 
@@ -82,8 +90,11 @@ export function DocumentUploader({
 
   // ── 上传 ──
   async function handleUpload() {
-    const pending = items.filter((i) => i.status === "pending");
-    if (!pending.length) {
+    // error 行也纳入队列：支持失败重试
+    const queue = items.filter(
+      (i) => i.status === "pending" || i.status === "error"
+    );
+    if (!queue.length) {
       setGlobalError("没有待上传的文件");
       return;
     }
@@ -92,16 +103,25 @@ export function DocumentUploader({
 
     const results: Document[] = [];
 
-    await Promise.all(
-      pending.map(async (item) => {
-        setItems((prev) =>
-          prev.map((i) => (i.key === item.key ? { ...i, status: "uploading" } : i))
-        );
-        try {
+    // 逐个串行处理：解析阶段要调 embedding 接口，并行会触发限流
+    for (const item of queue) {
+      try {
+        let docId = item.docId;
+
+        // 已建档（上次解析失败）→ 跳过上传，只重跑解析，避免重复建档
+        if (!docId) {
+          setItems((prev) =>
+            prev.map((i) =>
+              i.key === item.key
+                ? { ...i, status: "uploading", error: undefined }
+                : i
+            )
+          );
           const form = new FormData();
           form.append("file", item.file);
           form.append("city", item.city.trim() || "未知");
           form.append("fileType", item.fileType);
+          if (item.effectiveDate) form.append("effectiveDate", item.effectiveDate);
           const res = await fetch("/api/documents/upload", {
             method: "POST",
             body: form,
@@ -111,26 +131,46 @@ export function DocumentUploader({
             throw new Error(d.error ?? `上传失败：${res.status}`);
           }
           const data = await res.json();
-          const doc = data.document as Document;
-          results.push(doc);
+          docId = (data.document as Document).id;
           setItems((prev) =>
-            prev.map((i) => (i.key === item.key ? { ...i, status: "done" } : i))
-          );
-        } catch (e) {
-          setItems((prev) =>
-            prev.map((i) =>
-              i.key === item.key
-                ? {
-                    ...i,
-                    status: "error",
-                    error: e instanceof Error ? e.message : "上传出错",
-                  }
-                : i
-            )
+            prev.map((i) => (i.key === item.key ? { ...i, docId } : i))
           );
         }
-      })
-    );
+
+        // 自动解析
+        setItems((prev) =>
+          prev.map((i) =>
+            i.key === item.key
+              ? { ...i, status: "processing", error: undefined }
+              : i
+          )
+        );
+        const processRes = await fetch(`/api/documents/${docId}/process`, {
+          method: "POST",
+        });
+        const pd = await processRes.json().catch(() => ({}));
+        if (!processRes.ok) {
+          throw new Error(pd.error ?? `解析失败：${processRes.status}`);
+        }
+
+        results.push(pd.document as Document);
+        setItems((prev) =>
+          prev.map((i) => (i.key === item.key ? { ...i, status: "done" } : i))
+        );
+      } catch (e) {
+        setItems((prev) =>
+          prev.map((i) =>
+            i.key === item.key
+              ? {
+                  ...i,
+                  status: "error",
+                  error: e instanceof Error ? e.message : "上传出错",
+                }
+              : i
+          )
+        );
+      }
+    }
 
     if (results.length) onUploaded(results);
     setUploading(false);
@@ -139,6 +179,7 @@ export function DocumentUploader({
   const pendingCount = items.filter((i) => i.status === "pending").length;
   const doneCount = items.filter((i) => i.status === "done").length;
   const errorCount = items.filter((i) => i.status === "error").length;
+  const uploadableCount = pendingCount + errorCount;
 
   return (
     <Card>
@@ -192,7 +233,7 @@ export function DocumentUploader({
           )}
           <Button
             onClick={handleUpload}
-            disabled={uploading || pendingCount === 0}
+            disabled={uploading || uploadableCount === 0}
             className="self-end"
           >
             {uploading ? (
@@ -200,7 +241,11 @@ export function DocumentUploader({
             ) : (
               <Upload className="h-4 w-4" />
             )}
-            {pendingCount > 1 ? `上传 ${pendingCount} 个` : "上传"}
+            {pendingCount === 0 && errorCount > 0
+              ? `重试 ${errorCount} 个`
+              : uploadableCount > 1
+              ? `上传 ${uploadableCount} 个`
+              : "上传"}
           </Button>
         </div>
 
@@ -215,14 +260,14 @@ export function DocumentUploader({
                     ? "bg-green-50/60"
                     : item.status === "error"
                     ? "bg-red-50/60"
-                    : item.status === "uploading"
+                    : item.status === "uploading" || item.status === "processing"
                     ? "bg-sky-50/60"
                     : ""
                 }`}
               >
                 {/* 状态图标 */}
                 <span className="shrink-0 w-4">
-                  {item.status === "uploading" && (
+                  {(item.status === "uploading" || item.status === "processing") && (
                     <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-600" />
                   )}
                   {item.status === "done" && (
@@ -234,15 +279,16 @@ export function DocumentUploader({
                 </span>
 
                 {/* 文件名 */}
-                <span
-                  className="flex-1 min-w-0 truncate text-slate-700"
-                  title={item.file.name}
-                >
+                <span className="flex-1 min-w-0 truncate text-slate-700" title={item.file.name}>
                   {item.file.name}
+                  {item.status === "uploading" && (
+                    <span className="ml-2 text-xs text-sky-600">上传中…</span>
+                  )}
+                  {item.status === "processing" && (
+                    <span className="ml-2 text-xs text-sky-600">解析中…</span>
+                  )}
                   {item.error && (
-                    <span className="ml-2 text-xs text-red-600">
-                      {item.error}
-                    </span>
+                    <span className="ml-2 text-xs text-red-600">{item.error}</span>
                   )}
                 </span>
 
@@ -250,7 +296,7 @@ export function DocumentUploader({
                 <Input
                   className="w-20 h-7 text-xs px-2"
                   value={item.city}
-                  disabled={item.status !== "pending"}
+                  disabled={item.status !== "pending" && item.status !== "error"}
                   onChange={(e) => updateItem(item.key, { city: e.target.value })}
                   placeholder="城市"
                 />
@@ -259,7 +305,7 @@ export function DocumentUploader({
                 <Select
                   className="w-36 h-7 text-xs"
                   value={item.fileType}
-                  disabled={item.status !== "pending"}
+                  disabled={item.status !== "pending" && item.status !== "error"}
                   onChange={(e) =>
                     updateItem(item.key, { fileType: e.target.value as FileType })
                   }
@@ -271,8 +317,20 @@ export function DocumentUploader({
                   ))}
                 </Select>
 
+                {/* 生效日期（可选，用于多版本优先级） */}
+                <Input
+                  type="date"
+                  className="w-32 h-7 text-xs px-2"
+                  value={item.effectiveDate}
+                  disabled={item.status !== "pending" && item.status !== "error"}
+                  onChange={(e) =>
+                    updateItem(item.key, { effectiveDate: e.target.value })
+                  }
+                  title="生效日期（可选）"
+                />
+
                 {/* 删除 */}
-                {item.status === "pending" && (
+                {(item.status === "pending" || item.status === "error") && (
                   <button
                     onClick={() => removeItem(item.key)}
                     className="shrink-0 text-slate-400 hover:text-red-500 transition-colors"
@@ -290,9 +348,7 @@ export function DocumentUploader({
         {(doneCount > 0 || errorCount > 0) && (
           <p className="text-xs text-muted-foreground">
             {doneCount > 0 && (
-              <span className="text-green-700 mr-3">
-                ✓ {doneCount} 个上传成功，点击「重新解析」完成入库
-              </span>
+              <span className="text-green-700 mr-3">✓ {doneCount} 个已入库</span>
             )}
             {errorCount > 0 && (
               <span className="text-red-600">{errorCount} 个失败</span>
@@ -302,8 +358,7 @@ export function DocumentUploader({
 
         <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
           <FileUp className="h-3.5 w-3.5 shrink-0" />
-          支持 PDF、DOCX、TXT、Markdown；多文件可分别设置城市与类型；
-          上传后点击「重新解析」完成切片与入库。
+          支持 PDF、DOCX、TXT、Markdown；多文件可分别设置城市、类型与生效日期（可选，用于新旧版本排序）；上传后自动解析入库，失败可点击重试。
         </p>
 
         {globalError && (

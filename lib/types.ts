@@ -239,6 +239,8 @@ export interface Document {
   enabled: boolean;
   status: DocumentStatus;
   createdAt: string;
+  /** 文件生效日期（YYYY-MM-DD），用于多版本优先级判断 */
+  effectiveDate?: string;
 }
 
 /** 文档切片（知识单元 chunk） */
@@ -397,6 +399,8 @@ export interface RetrieveDebugResponse {
 /** 评测题目与结果 */
 export interface EvaluationItem {
   id: string;
+  /** 题目序号（导入时自动识别，可选；仅用于展示与排序） */
+  seq?: string;
   /** 测试问题 */
   question: string;
   /** 标准答案 */
@@ -423,6 +427,12 @@ export interface EvaluationItem {
   inTop5?: boolean;
   /** 主要错误原因 */
   errorReason?: string;
+
+  // ---- 运行指标（运行评测后回填） ----
+  /** 单题问答耗时（毫秒，含检索 + LLM） */
+  answerDurationMs?: number;
+  /** 消耗 token 总数（prompt + completion + embedding） */
+  tokensUsed?: number;
 }
 
 /** 评测统计汇总 */

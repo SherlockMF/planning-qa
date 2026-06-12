@@ -11,6 +11,7 @@
 // ============================================================================
 
 import type { RetrievedChunk } from "@/lib/types";
+import { normalizeCity } from "../city.ts";
 import { containsNumeric, LAND_USE_RE, queryPhrases } from "./patterns.ts";
 import { analyzeQuery } from "./retrieval/searchSignals.ts";
 
@@ -123,8 +124,9 @@ export function rerank(
       score += WEIGHTS.exactKey;
     }
 
-    // 城市匹配
-    if (ctx.city && c.city === ctx.city) score += WEIGHTS.city;
+    // 城市匹配（归一化："北京"="北京市"）
+    if (ctx.city && normalizeCity(c.city) === normalizeCity(ctx.city))
+      score += WEIGHTS.city;
     else if (!ctx.city) score += WEIGHTS.city * 0.5;
 
     // 含明确数值（百分比 / 平方米 / 个 / 米，兼容中文数字）

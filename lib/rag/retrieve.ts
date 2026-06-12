@@ -89,8 +89,15 @@ export async function vectorSearch(
   const qVec = await embedder.embed(question);
 
   const results: RetrievedChunk[] = [];
+  let dimMismatch = 0;
   for (const chunk of chunks) {
     if (!chunk.embedding) continue;
+    // 维度不一致 = 库内向量来自其它 embedding 提供方，cosine 会静默归零。
+    // 跳过并告警，避免"向量通道全灭却无人知晓"。
+    if (chunk.embedding.length !== qVec.length) {
+      dimMismatch++;
+      continue;
+    }
     const sim = cosineSimilarity(qVec, chunk.embedding);
     results.push({
       chunk,
@@ -100,6 +107,12 @@ export async function vectorSearch(
       source: "vector",
       matchedKeywords: [],
     });
+  }
+  if (dimMismatch > 0) {
+    console.warn(
+      `[retrieve] ${dimMismatch} 个 chunk 的 embedding 维度与当前提供方（${embedder.signature}）不一致，` +
+        "已跳过向量打分。请重新解析对应文档以重建向量。"
+    );
   }
   return results.sort((a, b) => b.vectorScore - a.vectorScore);
 }

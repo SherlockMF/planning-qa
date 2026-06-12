@@ -1,7 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { EvaluationItem, EvaluationStats } from "@/lib/types";
+import {
+  parseEvaluationImport,
+  parseRowsToEvaluation,
+  type ImportResult,
+} from "@/lib/evaluation/importParser";
+import { downloadEvaluationXlsx } from "@/lib/evaluation/exportResults";
 import {
   Table,
   TableBody,
@@ -33,6 +39,8 @@ import {
   Trash2,
   Eye,
   RotateCcw,
+  Upload,
+  Download,
 } from "lucide-react";
 
 /** 纯客户端统计（与服务端 computeStats 等价），用于本地编辑后实时更新面板。 */
@@ -83,8 +91,43 @@ export function EvaluationManager() {
   const [isNew, setIsNew] = useState(false);
   // 查看系统回答
   const [viewing, setViewing] = useState<EvaluationItem | null>(null);
+  // 多选
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // 导入题库
+  const [importOpen, setImportOpen] = useState(false);
+  const [exporting, setExporting] = useState(false);
 
   const stats = useMemo(() => computeStatsLocal(items), [items]);
+
+  const allSelected = items.length > 0 && selected.size === items.length;
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected((prev) =>
+      prev.size === items.length ? new Set() : new Set(items.map((i) => i.id))
+    );
+  }
+
+  function deleteSelected() {
+    if (selected.size === 0) return;
+    if (!confirm(`确定删除所选 ${selected.size} 道题目？`)) return;
+    setItems((arr) => arr.filter((it) => !selected.has(it.id)));
+    setSelected(new Set());
+    setDirty(true);
+  }
+
+  function importItems(newItems: EvaluationItem[]) {
+    setItems((arr) => [...arr, ...newItems]);
+    setDirty(true);
+  }
 
   const load = useCallback(async () => {
     const res = await fetch("/api/evaluation", { cache: "no-store" });
@@ -106,6 +149,11 @@ export function EvaluationManager() {
   function removeItem(id: string) {
     if (!confirm("确定删除该题目？")) return;
     setItems((arr) => arr.filter((it) => it.id !== id));
+    setSelected((prev) => {
+      const next = new Set(prev);
+      next.delete(id);
+      return next;
+    });
     setDirty(true);
   }
 
@@ -163,20 +211,36 @@ export function EvaluationManager() {
     }
   }
 
-  async function run() {
+  async function run(runIds?: string[]) {
     setRunning(true);
     try {
-      // 把当前（含新增/编辑）的题库一并提交并逐题运行
+      // 把当前（含新增/编辑）的题库一并提交；runIds 非空时仅运行所选题
       const res = await fetch("/api/evaluation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "run", items }),
+        body: JSON.stringify({ action: "run", items, runIds }),
       });
       const data = await res.json();
       setItems(data.items ?? []);
       setDirty(false);
     } finally {
       setRunning(false);
+    }
+  }
+
+  async function exportResults(targets?: EvaluationItem[]) {
+    const list = targets ?? items;
+    if (!list.length) {
+      alert("暂无题目可导出");
+      return;
+    }
+    setExporting(true);
+    try {
+      await downloadEvaluationXlsx(list);
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "导出失败");
+    } finally {
+      setExporting(false);
     }
   }
 
@@ -198,6 +262,22 @@ export function EvaluationManager() {
           <Plus className="h-4 w-4" />
           新增题目
         </Button>
+        <Button variant="outline" onClick={() => setImportOpen(true)}>
+          <Upload className="h-4 w-4" />
+          导入题库
+        </Button>
+        <Button
+          variant="outline"
+          onClick={() => exportResults()}
+          disabled={exporting || items.length === 0}
+        >
+          {exporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
+          导出结果
+        </Button>
         <Button variant="outline" onClick={persist} disabled={saving || !dirty}>
           {saving ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -206,13 +286,13 @@ export function EvaluationManager() {
           )}
           保存{dirty ? "（有改动）" : ""}
         </Button>
-        <Button onClick={run} disabled={running}>
+        <Button onClick={() => run()} disabled={running}>
           {running ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
             <Play className="h-4 w-4" />
           )}
-          运行评测（自动判分）
+          运行全部（自动判分）
         </Button>
         <Button variant="ghost" onClick={reset} disabled={saving || running}>
           <RotateCcw className="h-4 w-4" />
@@ -223,10 +303,72 @@ export function EvaluationManager() {
         </span>
       </div>
 
+      {/* 多选操作条 */}
+      {selected.size > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
+          <span className="text-muted-foreground">已选 {selected.size} 道</span>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => run([...selected])}
+            disabled={running}
+          >
+            {running ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Play className="h-3.5 w-3.5" />
+            )}
+            运行所选
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              exportResults(items.filter((it) => selected.has(it.id)))
+            }
+            disabled={exporting}
+          >
+            {exporting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Download className="h-3.5 w-3.5" />
+            )}
+            导出所选
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={deleteSelected}
+            className="text-destructive hover:text-destructive"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            删除所选
+          </Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>
+            取消选择
+          </Button>
+        </div>
+      )}
+
       <div className="rounded-lg border bg-card">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 cursor-pointer accent-primary"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el)
+                      el.indeterminate =
+                        selected.size > 0 && !allSelected;
+                  }}
+                  onChange={toggleSelectAll}
+                  aria-label="全选"
+                />
+              </TableHead>
+              <TableHead className="w-14">序号</TableHead>
               <TableHead className="min-w-[220px]">问题 / 标准答案</TableHead>
               <TableHead className="min-w-[150px]">正确文件 / 条款 / 页码</TableHead>
               <TableHead>应拒答</TableHead>
@@ -234,13 +376,30 @@ export function EvaluationManager() {
               <TableHead>引用正确</TableHead>
               <TableHead>正确拒答</TableHead>
               <TableHead>答案得分</TableHead>
+              <TableHead className="w-20">耗时</TableHead>
+              <TableHead className="w-20">Token</TableHead>
               <TableHead className="min-w-[130px]">错误原因</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((it) => (
-              <TableRow key={it.id}>
+            {items.map((it, idx) => (
+              <TableRow
+                key={it.id}
+                className={selected.has(it.id) ? "bg-primary/5" : undefined}
+              >
+                <TableCell className="align-top">
+                  <input
+                    type="checkbox"
+                    className="mt-1 h-4 w-4 cursor-pointer accent-primary"
+                    checked={selected.has(it.id)}
+                    onChange={() => toggleSelect(it.id)}
+                    aria-label="选择该题"
+                  />
+                </TableCell>
+                <TableCell className="align-top text-xs text-muted-foreground">
+                  {it.seq || idx + 1}
+                </TableCell>
                 <TableCell className="align-top text-sm text-slate-800">
                   {it.question || <span className="text-muted-foreground">（空）</span>}
                   <p className="mt-1 text-xs text-muted-foreground">
@@ -302,6 +461,12 @@ export function EvaluationManager() {
                     <option value="2">2</option>
                   </Select>
                 </TableCell>
+                <TableCell className="align-top text-xs tabular-nums text-muted-foreground">
+                  {formatDuration(it.answerDurationMs)}
+                </TableCell>
+                <TableCell className="align-top text-xs tabular-nums text-muted-foreground">
+                  {formatTokens(it.tokensUsed)}
+                </TableCell>
                 <TableCell className="align-top">
                   <Input
                     value={it.errorReason ?? ""}
@@ -347,8 +512,8 @@ export function EvaluationManager() {
             ))}
             {items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={9} className="py-8 text-center text-sm text-muted-foreground">
-                  暂无题目，点击「新增题目」录入。
+                <TableCell colSpan={13} className="py-8 text-center text-sm text-muted-foreground">
+                  暂无题目，点击「新增题目」录入，或「导入题库」批量导入。
                 </TableCell>
               </TableRow>
             )}
@@ -428,6 +593,13 @@ export function EvaluationManager() {
         </DialogContent>
       </Dialog>
 
+      {/* 导入题库 */}
+      <ImportDialog
+        open={importOpen}
+        onClose={() => setImportOpen(false)}
+        onImport={importItems}
+      />
+
       {/* 查看系统回答 */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
         <DialogContent className="max-w-2xl">
@@ -442,6 +614,269 @@ export function EvaluationManager() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function ImportDialog({
+  open,
+  onClose,
+  onImport,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onImport: (items: EvaluationItem[]) => void;
+}) {
+  const [text, setText] = useState("");
+  const [shouldRefuse, setShouldRefuse] = useState(false);
+  // XLSX 解析结果（二进制无法走文本框，单独保存）
+  const [xlsxResult, setXlsxResult] = useState<ImportResult | null>(null);
+  const [xlsxName, setXlsxName] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  // 优先使用 XLSX 结果；否则解析文本框内容
+  const result: ImportResult | null = useMemo(() => {
+    if (xlsxResult) return xlsxResult;
+    return text.trim() ? parseEvaluationImport(text) : null;
+  }, [text, xlsxResult]);
+
+  function reset() {
+    setText("");
+    setShouldRefuse(false);
+    setXlsxResult(null);
+    setXlsxName(null);
+    setFileError(null);
+    if (fileRef.current) fileRef.current.value = "";
+  }
+
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileError(null);
+    const isExcel = /\.(xlsx|xls)$/i.test(file.name);
+    if (isExcel) {
+      try {
+        // 按需加载 SheetJS，避免增大主包体积
+        const XLSX = await import("xlsx");
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: "array" });
+
+        // 扫描所有工作表，选用能解析出最多题目的那个
+        // （兼容数据不在第一个 sheet、或前面有空白/说明 sheet 的情况）
+        let best: { name: string; result: ImportResult } | null = null;
+        for (const name of wb.SheetNames) {
+          const sheet = wb.Sheets[name];
+          if (!sheet) continue;
+          const rows = XLSX.utils.sheet_to_json<string[]>(sheet, {
+            header: 1,
+            blankrows: false,
+            defval: "",
+            raw: false,
+          });
+          const result = parseRowsToEvaluation(rows);
+          if (!best || result.rows.length > best.result.rows.length) {
+            best = { name, result };
+          }
+        }
+
+        setText("");
+        if (!best || best.result.rows.length === 0) {
+          setXlsxResult(null);
+          setXlsxName(null);
+          setFileError(
+            `未从 Excel 解析到题目。工作表：${wb.SheetNames.join("、")}。` +
+              `请确认数据所在表含「问题」列且非空。`
+          );
+        } else {
+          setXlsxName(
+            wb.SheetNames.length > 1
+              ? `${file.name}（工作表：${best.name}）`
+              : file.name
+          );
+          setXlsxResult(best.result);
+        }
+      } catch (err) {
+        setXlsxResult(null);
+        setXlsxName(null);
+        setFileError(
+          "Excel 解析失败：" + (err instanceof Error ? err.message : String(err))
+        );
+      }
+    } else {
+      // 文本类文件走文本框（可继续编辑）
+      const content = await file.text();
+      setXlsxResult(null);
+      setXlsxName(null);
+      setText(content);
+    }
+  }
+
+  function confirmImport() {
+    if (!result || result.rows.length === 0) return;
+    const items: EvaluationItem[] = result.rows.map((r, i) => ({
+      id: `eval-import-${Date.now()}-${i}-${Math.random()
+        .toString(36)
+        .slice(2, 6)}`,
+      seq: r.seq,
+      question: r.question,
+      standardAnswer: r.standardAnswer,
+      correctFile: r.correctFile,
+      correctArticle: "",
+      correctPage: "",
+      shouldRefuse,
+    }));
+    onImport(items);
+    reset();
+    onClose();
+  }
+
+  const FIELD_LABEL: Record<string, string> = {
+    seq: "序号",
+    question: "问题",
+    standardAnswer: "标准答案",
+    correctFile: "答案来源",
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(o) => {
+        if (!o) {
+          reset();
+          onClose();
+        }
+      }}
+    >
+      <DialogContent className="max-w-3xl">
+        <DialogHeader>
+          <DialogTitle>导入题库</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-3">
+          <p className="text-xs text-muted-foreground">
+            支持上传 Excel(XLSX/XLS) / CSV / TSV / TXT / Markdown 表格，或直接粘贴。系统自动识别
+            <b>序号、问题、标准答案、答案来源</b> 列（无表头时按此顺序）。
+          </p>
+          <div className="flex items-center gap-2">
+            <Input
+              ref={fileRef}
+              type="file"
+              accept=".xlsx,.xls,.csv,.tsv,.txt,.md,.markdown"
+              onChange={handleFile}
+              className="max-w-xs"
+            />
+            <span className="text-xs text-muted-foreground">或在下方粘贴</span>
+          </div>
+          {xlsxName && (
+            <p className="text-xs text-emerald-600">
+              已读取 Excel 文件：{xlsxName}
+            </p>
+          )}
+          {fileError && <p className="text-xs text-destructive">{fileError}</p>}
+          <Textarea
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              // 切换到文本输入时，放弃已加载的 Excel 结果
+              if (xlsxResult) {
+                setXlsxResult(null);
+                setXlsxName(null);
+              }
+            }}
+            rows={6}
+            placeholder={
+              xlsxName
+                ? "（已从 Excel 读取，见下方预览；在此输入将改用文本内容）"
+                : "序号,问题,标准答案,答案来源\n1,二类居住用地是什么？,以多中高层住宅为主的用地,用地分类标准.pdf"
+            }
+            className="font-mono text-xs"
+          />
+
+          <label className="flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              className="h-4 w-4 accent-primary"
+              checked={shouldRefuse}
+              onChange={(e) => setShouldRefuse(e.target.checked)}
+            />
+            导入的题目标记为「应拒答」
+          </label>
+
+          {result && (
+            <div className="rounded-md border bg-muted/30 p-3 text-xs">
+              <div className="mb-2 flex flex-wrap items-center gap-2 text-muted-foreground">
+                <Badge variant={result.headerDetected ? "success" : "secondary"}>
+                  {result.headerDetected ? "已识别表头" : "无表头·按列序"}
+                </Badge>
+                <span>
+                  列映射：
+                  {result.columnMap
+                    .map((f) => (f ? FIELD_LABEL[f] : "（忽略）"))
+                    .join(" | ")}
+                </span>
+                <span>共 {result.rows.length} 题</span>
+              </div>
+              {result.warnings.map((w, i) => (
+                <p key={i} className="text-amber-600">
+                  · {w}
+                </p>
+              ))}
+              {result.rows.length > 0 && (
+                <div className="mt-2 max-h-48 overflow-auto rounded border bg-card">
+                  <table className="w-full text-left">
+                    <thead className="sticky top-0 bg-muted/60">
+                      <tr>
+                        <th className="px-2 py-1">序号</th>
+                        <th className="px-2 py-1">问题</th>
+                        <th className="px-2 py-1">标准答案</th>
+                        <th className="px-2 py-1">答案来源</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {result.rows.slice(0, 50).map((r, i) => (
+                        <tr key={i} className="border-t">
+                          <td className="px-2 py-1 text-muted-foreground">
+                            {r.seq || i + 1}
+                          </td>
+                          <td className="px-2 py-1">{r.question}</td>
+                          <td className="px-2 py-1 text-muted-foreground">
+                            {r.standardAnswer || "—"}
+                          </td>
+                          <td className="px-2 py-1 text-muted-foreground">
+                            {r.correctFile || "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {result.rows.length > 50 && (
+                    <p className="px-2 py-1 text-muted-foreground">
+                      仅预览前 50 题，导入将包含全部 {result.rows.length} 题。
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => {
+              reset();
+              onClose();
+            }}
+          >
+            取消
+          </Button>
+          <Button
+            onClick={confirmImport}
+            disabled={!result || result.rows.length === 0}
+          >
+            导入 {result?.rows.length ? `${result.rows.length} 题` : ""}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -465,3 +900,14 @@ function TriBadge({ value }: { value?: boolean }) {
 const triToStr = (v?: boolean) => (v === undefined ? "" : v ? "true" : "false");
 const strToTri = (s: string): boolean | undefined =>
   s === "" ? undefined : s === "true";
+
+function formatDuration(ms?: number): string {
+  if (ms == null) return "—";
+  if (ms < 1000) return `${ms}ms`;
+  return `${(ms / 1000).toFixed(1)}s`;
+}
+
+function formatTokens(n?: number): string {
+  if (n == null) return "—";
+  return n.toLocaleString("zh-CN");
+}
