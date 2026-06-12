@@ -13,7 +13,14 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
-import { RefreshCw, Trash2, Loader2, FileText } from "lucide-react";
+import {
+  RefreshCw,
+  Trash2,
+  Loader2,
+  FileText,
+  Search,
+  SearchX,
+} from "lucide-react";
 
 const STATUS_META: Record<
   DocumentStatus,
@@ -33,6 +40,27 @@ export function DocumentTable({
   onChange: () => void;
 }) {
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<string | null>(null);
+
+  // 只认仍存在于列表中的选中项（删除/刷新后自动失效）
+  const selectedIds = documents.filter((d) => selected.has(d.id)).map((d) => d.id);
+  const allSelected =
+    documents.length > 0 && selectedIds.length === documents.length;
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function toggleSelectAll() {
+    setSelected(allSelected ? new Set() : new Set(documents.map((d) => d.id)));
+  }
 
   async function process(id: string) {
     setBusyId(id);
@@ -49,6 +77,11 @@ export function DocumentTable({
     setBusyId(id);
     try {
       await fetch(`/api/documents/${id}`, { method: "DELETE" });
+      setSelected((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
       onChange();
     } finally {
       setBusyId(null);
@@ -69,6 +102,63 @@ export function DocumentTable({
     }
   }
 
+  // ── 批量操作（逐个串行：解析含 embedding 调用，并行会触发接口限流） ──
+
+  async function batchProcess() {
+    setBatchBusy(true);
+    try {
+      for (let i = 0; i < selectedIds.length; i++) {
+        setBatchProgress(`解析中 ${i + 1}/${selectedIds.length}`);
+        await fetch(`/api/documents/${selectedIds[i]}/process`, {
+          method: "POST",
+        });
+      }
+      onChange();
+    } finally {
+      setBatchBusy(false);
+      setBatchProgress(null);
+    }
+  }
+
+  async function batchSetEnabled(enabled: boolean) {
+    setBatchBusy(true);
+    try {
+      for (let i = 0; i < selectedIds.length; i++) {
+        setBatchProgress(`更新中 ${i + 1}/${selectedIds.length}`);
+        await fetch(`/api/documents/${selectedIds[i]}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enabled }),
+        });
+      }
+      onChange();
+    } finally {
+      setBatchBusy(false);
+      setBatchProgress(null);
+    }
+  }
+
+  async function batchRemove() {
+    if (
+      !confirm(
+        `确定删除所选 ${selectedIds.length} 个文档及其切片？此操作不可撤销。`
+      )
+    )
+      return;
+    setBatchBusy(true);
+    try {
+      for (let i = 0; i < selectedIds.length; i++) {
+        setBatchProgress(`删除中 ${i + 1}/${selectedIds.length}`);
+        await fetch(`/api/documents/${selectedIds[i]}`, { method: "DELETE" });
+      }
+      setSelected(new Set());
+      onChange();
+    } finally {
+      setBatchBusy(false);
+      setBatchProgress(null);
+    }
+  }
+
   if (documents.length === 0) {
     return (
       <EmptyState
@@ -81,9 +171,84 @@ export function DocumentTable({
 
   return (
     <div className="rounded-lg border bg-card">
+      {/* 批量操作工具条（有选中时显示） */}
+      {selectedIds.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-4 py-2 text-sm">
+          <span className="text-muted-foreground">
+            已选 {selectedIds.length} 个
+          </span>
+          {batchProgress ? (
+            <span className="flex items-center gap-1.5 text-sky-600">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              {batchProgress}
+            </span>
+          ) : (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={batchProcess}
+                disabled={batchBusy}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                重新解析
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => batchSetEnabled(true)}
+                disabled={batchBusy}
+              >
+                <Search className="h-3.5 w-3.5" />
+                参与检索
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => batchSetEnabled(false)}
+                disabled={batchBusy}
+              >
+                <SearchX className="h-3.5 w-3.5" />
+                取消检索
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={batchRemove}
+                disabled={batchBusy}
+                className="text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                删除
+              </Button>
+              <button
+                onClick={() => setSelected(new Set())}
+                className="ml-auto text-xs text-muted-foreground hover:text-foreground"
+              >
+                取消选择
+              </button>
+            </>
+          )}
+        </div>
+      )}
+
       <Table>
         <TableHeader>
           <TableRow>
+            <TableHead className="w-10">
+              <input
+                type="checkbox"
+                className="h-3.5 w-3.5 cursor-pointer accent-primary align-middle"
+                checked={allSelected}
+                ref={(el) => {
+                  if (el)
+                    el.indeterminate = selectedIds.length > 0 && !allSelected;
+                }}
+                onChange={toggleSelectAll}
+                disabled={batchBusy}
+                aria-label="全选"
+              />
+            </TableHead>
             <TableHead className="min-w-[220px]">文件名</TableHead>
             <TableHead>城市</TableHead>
             <TableHead>类型</TableHead>
@@ -96,9 +261,22 @@ export function DocumentTable({
         <TableBody>
           {documents.map((doc) => {
             const status = STATUS_META[doc.status];
-            const busy = busyId === doc.id;
+            const busy = busyId === doc.id || batchBusy;
             return (
-              <TableRow key={doc.id}>
+              <TableRow
+                key={doc.id}
+                className={selected.has(doc.id) ? "bg-primary/5" : undefined}
+              >
+                <TableCell>
+                  <input
+                    type="checkbox"
+                    className="h-3.5 w-3.5 cursor-pointer accent-primary align-middle"
+                    checked={selected.has(doc.id)}
+                    onChange={() => toggleSelect(doc.id)}
+                    disabled={batchBusy}
+                    aria-label="选择文档"
+                  />
+                </TableCell>
                 <TableCell className="font-medium text-slate-800">
                   <span className="break-all">{doc.fileName}</span>
                 </TableCell>
@@ -140,7 +318,7 @@ export function DocumentTable({
                       onClick={() => process(doc.id)}
                       disabled={busy}
                     >
-                      {busy ? (
+                      {busyId === doc.id ? (
                         <Loader2 className="h-3.5 w-3.5 animate-spin" />
                       ) : (
                         <RefreshCw className="h-3.5 w-3.5" />
