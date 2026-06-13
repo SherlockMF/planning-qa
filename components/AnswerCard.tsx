@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { CitationCard } from "@/components/CitationCard";
 import { TableBlock, hasTableStructure } from "@/components/TableBlock";
 import { AnswerBlocks } from "@/components/AnswerBlocks";
-import { CheckCircle2, AlertTriangle, Info } from "lucide-react";
+import { CheckCircle2, AlertTriangle, Info, ShieldAlert } from "lucide-react";
 
 /** 将回答文本按已知【标题】切分为分段，便于结构化渲染。
  *  只拆分已知的模板节标题，防止 chunk 内容里的【所属表:…】【表头:…】等
@@ -36,9 +36,13 @@ export function AnswerCard({ response }: { response: ChatResponse }) {
   if (!response.foundEvidence) {
     return (
       <Alert variant="warning" className="border-2">
-        <AlertTriangle className="h-4 w-4" />
+        {response.noAccess ? (
+          <ShieldAlert className="h-4 w-4" />
+        ) : (
+          <AlertTriangle className="h-4 w-4" />
+        )}
         <AlertTitle className="flex items-center gap-2">
-          无法确定
+          {response.noAccess ? "权限不足" : "无法确定"}
           {response.refusalReason && (
             <Badge variant="warning">{response.refusalReason}</Badge>
           )}
@@ -67,6 +71,11 @@ export function AnswerCard({ response }: { response: ChatResponse }) {
             <div className="mb-2 flex items-center gap-2 text-sm font-semibold text-primary">
               <CheckCircle2 className="h-4 w-4" />
               结论
+              {response.confidenceLabel && (
+                <Badge variant={response.confidence === "high" ? "success" : "info"}>
+                  {response.confidenceLabel}
+                </Badge>
+              )}
             </div>
             {hasBlocks ? (
               <AnswerBlocks blocks={response.answerBlocks!} />

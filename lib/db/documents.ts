@@ -3,6 +3,7 @@
 // ============================================================================
 
 import type { Document, FileType } from "@/lib/types";
+import { categoryFromFileType } from "@/lib/knowledge/categories";
 import { ensureSeeded, getStore } from "./store";
 import {
   deleteRawBuffer,
@@ -26,6 +27,13 @@ export interface CreateDocumentInput {
   fileName: string;
   city: string;
   fileType: FileType;
+  category?: Document["category"];
+  owner?: string;
+  department?: string;
+  permissionLevel?: Document["permissionLevel"];
+  projectId?: string;
+  projectName?: string;
+  projectOwnerId?: string;
   /** 文件生效日期（YYYY-MM-DD），可手动填写，用于多版本优先级判断 */
   effectiveDate?: string;
 }
@@ -39,6 +47,13 @@ export async function createDocument(
     fileName: input.fileName,
     city: input.city,
     fileType: input.fileType,
+    category: input.category ?? categoryFromFileType(input.fileType),
+    owner: input.owner ?? "知识库管理员",
+    department: input.department ?? "知识管理部",
+    permissionLevel: input.permissionLevel ?? 1,
+    ...(input.projectId ? { projectId: input.projectId } : {}),
+    ...(input.projectName ? { projectName: input.projectName } : {}),
+    ...(input.projectOwnerId ? { projectOwnerId: input.projectOwnerId } : {}),
     enabled: true,
     status: "pending",
     createdAt: new Date().toISOString(),

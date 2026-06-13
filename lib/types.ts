@@ -12,6 +12,40 @@ export type FileType =
   | "公共服务设施标准"
   | "其他";
 
+/** 企业知识库分类：同时覆盖设计院通用管理知识与规划设计行业知识。 */
+export type KnowledgeCategory =
+  | "企业制度"
+  | "流程指引"
+  | "FAQ"
+  | "IT与行政"
+  | "财务与报销"
+  | "规划法规"
+  | "技术标准"
+  | "设计指引"
+  | "项目资料"
+  | "成果要求"
+  | "其他";
+
+/** 轻量权限等级：L1 公开，L2 项目/主管，L3 管理员。 */
+export type PermissionLevel = 1 | 2 | 3;
+
+export type KnowledgeRoleId = "employee" | "project_manager" | "admin";
+
+export interface KnowledgeRole {
+  id: KnowledgeRoleId;
+  label: string;
+  maxPermissionLevel: PermissionLevel;
+}
+
+export interface KnowledgeUser {
+  id: string;
+  name: string;
+  role: KnowledgeRoleId;
+  department: string;
+  projectIds: string[];
+  ownedProjectIds: string[];
+}
+
 /** 文档处理状态 */
 export type DocumentStatus = "pending" | "processing" | "indexed" | "failed";
 
@@ -235,6 +269,16 @@ export interface Document {
   fileName: string;
   city: string;
   fileType: FileType;
+  /** 企业知识库分类。未填写时按 fileType 推断。 */
+  category?: KnowledgeCategory;
+  owner?: string;
+  department?: string;
+  permissionLevel?: PermissionLevel;
+  /** 项目资料可绑定项目；空值表示非项目资料或公开资料。 */
+  projectId?: string;
+  projectName?: string;
+  projectOwnerId?: string;
+  accessibleDepartments?: string[];
   /** 是否参与检索 */
   enabled: boolean;
   status: DocumentStatus;
@@ -369,6 +413,9 @@ export interface Citation {
 export interface ChatRequest {
   question: string;
   city?: string;
+  /** Mock 用户，用于模拟设计院项目资料权限。 */
+  userId?: string;
+  userRole?: KnowledgeRoleId;
 }
 
 /** /api/chat 响应 */
@@ -379,6 +426,11 @@ export interface ChatResponse {
   citations: Citation[];
   /** 拒答原因（foundEvidence=false 时给出） */
   refusalReason?: string;
+  confidence?: "high" | "medium" | "low";
+  confidenceLabel?: string;
+  /** 有相关资料但当前用户无权查看。 */
+  noAccess?: boolean;
+  feedbackTargetId?: string;
   /**
    * 结构化答案块（P0）。仅当命中表格、需要以真实表格展示时给出；
    * 为空/缺省时前端回退到 answer 字符串渲染（向后兼容）。

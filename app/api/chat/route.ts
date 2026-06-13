@@ -14,6 +14,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "缺少 question 参数" }, { status: 400 });
   }
 
-  const { response } = await generateAnswer(body.question, body.city);
+  const { response } = await generateAnswer(
+    body.question,
+    body.city,
+    body.userId,
+    body.userRole
+  );
   return NextResponse.json(response);
 }

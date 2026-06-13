@@ -6,8 +6,10 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Select } from "@/components/ui/select";
 import { AnswerCard } from "@/components/AnswerCard";
 import { EmptyState } from "@/components/EmptyState";
+import { KNOWLEDGE_ROLES, KNOWLEDGE_USERS } from "@/lib/knowledge/permissions";
 import {
   Send,
   Loader2,
@@ -15,6 +17,11 @@ import {
   History,
   MessageSquareQuote,
   Trash2,
+  UserRound,
+  ShieldCheck,
+  ThumbsUp,
+  ThumbsDown,
+  LifeBuoy,
 } from "lucide-react";
 import { DEFAULT_CITY } from "@/lib/city";
 
@@ -34,6 +41,8 @@ const EXAMPLES = [
 interface ChatRecord {
   id: string;
   question: string;
+  userId: string;
+  userLabel: string;
   response: ChatResponse;
   at: string;
 }
@@ -59,6 +68,7 @@ function saveHistory(records: ChatRecord[]) {
 
 export function ChatPanel() {
   const [question, setQuestion] = useState("");
+  const [userId, setUserId] = useState(KNOWLEDGE_USERS[0].id);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ChatResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +76,7 @@ export function ChatPanel() {
   const [history, setHistory] = useState<ChatRecord[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
+  const [feedbackByTarget, setFeedbackByTarget] = useState<Record<string, string>>({});
 
   // 首次挂载：从 localStorage 恢复记录
   useEffect(() => {
@@ -87,7 +98,7 @@ export function ChatPanel() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed, city: CITY }),
+        body: JSON.stringify({ question: trimmed, city: CITY, userId }),
       });
       if (!res.ok) throw new Error(`请求失败：${res.status}`);
       const data = (await res.json()) as ChatResponse;
@@ -95,6 +106,8 @@ export function ChatPanel() {
       const record: ChatRecord = {
         id: `qa-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         question: trimmed,
+        userId,
+        userLabel: currentUserLabel,
         response: data,
         at: new Date().toISOString(),
       };
@@ -143,18 +156,53 @@ export function ChatPanel() {
   }
 
   const allSelected = history.length > 0 && selected.size === history.length;
+  const currentUser =
+    KNOWLEDGE_USERS.find((u) => u.id === userId) ?? KNOWLEDGE_USERS[0];
+  const currentRole = KNOWLEDGE_ROLES[currentUser.role];
+  const currentUserLabel = `${currentUser.name} · ${currentRole.label}`;
+
+  async function submitFeedback(type: "helpful" | "not_helpful" | "need_human") {
+    const targetId = response?.feedbackTargetId;
+    if (!targetId || feedbackByTarget[targetId]) return;
+    await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ targetId, type, userId }),
+    });
+    setFeedbackByTarget((prev) => ({ ...prev, [targetId]: type }));
+  }
 
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
       <div className="space-y-5">
-        {/* 城市提示 */}
-        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1.5 font-medium text-foreground">
-            <MapPin className="h-4 w-4 text-primary" />
-            当前知识库城市：
-          </span>
-          <Badge variant="info">{CITY}</Badge>
-          <span className="text-xs">（北京 / 上海 / 深圳，可配置）</span>
+        <div className="grid gap-3 rounded-lg border bg-card p-3 md:grid-cols-[1fr_280px] md:items-center">
+          <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+            <span className="flex items-center gap-1.5 font-medium text-foreground">
+              <MapPin className="h-4 w-4 text-primary" />
+              当前知识库城市：
+            </span>
+            <Badge variant="info">{CITY}</Badge>
+            <span className="flex items-center gap-1.5">
+              <ShieldCheck className="h-4 w-4 text-emerald-600" />
+              项目资料按账号权限过滤
+            </span>
+          </div>
+          <div className="space-y-1">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+              <UserRound className="h-3.5 w-3.5" />
+              模拟账号
+            </label>
+            <Select value={userId} onChange={(e) => setUserId(e.target.value)}>
+              {KNOWLEDGE_USERS.map((u) => (
+                <option key={u.id} value={u.id}>
+                  {u.name} · {KNOWLEDGE_ROLES[u.role].label}
+                  {u.projectIds.length || u.ownedProjectIds.length
+                    ? ` · ${[...u.projectIds, ...u.ownedProjectIds].join("/")}`
+                    : ""}
+                </option>
+              ))}
+            </Select>
+          </div>
         </div>
 
         {/* 输入区 */}
@@ -174,7 +222,7 @@ export function ChatPanel() {
             />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
-                仅基于知识库作答 · 有依据才回答 · 无依据则拒答（Ctrl/⌘ + Enter 提交）
+                仅基于当前账号可访问的知识作答 · 无依据或无权限则拒答（Ctrl/⌘ + Enter 提交）
               </p>
               <Button onClick={() => ask(question)} disabled={loading || !question.trim()}>
                 {loading ? (
@@ -229,7 +277,53 @@ export function ChatPanel() {
           </Card>
         )}
 
-        {response && !loading && <AnswerCard response={response} />}
+        {response && !loading && (
+          <div className="space-y-3">
+            <AnswerCard response={response} />
+            {response.feedbackTargetId && (
+              <Card>
+                <CardContent className="flex flex-wrap items-center justify-between gap-3 py-3">
+                  <div className="text-xs text-muted-foreground">
+                    当前账号：{currentUserLabel}
+                    {response.confidenceLabel && (
+                      <span className="ml-2">· {response.confidenceLabel}</span>
+                    )}
+                  </div>
+                  {feedbackByTarget[response.feedbackTargetId] ? (
+                    <Badge variant="success">已记录反馈</Badge>
+                  ) : (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => submitFeedback("helpful")}
+                      >
+                        <ThumbsUp className="h-3.5 w-3.5" />
+                        有帮助
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => submitFeedback("not_helpful")}
+                      >
+                        <ThumbsDown className="h-3.5 w-3.5" />
+                        不准确
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => submitFeedback("need_human")}
+                      >
+                        <LifeBuoy className="h-3.5 w-3.5" />
+                        需人工补充
+                      </Button>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 问答记录 */}
@@ -312,7 +406,7 @@ export function ChatPanel() {
                       {rec.question}
                     </div>
                     <div className="mt-1 flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>{formatTime(rec.at)}</span>
+                      <span>{formatTime(rec.at)} · {rec.userLabel ?? "普通员工"}</span>
                       <Badge
                         variant={rec.response.foundEvidence ? "success" : "warning"}
                         className="px-1.5 py-0"

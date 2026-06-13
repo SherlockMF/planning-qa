@@ -28,7 +28,7 @@ export function SiteNav() {
         <Link href="/" className="flex items-center gap-2">
           <Scale className="h-5 w-5" />
           <span className="text-sm font-semibold tracking-tight md:text-base">
-            智能问答助手
+            规划设计院知识库
           </span>
         </Link>
         <nav className="flex items-center gap-1">

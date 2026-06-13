@@ -5,5 +5,7 @@ import "./tableConfidence.test.ts";
 import "./p1Parse.test.ts";
 import "./coordTables.test.ts";
 import "./knowledgeObjects.test.ts";
+import "./knowledgePermissions.test.ts";
+import "./feedback.test.ts";
 import "./importParser.test.ts";
 import "./exportResults.test.ts";

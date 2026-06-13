@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { Document, FileType } from "@/lib/types";
+import type { Document, FileType, KnowledgeCategory } from "@/lib/types";
+import { KNOWLEDGE_CATEGORIES } from "@/lib/knowledge/categories";
+import { KNOWLEDGE_USERS } from "@/lib/knowledge/permissions";
 import { createDocument } from "@/lib/db/documents";
 import { getStore } from "@/lib/db/store";
 import { saveRawBuffer } from "@/lib/db/persist";
@@ -33,6 +35,16 @@ export async function POST(req: NextRequest) {
   const city = (form.get("city") as string | null)?.trim();
   const fileTypeRaw = (form.get("fileType") as string | null)?.trim();
   const effectiveDateRaw = (form.get("effectiveDate") as string | null)?.trim();
+  const categoryRaw = (form.get("category") as string | null)?.trim();
+  const owner = (form.get("owner") as string | null)?.trim() || undefined;
+  const department =
+    (form.get("department") as string | null)?.trim() || undefined;
+  const permissionLevelRaw = Number(form.get("permissionLevel") ?? 1);
+  const projectId = (form.get("projectId") as string | null)?.trim() || undefined;
+  const projectName =
+    (form.get("projectName") as string | null)?.trim() || undefined;
+  const projectOwnerIdRaw =
+    (form.get("projectOwnerId") as string | null)?.trim() || undefined;
   // 仅接受 YYYY-MM-DD；格式不对静默忽略（可选字段）
   const effectiveDate = /^\d{4}-\d{2}-\d{2}$/.test(effectiveDateRaw ?? "")
     ? effectiveDateRaw!
@@ -47,6 +59,18 @@ export async function POST(req: NextRequest) {
   const fileType = (
     VALID_TYPES.includes(fileTypeRaw as FileType) ? fileTypeRaw : "其他"
   ) as FileType;
+  const categoryCandidate = categoryRaw ?? "";
+  const category = KNOWLEDGE_CATEGORIES.includes(
+    categoryCandidate as KnowledgeCategory
+  )
+    ? (categoryCandidate as KnowledgeCategory)
+    : undefined;
+  const permissionLevel =
+    permissionLevelRaw === 2 || permissionLevelRaw === 3 ? permissionLevelRaw : 1;
+  const projectOwnerId =
+    projectOwnerIdRaw && KNOWLEDGE_USERS.some((u) => u.id === projectOwnerIdRaw)
+      ? projectOwnerIdRaw
+      : undefined;
 
   const documents: Document[] = [];
   const failed: string[] = [];
@@ -66,6 +90,13 @@ export async function POST(req: NextRequest) {
       city,
       fileType,
       effectiveDate,
+      category,
+      owner,
+      department,
+      permissionLevel,
+      projectId,
+      projectName,
+      projectOwnerId,
     });
     getStore().rawBuffers[doc.id] = buf;
     saveRawBuffer(doc.id, buf);

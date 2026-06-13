@@ -2,9 +2,9 @@
 // 混合检索：关键词检索 + 向量检索
 // ============================================================================
 
-import type { Chunk, RetrievedChunk } from "@/lib/types";
+import type { Chunk, KnowledgeRoleId, RetrievedChunk } from "@/lib/types";
 import { cosineSimilarity, getEmbeddingProvider } from "@/lib/ai/embedding";
-import { listSearchableChunks } from "@/lib/db/chunks";
+import { listSearchableChunksByAccess } from "@/lib/db/chunks";
 import { rerank } from "./rerank";
 import { BM25Index, tokenize } from "./bm25";
 import { expandHit } from "./expand";
@@ -123,6 +123,7 @@ export interface RetrieveResult {
   keywordResults: RetrievedChunk[];
   vectorResults: RetrievedChunk[];
   mergedTop: RetrievedChunk[];
+  deniedTop: RetrievedChunk[];
 }
 
 /**
@@ -131,19 +132,71 @@ export interface RetrieveResult {
  */
 export async function retrieve(
   question: string,
-  city?: string
+  city?: string,
+  userId?: string,
+  userRole?: KnowledgeRoleId
 ): Promise<RetrieveResult> {
-  const chunks = await listSearchableChunks(city);
+  const { accessible: chunks, denied } = await listSearchableChunksByAccess(
+    city,
+    userId,
+    userRole
+  );
   const extractedKeywords = extractQueryKeywords(question);
   const topK = topKForQuerySignals(analyzeQuery(question));
-  const exactResults = exactSearchChunks(chunks, question);
+  const accessibleResults = await searchChunkSet(
+    chunks,
+    question,
+    extractedKeywords
+  );
 
-  // BM25 索引（每次查询基于当前可检索 chunk 集合构建）
+  const reranked = rerank(accessibleResults.merged, {
+    question,
+    keywords: extractedKeywords,
+    city,
+  });
+
+  // 命中扩展：table_row/code 补表头+表名；clause 补父标题/章节路径。
+  // 在 chunk 全集上查父块（table_full / 同序列），浅拷贝注入 content。
+  const byId = new Map(chunks.map((c) => [c.id, c]));
+  const topExpanded = limitContextBudget(
+    reranked.slice(0, topK).map((r) => expandHit(r, byId)),
+    MAX_CONTEXT_CHARS
+  );
+
+  const deniedResults = denied.length
+    ? await searchChunkSet(denied, question, extractedKeywords)
+    : { exactResults: [], keywordResults: [], vectorResults: [], merged: [] };
+  const deniedTop = rerank(deniedResults.merged, {
+    question,
+    keywords: extractedKeywords,
+    city,
+  }).slice(0, topK);
+
+  return {
+    extractedKeywords,
+    exactResults: accessibleResults.exactResults.slice(0, topK * 2),
+    keywordResults: accessibleResults.keywordResults.slice(0, topK * 2),
+    vectorResults: accessibleResults.vectorResults.slice(0, topK * 2),
+    mergedTop: topExpanded,
+    deniedTop,
+  };
+}
+
+async function searchChunkSet(
+  chunks: Chunk[],
+  question: string,
+  extractedKeywords: string[]
+): Promise<{
+  exactResults: RetrievedChunk[];
+  keywordResults: RetrievedChunk[];
+  vectorResults: RetrievedChunk[];
+  merged: RetrievedChunk[];
+}> {
+  const exactResults = exactSearchChunks(chunks, question);
   const bm25 = new BM25Index(chunks);
   const keywordResults = keywordSearch(bm25, question, extractedKeywords);
   const vectorResults = await vectorSearch(chunks, question);
 
-  // 合并：以 chunk.id 去重，保留关键词与向量两路得分
   const merged = new Map<string, RetrievedChunk>();
   for (const r of exactResults) merged.set(r.chunk.id, { ...r });
   for (const r of keywordResults) {
@@ -151,7 +204,9 @@ export async function retrieve(
     if (existing) {
       existing.keywordScore = Math.max(existing.keywordScore, r.keywordScore);
       existing.source = "hybrid";
-      existing.matchedKeywords = [...new Set([...existing.matchedKeywords, ...r.matchedKeywords])];
+      existing.matchedKeywords = [
+        ...new Set([...existing.matchedKeywords, ...r.matchedKeywords]),
+      ];
     } else {
       merged.set(r.chunk.id, { ...r });
     }
@@ -166,26 +221,11 @@ export async function retrieve(
     }
   }
 
-  const reranked = rerank([...merged.values()], {
-    question,
-    keywords: extractedKeywords,
-    city,
-  });
-
-  // 命中扩展：table_row/code 补表头+表名；clause 补父标题/章节路径。
-  // 在 chunk 全集上查父块（table_full / 同序列），浅拷贝注入 content。
-  const byId = new Map(chunks.map((c) => [c.id, c]));
-  const topExpanded = limitContextBudget(
-    reranked.slice(0, topK).map((r) => expandHit(r, byId)),
-    MAX_CONTEXT_CHARS
-  );
-
   return {
-    extractedKeywords,
-    exactResults: exactResults.slice(0, topK * 2),
-    keywordResults: keywordResults.slice(0, topK * 2),
-    vectorResults: vectorResults.slice(0, topK * 2),
-    mergedTop: topExpanded,
+    exactResults,
+    keywordResults,
+    vectorResults,
+    merged: [...merged.values()],
   };
 }
 

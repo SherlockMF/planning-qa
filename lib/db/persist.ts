@@ -26,10 +26,12 @@ const SCHEMA_FILE = path.join(DATA_DIR, "schema.json");
  * Chunk 数据结构版本。
  *   v2：结构化重构（带 chunkType 等字段）。
  *   v3：表格一级对象 RagTable + chunk.rowId 绑定（P0 表格 RAG 闭环）。
+ *   v4：企业知识库元数据 + 设计院项目资料 mock ACL。
+ *   v5：强制刷新已落盘但缺少项目资料样例的本地 mock 索引。
  * 落盘 chunks 若版本低于此值，loadFromDisk 视为失效（不加载旧 chunk），
  * 由上层重新解析/重新播种，以保证 rowId 与 RagTable 一致。
  */
-export const SCHEMA_VERSION = 3;
+export const SCHEMA_VERSION = 5;
 
 function ensureDirs() {
   fs.mkdirSync(RAW_DIR, { recursive: true });

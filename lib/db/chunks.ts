@@ -2,7 +2,7 @@
 // Chunk 数据访问层
 // ============================================================================
 
-import type { Block, Chunk, Document } from "@/lib/types";
+import type { Block, Chunk, Document, KnowledgeRoleId } from "@/lib/types";
 import { cityMatches } from "../city.ts";
 import { ensureSeeded, getStore } from "./store";
 import { getEmbeddingProvider } from "@/lib/ai/embedding";
@@ -15,22 +15,31 @@ import { replaceRagTablesForDoc } from "./ragTables";
 import { saveChunks } from "./persist";
 import { writeAllTableDebug, tableDebugEnabled } from "@/lib/debug/tableDebug";
 import { writeRagPipelineDebug } from "@/lib/rag/debug";
+import { splitChunksByUserAccess } from "@/lib/knowledge/permissions";
 
 /** 仅返回参与检索（enabled 且 indexed）文档对应的 chunks。 */
-export async function listSearchableChunks(city?: string): Promise<Chunk[]> {
+export async function listSearchableChunks(
+  city?: string,
+  userId?: string,
+  userRole?: KnowledgeRoleId
+): Promise<Chunk[]> {
+  const { accessible } = await listSearchableChunksByAccess(city, userId, userRole);
+  return accessible;
+}
+
+export async function listSearchableChunksByAccess(
+  city?: string,
+  userId?: string,
+  userRole?: KnowledgeRoleId
+): Promise<{ accessible: Chunk[]; denied: Chunk[] }> {
   await ensureSeeded();
   const store = getStore();
-  const enabledDocIds = new Set(
-    store.documents
-      .filter((d) => d.enabled && d.status === "indexed")
-      .map((d) => d.id)
+  const searchableDocs = store.documents.filter(
+    (d) => d.enabled && d.status === "indexed" && cityMatches(d.city, city)
   );
-  return store.chunks.filter((c) => {
-    if (!enabledDocIds.has(c.documentId)) return false;
-    // 归一化匹配（"北京"="北京市"），"未知/通用"城市的文档对任何查询可见
-    if (!cityMatches(c.city, city)) return false;
-    return true;
-  });
+  const searchableDocIds = new Set(searchableDocs.map((d) => d.id));
+  const chunks = store.chunks.filter((c) => searchableDocIds.has(c.documentId));
+  return splitChunksByUserAccess(chunks, searchableDocs, userId, userRole);
 }
 
 export async function listChunksByDocument(

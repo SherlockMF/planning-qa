@@ -10,14 +10,19 @@ import type {
   AnswerBlock,
   ChatResponse,
   Citation,
+  KnowledgeRoleId,
   RetrievedChunk,
 } from "@/lib/types";
-import { retrieve, type RetrieveResult } from "./retrieve";
-import { checkEvidence, checkScope } from "./refusal";
-import { relevanceLabel } from "./rerank";
-import { assembleTableSlices } from "./tableAssembly";
+import { retrieve, type RetrieveResult } from "./retrieve.ts";
+import { checkEvidence, checkScope } from "./refusal.ts";
+import { relevanceLabel } from "./rerank.ts";
+import { assembleTableSlices } from "./tableAssembly.ts";
 import { getLLMProvider, toContextChunk } from "@/lib/ai/llm";
 import { renderChunkAnswerContext } from "./retrieval/renderAnswerContext.ts";
+import {
+  buildNoAccessChatResponse,
+  shouldReturnNoAccess,
+} from "@/lib/knowledge/noAccess";
 
 // LLM 可见的上下文窗口（要覆盖到依据判断所用的 Top-N，避免“能搜到却答不出”）
 const LLM_CONTEXT = 5;
@@ -35,7 +40,9 @@ export interface GenerateResult {
 
 export async function generateAnswer(
   question: string,
-  city?: string
+  city?: string,
+  userId?: string,
+  userRole?: KnowledgeRoleId
 ): Promise<GenerateResult> {
   const q = question.trim();
   if (!q) {
@@ -58,12 +65,25 @@ export async function generateAnswer(
   }
 
   // 2. 混合检索
-  const retrieval = await retrieve(q, city);
+  const retrieval = await retrieve(q, city, userId, userRole);
   const top = retrieval.mergedTop;
+
+  if (shouldReturnNoAccess(top, retrieval.deniedTop)) {
+    return {
+      response: buildNoAccessChatResponse(q),
+      retrieval,
+    };
+  }
 
   // 3. 检索后依据判断
   const evidence = checkEvidence(q, top);
   if (evidence.shouldRefuse) {
+    if (retrieval.deniedTop.length > 0) {
+      return {
+        response: buildNoAccessChatResponse(q),
+        retrieval,
+      };
+    }
     return {
       response: buildRefusal(evidence.reason!, evidence.reasonCode!),
       retrieval,
@@ -144,6 +164,12 @@ export async function generateAnswer(
       foundEvidence: true,
       citations,
       answerBlocks,
+      confidence: citations.length >= 2 ? "high" : "medium",
+      confidenceLabel:
+        citations.length >= 2
+          ? "高置信度 · 多段依据交叉印证"
+          : "中置信度 · 建议结合引用原文确认",
+      feedbackTargetId: `answer-${Date.now()}`,
     },
     retrieval,
   };
@@ -259,5 +285,8 @@ function buildRefusal(reason: string, reasonCode: string): ChatResponse {
     foundEvidence: false,
     citations: [],
     refusalReason: reasonCode,
+    confidence: "low",
+    confidenceLabel: "低置信度 · 无明确依据",
+    feedbackTargetId: `refusal-${Date.now()}`,
   };
 }

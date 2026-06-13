@@ -1,7 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import type { Document, DocumentStatus } from "@/lib/types";
+import type {
+  Document,
+  DocumentStatus,
+  KnowledgeCategory,
+  PermissionLevel,
+} from "@/lib/types";
 import {
   Table,
   TableBody,
@@ -12,7 +17,11 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
+import { KNOWLEDGE_CATEGORIES } from "@/lib/knowledge/categories";
+import { KNOWLEDGE_USERS } from "@/lib/knowledge/permissions";
 import {
   RefreshCw,
   Trash2,
@@ -102,6 +111,20 @@ export function DocumentTable({
     }
   }
 
+  async function saveMetadata(doc: Document, patch: Partial<Document>) {
+    setBusyId(doc.id);
+    try {
+      await fetch(`/api/documents/${doc.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(patch),
+      });
+      onChange();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
   // ── 批量操作（逐个串行：解析含 embedding 调用，并行会触发接口限流） ──
 
   async function batchProcess() {
@@ -170,7 +193,7 @@ export function DocumentTable({
   }
 
   return (
-    <div className="rounded-lg border bg-card">
+    <div className="overflow-hidden rounded-lg border bg-card">
       {/* 批量操作工具条（有选中时显示） */}
       {selectedIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-4 py-2 text-sm">
@@ -232,6 +255,7 @@ export function DocumentTable({
         </div>
       )}
 
+      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -252,6 +276,10 @@ export function DocumentTable({
             <TableHead className="min-w-[220px]">文件名</TableHead>
             <TableHead>城市</TableHead>
             <TableHead>类型</TableHead>
+            <TableHead className="min-w-[150px]">知识分类</TableHead>
+            <TableHead className="min-w-[220px]">项目</TableHead>
+            <TableHead className="min-w-[140px]">负责人</TableHead>
+            <TableHead className="min-w-[110px]">权限</TableHead>
             <TableHead>参与检索</TableHead>
             <TableHead>状态</TableHead>
             <TableHead>上传时间</TableHead>
@@ -285,6 +313,94 @@ export function DocumentTable({
                 </TableCell>
                 <TableCell className="text-muted-foreground">
                   {doc.fileType}
+                </TableCell>
+                <TableCell>
+                  <Select
+                    className="h-8 min-w-[130px] text-xs"
+                    value={doc.category ?? "其他"}
+                    disabled={busy}
+                    onChange={(e) =>
+                      saveMetadata(doc, {
+                        category: e.target.value as KnowledgeCategory,
+                      })
+                    }
+                  >
+                    {KNOWLEDGE_CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </Select>
+                </TableCell>
+                <TableCell>
+                  <div className="grid gap-1">
+                    <Input
+                      className="h-7 min-w-[180px] px-2 text-xs"
+                      defaultValue={doc.projectName ?? ""}
+                      placeholder="非项目资料"
+                      disabled={busy}
+                      onBlur={(e) =>
+                        saveMetadata(doc, { projectName: e.currentTarget.value })
+                      }
+                    />
+                    <Input
+                      className="h-7 min-w-[180px] px-2 text-xs"
+                      defaultValue={doc.projectId ?? ""}
+                      placeholder="project-id"
+                      disabled={busy}
+                      onBlur={(e) =>
+                        saveMetadata(doc, { projectId: e.currentTarget.value })
+                      }
+                    />
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <div className="grid gap-1">
+                    <Input
+                      className="h-7 min-w-[120px] px-2 text-xs"
+                      defaultValue={doc.owner ?? ""}
+                      placeholder="负责人"
+                      disabled={busy}
+                      onBlur={(e) =>
+                        saveMetadata(doc, { owner: e.currentTarget.value })
+                      }
+                    />
+                    <Select
+                      className="h-7 min-w-[120px] text-xs"
+                      value={doc.projectOwnerId ?? ""}
+                      disabled={busy}
+                      onChange={(e) =>
+                        saveMetadata(doc, {
+                          projectOwnerId: e.target.value || undefined,
+                        })
+                      }
+                    >
+                      <option value="">无项目负责人</option>
+                      {KNOWLEDGE_USERS.filter((u) => u.role !== "employee").map(
+                        (u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name}
+                          </option>
+                        )
+                      )}
+                    </Select>
+                  </div>
+                </TableCell>
+                <TableCell>
+                  <Select
+                    className="h-8 min-w-[90px] text-xs"
+                    value={String(doc.permissionLevel ?? 1)}
+                    disabled={busy}
+                    onChange={(e) =>
+                      saveMetadata(doc, {
+                        permissionLevel: Number(e.target.value) as PermissionLevel,
+                      })
+                    }
+                  >
+                    <option value="1">L1 公开</option>
+                    <option value="2">L2 项目</option>
+                    <option value="3">L3 管理员</option>
+                  </Select>
                 </TableCell>
                 <TableCell>
                   <button
@@ -341,6 +457,7 @@ export function DocumentTable({
           })}
         </TableBody>
       </Table>
+      </div>
     </div>
   );
 }
