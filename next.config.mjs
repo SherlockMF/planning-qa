@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  distDir: process.env.NODE_ENV === "production" ? ".next-build" : ".next",
   // pdf-parse / mammoth 为 Node 原生库，交给服务端 require，避免被打包导致的副作用
   experimental: {
     // pdf-parse / mammoth 为 CJS 原生库，让 webpack 用 require() 外部化
