@@ -23,6 +23,11 @@ export const KNOWLEDGE_ROLES: Record<KnowledgeRoleId, KnowledgeRole> = {
     label: "管理员",
     maxPermissionLevel: 3,
   },
+  developer: {
+    id: "developer",
+    label: "开发人员",
+    maxPermissionLevel: 3,
+  },
 };
 
 export const KNOWLEDGE_USERS: KnowledgeUser[] = [
@@ -66,6 +71,14 @@ export const KNOWLEDGE_USERS: KnowledgeUser[] = [
     projectIds: [],
     ownedProjectIds: [],
   },
+  {
+    id: "user-developer",
+    name: "赵工",
+    role: "developer",
+    department: "数字化研发组",
+    projectIds: [],
+    ownedProjectIds: [],
+  },
 ];
 
 export function getKnowledgeUser(userId?: string): KnowledgeUser | undefined {
@@ -89,7 +102,7 @@ export function canAccessDocument(user: KnowledgeUser, doc: Document): boolean {
   if (!role) return false;
 
   const level: PermissionLevel = doc.permissionLevel ?? 1;
-  if (role.id === "admin") return true;
+  if (role.id === "admin" || role.id === "developer") return true;
   if (level <= 1 && !doc.projectId) return true;
 
   const projectId = doc.projectId;

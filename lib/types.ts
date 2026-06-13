@@ -29,7 +29,11 @@ export type KnowledgeCategory =
 /** 轻量权限等级：L1 公开，L2 项目/主管，L3 管理员。 */
 export type PermissionLevel = 1 | 2 | 3;
 
-export type KnowledgeRoleId = "employee" | "project_manager" | "admin";
+export type KnowledgeRoleId =
+  | "employee"
+  | "project_manager"
+  | "admin"
+  | "developer";
 
 export interface KnowledgeRole {
   id: KnowledgeRoleId;

@@ -1,4 +1,5 @@
 import { EvaluationManager } from "@/components/EvaluationManager";
+import { DeveloperOnly } from "@/components/DeveloperOnly";
 
 export default function EvaluationPage() {
   return (
@@ -12,7 +13,9 @@ export default function EvaluationPage() {
           所有统计来自当前题库的真实记录，不预设指标。
         </p>
       </div>
-      <EvaluationManager />
+      <DeveloperOnly>
+        <EvaluationManager />
+      </DeveloperOnly>
     </div>
   );
 }

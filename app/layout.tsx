@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { SiteNav } from "@/components/SiteNav";
+import { KnowledgeUserProvider } from "@/components/KnowledgeUserProvider";
 
 export const metadata: Metadata = {
-  title: "智能问答助手",
+  title: "规划设计院企业知识库",
   description:
-    "基于知识库的问答工具：仅基于知识库回答，有明确依据才回答，无依据则拒答。",
+    "面向城市规划与建筑设计院的企业知识库：支持通用知识、行业标准与项目资料权限问答。",
 };
 
 export default function RootLayout({
@@ -16,16 +17,17 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body className="min-h-screen bg-background antialiased">
-        <SiteNav />
-        <main className="mx-auto w-full max-w-6xl px-4 py-6 md:py-8">
-          {children}
-        </main>
-        <footer className="border-t bg-card">
-          <div className="mx-auto max-w-6xl px-4 py-4 text-xs text-muted-foreground">
-            本工具为法规条文快查 MVP，仅基于已收录知识库作答，不进行规划条件审查、
-            指标组合可行性判断或审批结论认定。最终以经批准的具体文件为准。
-          </div>
-        </footer>
+        <KnowledgeUserProvider>
+          <SiteNav />
+          <main className="mx-auto w-full max-w-6xl px-4 py-6 md:py-8">
+            {children}
+          </main>
+          <footer className="border-t bg-card">
+            <div className="mx-auto max-w-6xl px-4 py-4 text-xs text-muted-foreground">
+              本系统仅基于当前账号可访问的企业知识库作答；项目资料、技术标准与成果要求以正式发布文件和项目授权为准。
+            </div>
+          </footer>
+        </KnowledgeUserProvider>
       </body>
     </html>
   );

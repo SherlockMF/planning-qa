@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Select } from "@/components/ui/select";
 import { AnswerCard } from "@/components/AnswerCard";
 import { EmptyState } from "@/components/EmptyState";
-import { KNOWLEDGE_ROLES, KNOWLEDGE_USERS } from "@/lib/knowledge/permissions";
+import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
 import {
   Send,
   Loader2,
@@ -17,7 +16,6 @@ import {
   History,
   MessageSquareQuote,
   Trash2,
-  UserRound,
   ShieldCheck,
   ThumbsUp,
   ThumbsDown,
@@ -68,7 +66,6 @@ function saveHistory(records: ChatRecord[]) {
 
 export function ChatPanel() {
   const [question, setQuestion] = useState("");
-  const [userId, setUserId] = useState(KNOWLEDGE_USERS[0].id);
   const [loading, setLoading] = useState(false);
   const [response, setResponse] = useState<ChatResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -77,6 +74,7 @@ export function ChatPanel() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [loaded, setLoaded] = useState(false);
   const [feedbackByTarget, setFeedbackByTarget] = useState<Record<string, string>>({});
+  const { currentUser } = useKnowledgeUser();
 
   // 首次挂载：从 localStorage 恢复记录
   useEffect(() => {
@@ -98,7 +96,7 @@ export function ChatPanel() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: trimmed, city: CITY, userId }),
+        body: JSON.stringify({ question: trimmed, city: CITY, userId: currentUser.id }),
       });
       if (!res.ok) throw new Error(`请求失败：${res.status}`);
       const data = (await res.json()) as ChatResponse;
@@ -106,7 +104,7 @@ export function ChatPanel() {
       const record: ChatRecord = {
         id: `qa-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
         question: trimmed,
-        userId,
+        userId: currentUser.id,
         userLabel: currentUserLabel,
         response: data,
         at: new Date().toISOString(),
@@ -156,10 +154,7 @@ export function ChatPanel() {
   }
 
   const allSelected = history.length > 0 && selected.size === history.length;
-  const currentUser =
-    KNOWLEDGE_USERS.find((u) => u.id === userId) ?? KNOWLEDGE_USERS[0];
-  const currentRole = KNOWLEDGE_ROLES[currentUser.role];
-  const currentUserLabel = `${currentUser.name} · ${currentRole.label}`;
+  const currentUserLabel = `${currentUser.name} · ${currentUser.department}`;
 
   async function submitFeedback(type: "helpful" | "not_helpful" | "need_human") {
     const targetId = response?.feedbackTargetId;
@@ -167,7 +162,7 @@ export function ChatPanel() {
     await fetch("/api/feedback", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ targetId, type, userId }),
+      body: JSON.stringify({ targetId, type, userId: currentUser.id }),
     });
     setFeedbackByTarget((prev) => ({ ...prev, [targetId]: type }));
   }
@@ -175,7 +170,7 @@ export function ChatPanel() {
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_300px]">
       <div className="space-y-5">
-        <div className="grid gap-3 rounded-lg border bg-card p-3 md:grid-cols-[1fr_280px] md:items-center">
+        <div className="rounded-lg border bg-card p-3">
           <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
             <span className="flex items-center gap-1.5 font-medium text-foreground">
               <MapPin className="h-4 w-4 text-primary" />
@@ -186,22 +181,7 @@ export function ChatPanel() {
               <ShieldCheck className="h-4 w-4 text-emerald-600" />
               项目资料按账号权限过滤
             </span>
-          </div>
-          <div className="space-y-1">
-            <label className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
-              <UserRound className="h-3.5 w-3.5" />
-              模拟账号
-            </label>
-            <Select value={userId} onChange={(e) => setUserId(e.target.value)}>
-              {KNOWLEDGE_USERS.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name} · {KNOWLEDGE_ROLES[u.role].label}
-                  {u.projectIds.length || u.ownedProjectIds.length
-                    ? ` · ${[...u.projectIds, ...u.ownedProjectIds].join("/")}`
-                    : ""}
-                </option>
-              ))}
-            </Select>
+            <Badge variant="secondary">{currentUser.name}</Badge>
           </div>
         </div>
 

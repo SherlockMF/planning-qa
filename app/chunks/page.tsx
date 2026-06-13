@@ -1,4 +1,5 @@
 import { ChunkViewer } from "@/components/ChunkViewer";
+import { DeveloperOnly } from "@/components/DeveloperOnly";
 
 export default function ChunksPage() {
   return (
@@ -12,7 +13,9 @@ export default function ChunksPage() {
           用于核对分块质量与检索可解释性。
         </p>
       </div>
-      <ChunkViewer />
+      <DeveloperOnly>
+        <ChunkViewer />
+      </DeveloperOnly>
     </div>
   );
 }

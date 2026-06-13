@@ -1,4 +1,5 @@
 import { RetrievalDebugPanel } from "@/components/RetrievalDebugPanel";
+import { DeveloperOnly } from "@/components/DeveloperOnly";
 
 export default function DebugPage() {
   return (
@@ -11,7 +12,9 @@ export default function DebugPage() {
           查看关键词检索、向量检索及合并重排序后的 Top5 片段与各项得分，用于测试 RAG 效果。
         </p>
       </div>
-      <RetrievalDebugPanel />
+      <DeveloperOnly>
+        <RetrievalDebugPanel />
+      </DeveloperOnly>
     </div>
   );
 }

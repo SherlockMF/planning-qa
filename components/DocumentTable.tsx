@@ -7,14 +7,6 @@ import type {
   KnowledgeCategory,
   PermissionLevel,
 } from "@/lib/types";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -193,7 +185,7 @@ export function DocumentTable({
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div className="rounded-lg border bg-card">
       {/* 批量操作工具条（有选中时显示） */}
       {selectedIds.length > 0 && (
         <div className="flex flex-wrap items-center gap-2 border-b bg-muted/40 px-4 py-2 text-sm">
@@ -255,68 +247,72 @@ export function DocumentTable({
         </div>
       )}
 
-      <div className="overflow-x-auto">
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-10">
-              <input
-                type="checkbox"
-                className="h-3.5 w-3.5 cursor-pointer accent-primary align-middle"
-                checked={allSelected}
-                ref={(el) => {
-                  if (el)
-                    el.indeterminate = selectedIds.length > 0 && !allSelected;
-                }}
-                onChange={toggleSelectAll}
-                disabled={batchBusy}
-                aria-label="全选"
-              />
-            </TableHead>
-            <TableHead className="min-w-[220px]">文件名</TableHead>
-            <TableHead>城市</TableHead>
-            <TableHead>类型</TableHead>
-            <TableHead className="min-w-[150px]">知识分类</TableHead>
-            <TableHead className="min-w-[220px]">项目</TableHead>
-            <TableHead className="min-w-[140px]">负责人</TableHead>
-            <TableHead className="min-w-[110px]">权限</TableHead>
-            <TableHead>参与检索</TableHead>
-            <TableHead>状态</TableHead>
-            <TableHead>上传时间</TableHead>
-            <TableHead className="text-right">操作</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {documents.map((doc) => {
-            const status = STATUS_META[doc.status];
-            const busy = busyId === doc.id || batchBusy;
-            return (
-              <TableRow
-                key={doc.id}
-                className={selected.has(doc.id) ? "bg-primary/5" : undefined}
-              >
-                <TableCell>
-                  <input
-                    type="checkbox"
-                    className="h-3.5 w-3.5 cursor-pointer accent-primary align-middle"
-                    checked={selected.has(doc.id)}
-                    onChange={() => toggleSelect(doc.id)}
-                    disabled={batchBusy}
-                    aria-label="选择文档"
-                  />
-                </TableCell>
-                <TableCell className="font-medium text-slate-800">
-                  <span className="break-all">{doc.fileName}</span>
-                </TableCell>
-                <TableCell>
-                  <Badge variant="info">{doc.city}</Badge>
-                </TableCell>
-                <TableCell className="text-muted-foreground">
-                  {doc.fileType}
-                </TableCell>
-                <TableCell>
+      <div className="border-b bg-muted/30 px-4 py-2">
+        <label className="flex w-fit cursor-pointer items-center gap-2 text-xs text-muted-foreground">
+          <input
+            type="checkbox"
+            className="h-3.5 w-3.5 cursor-pointer accent-primary"
+            checked={allSelected}
+            ref={(el) => {
+              if (el) el.indeterminate = selectedIds.length > 0 && !allSelected;
+            }}
+            onChange={toggleSelectAll}
+            disabled={batchBusy}
+          />
+          全选当前列表
+        </label>
+      </div>
+
+      <div className="divide-y">
+        {documents.map((doc) => {
+          const status = STATUS_META[doc.status];
+          const busy = busyId === doc.id || batchBusy;
+          return (
+            <article
+              key={doc.id}
+              className={`grid gap-4 p-4 transition-colors xl:grid-cols-[minmax(220px,1.1fr)_minmax(420px,2fr)_180px] ${
+                selected.has(doc.id) ? "bg-primary/5" : "bg-card"
+              }`}
+            >
+              <div className="flex min-w-0 gap-3">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-3.5 w-3.5 shrink-0 cursor-pointer accent-primary"
+                  checked={selected.has(doc.id)}
+                  onChange={() => toggleSelect(doc.id)}
+                  disabled={batchBusy}
+                  aria-label="选择文档"
+                />
+                <div className="min-w-0 space-y-2">
+                  <div className="flex items-start gap-2">
+                    <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
+                    <div className="min-w-0">
+                      <p className="break-words text-sm font-semibold leading-5 text-slate-800">
+                        {doc.fileName}
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        {new Date(doc.createdAt).toLocaleString("zh-CN", {
+                          year: "numeric",
+                          month: "2-digit",
+                          day: "2-digit",
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    <Badge variant="info">{doc.city}</Badge>
+                    <Badge variant="secondary">{doc.fileType}</Badge>
+                    <Badge variant={status.variant}>{status.label}</Badge>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+                <Field label="知识分类">
                   <Select
-                    className="h-8 min-w-[130px] text-xs"
+                    className="h-8 text-xs"
                     value={doc.category ?? "其他"}
                     disabled={busy}
                     onChange={(e) =>
@@ -331,11 +327,11 @@ export function DocumentTable({
                       </option>
                     ))}
                   </Select>
-                </TableCell>
-                <TableCell>
-                  <div className="grid gap-1">
+                </Field>
+                <Field label="项目">
+                  <div className="grid gap-1.5">
                     <Input
-                      className="h-7 min-w-[180px] px-2 text-xs"
+                      className="h-8 px-2 text-xs"
                       defaultValue={doc.projectName ?? ""}
                       placeholder="非项目资料"
                       disabled={busy}
@@ -344,7 +340,7 @@ export function DocumentTable({
                       }
                     />
                     <Input
-                      className="h-7 min-w-[180px] px-2 text-xs"
+                      className="h-8 px-2 text-xs"
                       defaultValue={doc.projectId ?? ""}
                       placeholder="project-id"
                       disabled={busy}
@@ -353,11 +349,11 @@ export function DocumentTable({
                       }
                     />
                   </div>
-                </TableCell>
-                <TableCell>
-                  <div className="grid gap-1">
+                </Field>
+                <Field label="负责人">
+                  <div className="grid gap-1.5">
                     <Input
-                      className="h-7 min-w-[120px] px-2 text-xs"
+                      className="h-8 px-2 text-xs"
                       defaultValue={doc.owner ?? ""}
                       placeholder="负责人"
                       disabled={busy}
@@ -366,7 +362,7 @@ export function DocumentTable({
                       }
                     />
                     <Select
-                      className="h-7 min-w-[120px] text-xs"
+                      className="h-8 text-xs"
                       value={doc.projectOwnerId ?? ""}
                       disabled={busy}
                       onChange={(e) =>
@@ -385,10 +381,10 @@ export function DocumentTable({
                       )}
                     </Select>
                   </div>
-                </TableCell>
-                <TableCell>
+                </Field>
+                <Field label="权限">
                   <Select
-                    className="h-8 min-w-[90px] text-xs"
+                    className="h-8 text-xs"
                     value={String(doc.permissionLevel ?? 1)}
                     disabled={busy}
                     onChange={(e) =>
@@ -401,63 +397,66 @@ export function DocumentTable({
                     <option value="2">L2 项目</option>
                     <option value="3">L3 管理员</option>
                   </Select>
-                </TableCell>
-                <TableCell>
-                  <button
-                    onClick={() => toggleEnabled(doc)}
-                    disabled={busy}
-                    className="disabled:opacity-50"
-                    title="点击切换是否参与检索"
-                  >
-                    <Badge variant={doc.enabled ? "success" : "secondary"}>
-                      {doc.enabled ? "是" : "否"}
-                    </Badge>
-                  </button>
-                </TableCell>
-                <TableCell>
-                  <Badge variant={status.variant}>{status.label}</Badge>
-                </TableCell>
-                <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
-                  {new Date(doc.createdAt).toLocaleString("zh-CN", {
-                    year: "numeric",
-                    month: "2-digit",
-                    day: "2-digit",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => process(doc.id)}
-                      disabled={busy}
-                    >
-                      {busyId === doc.id ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <RefreshCw className="h-3.5 w-3.5" />
-                      )}
-                      重新解析
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => remove(doc.id)}
-                      disabled={busy}
-                      className="text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </Button>
-                  </div>
-                </TableCell>
-              </TableRow>
-            );
-          })}
-        </TableBody>
-      </Table>
+                </Field>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2 xl:flex-col xl:items-stretch xl:justify-center">
+                <button
+                  onClick={() => toggleEnabled(doc)}
+                  disabled={busy}
+                  className="rounded-md border px-2.5 py-1.5 text-xs disabled:opacity-50"
+                  title="点击切换是否参与检索"
+                >
+                  <Badge variant={doc.enabled ? "success" : "secondary"}>
+                    {doc.enabled ? "参与检索" : "不参与检索"}
+                  </Badge>
+                </button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => process(doc.id)}
+                  disabled={busy}
+                  className="justify-center"
+                >
+                  {busyId === doc.id ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  )}
+                  重新解析
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => remove(doc.id)}
+                  disabled={busy}
+                  className="justify-center text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                  删除
+                </Button>
+              </div>
+            </article>
+          );
+        })}
       </div>
     </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <label className="grid gap-1">
+      <span className="text-[11px] font-medium text-muted-foreground">
+        {label}
+      </span>
+      {children}
+    </label>
   );
 }
