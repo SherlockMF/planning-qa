@@ -21,3 +21,6 @@ next-env.d.ts
 # dev server log
 .dev.log
 .env
+
+# Claude Code 本地配置
+.claude/

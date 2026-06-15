@@ -5,13 +5,9 @@ import { extractBlocksWithTables } from "../lib/parse/tablesSidecar.ts";
 import { buildChunksWithObjects } from "../lib/rag/chunk.ts";
 import { writeRagPipelineDebug } from "../lib/rag/debug.ts";
 
-const DEFAULT_PDFS = [
-  "C:/Users/84754/Desktop/上传资料/北京市居住公共服务设施配置指标京政发〔2025〕25号.pdf",
-  "C:/Users/84754/Desktop/上传资料/北京市控制性详细规划编制技术标准与成果规范-2022年9月版.pdf",
-  "C:/Users/84754/Desktop/上传资料/全-规划综合实施方案指南2022.12 最终最新.pdf",
-  "C:/Users/84754/Desktop/上传资料/北京市城乡规划用地分类标准.pdf",
-  "D:/BaiduSyncdisk/资料/北京-基准地价.pdf",
-];
+// 用法：node --experimental-strip-types scripts/run_real_pdf_eval.mjs <pdf1> [pdf2] ...
+// 不传参数时使用此默认列表（按需填入本地 PDF 路径）
+const DEFAULT_PDFS = [];
 
 const pdfs = process.argv.slice(2);
 const inputs = pdfs.length ? pdfs : DEFAULT_PDFS;
