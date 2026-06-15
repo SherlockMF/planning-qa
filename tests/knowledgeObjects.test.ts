@@ -472,6 +472,38 @@ test("plain sections are demoted unless structured hits are absent", () => {
   assert.equal(ranked[0].chunk.id, "structured");
 });
 
+test("project file name match promotes project-specific chunks over generic policy chunks", () => {
+  const generic = retrieved(chunk("generic-green-ratio", {
+    documentId: "doc-tech-rule",
+    fileName: "控制性详细规划技术规定（演示版）.docx",
+    chunkType: "clause",
+    content:
+      "居住用地的绿地率不应低于百分之三十（30%）。旧区改建的居住用地绿地率可适当降低。",
+    sectionPath: "第五章 绿地与公共空间控制",
+  }));
+  generic.source = "vector";
+  generic.keywordScore = 0;
+  generic.vectorScore = 0.27;
+
+  const project = retrieved(chunk("project-riverfront", {
+    documentId: "doc-project-riverfront",
+    fileName: "滨江片区控规优化项目资料（演示版）.md",
+    chunkType: "requirement",
+    content:
+      "新增公共绿地应优先补足十五分钟生活圈缺口；商业服务设施宜集中在轨道站点 500 米范围内，避免侵占连续滨水公共界面。",
+  }));
+  project.source = "vector";
+  project.keywordScore = 0;
+  project.vectorScore = 0.23;
+
+  const ranked = rerank([generic, project], {
+    question: "片区控规优化项目的用地调整原则是什么？",
+    keywords: ["片区", "控规优化", "用地调整原则"],
+  });
+
+  assert.equal(ranked[0].chunk.id, "project-riverfront");
+});
+
 test("version info does not mark referenced deprecated material as current document superseded", () => {
   const version = extractSourceVersionInfo([
     block("paragraph", "本文件引用的旧标准已废止，仅作为历史参考。", { pageStart: 1 }),

@@ -4,6 +4,8 @@ import assert from "node:assert/strict";
 import type { Chunk, Document } from "../lib/types.ts";
 import {
   canAccessDocument,
+  canManageDocumentInManagement,
+  canViewDocumentInManagement,
   getKnowledgeUser,
   splitChunksByUserAccess,
 } from "../lib/knowledge/permissions.ts";
@@ -86,11 +88,23 @@ test("项目负责人可访问自己负责的项目资料，管理员可访问�
 
   assert.equal(canAccessDocument(manager!, projectDoc({})), true);
   assert.equal(
-    canAccessDocument(manager!, projectDoc({ projectId: "project-tod" })),
+    canAccessDocument(
+      manager!,
+      projectDoc({
+        projectId: "project-tod",
+        projectOwnerId: "user-manager-tod",
+      })
+    ),
     false
   );
   assert.equal(
-    canAccessDocument(admin!, projectDoc({ projectId: "project-tod" })),
+    canAccessDocument(
+      admin!,
+      projectDoc({
+        projectId: "project-tod",
+        projectOwnerId: "user-manager-tod",
+      })
+    ),
     true
   );
 });
@@ -99,7 +113,12 @@ test("splitChunksByUserAccess separates denied project chunks before retrieval",
   const docs = [
     baseDoc,
     projectDoc({}),
-    projectDoc({ id: "doc-project-tod", projectId: "project-tod", projectName: "轨道站点 TOD 综合开发" }),
+    projectDoc({
+      id: "doc-project-tod",
+      projectId: "project-tod",
+      projectName: "轨道站点 TOD 综合开发",
+      projectOwnerId: "user-manager-tod",
+    }),
   ];
   const chunks = docs.map(chunkFor);
   const result = splitChunksByUserAccess(chunks, docs, "user-employee-riverfront");
@@ -109,6 +128,157 @@ test("splitChunksByUserAccess separates denied project chunks before retrieval",
     ["doc-project", "doc-public"]
   );
   assert.deepEqual(result.denied.map((c) => c.documentId), ["doc-project-tod"]);
+});
+
+test("document management list is filtered by current user project ACL", () => {
+  const managerTod = getKnowledgeUser("user-manager-tod");
+  const admin = getKnowledgeUser("user-admin");
+  const developer = getKnowledgeUser("user-developer");
+  assert.ok(managerTod);
+  assert.ok(admin);
+  assert.ok(developer);
+
+  const docs = [
+    { ...baseDoc, status: "pending" as const },
+    projectDoc({
+      id: "doc-project-tod",
+      projectId: "project-tod",
+      projectName: "轨道站点 TOD 综合开发",
+      projectOwnerId: "user-manager-tod",
+      status: "failed",
+    }),
+    projectDoc({
+      id: "doc-project-industrial",
+      projectId: "project-industrial",
+      projectName: "产业园城市设计",
+      projectOwnerId: "user-manager-riverfront",
+    }),
+  ];
+
+  assert.deepEqual(
+    docs
+      .filter((doc) => canViewDocumentInManagement(managerTod!, doc))
+      .map((doc) => doc.id),
+    ["doc-public", "doc-project-tod"]
+  );
+  assert.deepEqual(
+    docs
+      .filter((doc) => canViewDocumentInManagement(admin!, doc))
+      .map((doc) => doc.id),
+    ["doc-public", "doc-project-tod", "doc-project-industrial"]
+  );
+  assert.deepEqual(
+    docs
+      .filter((doc) => canViewDocumentInManagement(developer!, doc))
+      .map((doc) => doc.id),
+    ["doc-public", "doc-project-tod", "doc-project-industrial"]
+  );
+});
+
+test("document management mutations are limited to managers of the document", () => {
+  const employee = getKnowledgeUser("user-employee-riverfront");
+  const managerTod = getKnowledgeUser("user-manager-tod");
+  const managerRiverfront = getKnowledgeUser("user-manager-riverfront");
+  const admin = getKnowledgeUser("user-admin");
+  const developer = getKnowledgeUser("user-developer");
+  assert.ok(employee);
+  assert.ok(managerTod);
+  assert.ok(managerRiverfront);
+  assert.ok(admin);
+  assert.ok(developer);
+
+  const todDoc = projectDoc({
+    id: "doc-project-tod",
+    projectId: "project-tod",
+    projectName: "轨道站点 TOD 综合开发",
+    projectOwnerId: "user-manager-tod",
+  });
+
+  assert.equal(canViewDocumentInManagement(employee!, projectDoc({})), true);
+  assert.equal(canManageDocumentInManagement(employee!, projectDoc({})), false);
+  assert.equal(canManageDocumentInManagement(managerTod!, todDoc), true);
+  assert.equal(canManageDocumentInManagement(managerRiverfront!, todDoc), false);
+  assert.equal(canManageDocumentInManagement(admin!, todDoc), true);
+  assert.equal(canManageDocumentInManagement(developer!, todDoc), true);
+  assert.equal(canManageDocumentInManagement(admin!, baseDoc), true);
+});
+
+test("document accessibleUserIds grants explicit project document access", () => {
+  const employee = getKnowledgeUser("user-employee-riverfront");
+  const otherEmployee = getKnowledgeUser("user-employee-industrial");
+  assert.ok(employee);
+  assert.ok(otherEmployee);
+
+  const todDoc = projectDoc({
+    id: "doc-project-tod",
+    projectId: "project-tod",
+    projectName: "轨道站点 TOD 综合开发",
+    projectOwnerId: "user-manager-tod",
+    accessibleUserIds: ["user-employee-riverfront"],
+  });
+
+  assert.equal(canViewDocumentInManagement(employee!, todDoc), true);
+  assert.equal(canAccessDocument(employee!, todDoc), true);
+  assert.equal(canViewDocumentInManagement(otherEmployee!, todDoc), false);
+  assert.equal(canAccessDocument(otherEmployee!, todDoc), false);
+});
+
+test("document projectOwnerId grants the assigned manager project document access", () => {
+  const manager = getKnowledgeUser("user-manager-riverfront");
+  assert.ok(manager);
+
+  const assignedDoc = projectDoc({
+    projectId: "project-new-district",
+    projectName: "新片区城市设计",
+    projectOwnerId: "user-manager-riverfront",
+  });
+
+  assert.equal(canViewDocumentInManagement(manager!, assignedDoc), true);
+  assert.equal(canAccessDocument(manager!, assignedDoc), true);
+  assert.equal(canManageDocumentInManagement(manager!, assignedDoc), true);
+});
+
+test("document projectOwnerId overrides legacy ownedProjectIds for managers", () => {
+  const legacyProjectManager = getKnowledgeUser("user-manager-riverfront");
+  const assignedManager = getKnowledgeUser("user-manager-tod");
+  assert.ok(legacyProjectManager);
+  assert.ok(assignedManager);
+
+  const reassignedDoc = projectDoc({
+    projectId: "project-riverfront",
+    projectName: "滨江片区控规优化",
+    projectOwnerId: "user-manager-tod",
+    accessibleUserIds: [],
+  });
+
+  assert.equal(canViewDocumentInManagement(legacyProjectManager!, reassignedDoc), false);
+  assert.equal(canAccessDocument(legacyProjectManager!, reassignedDoc), false);
+  assert.equal(canManageDocumentInManagement(legacyProjectManager!, reassignedDoc), false);
+  assert.equal(canViewDocumentInManagement(assignedManager!, reassignedDoc), true);
+  assert.equal(canAccessDocument(assignedManager!, reassignedDoc), true);
+  assert.equal(canManageDocumentInManagement(assignedManager!, reassignedDoc), true);
+});
+
+test("document projectOwnerId scopes access even without projectId", () => {
+  const assignedManager = getKnowledgeUser("user-manager-riverfront");
+  const otherManager = getKnowledgeUser("user-manager-tod");
+  const employee = getKnowledgeUser("user-employee-riverfront");
+  assert.ok(assignedManager);
+  assert.ok(otherManager);
+  assert.ok(employee);
+
+  const ownerOnlyDoc = projectDoc({
+    projectId: undefined,
+    projectName: "朝阳园北区市政交通方案",
+    projectOwnerId: "user-manager-riverfront",
+    accessibleUserIds: [],
+    permissionLevel: 1,
+  });
+
+  assert.equal(canAccessDocument(assignedManager!, ownerOnlyDoc), true);
+  assert.equal(canAccessDocument(otherManager!, ownerOnlyDoc), false);
+  assert.equal(canAccessDocument(employee!, ownerOnlyDoc), false);
+  assert.equal(canViewDocumentInManagement(otherManager!, ownerOnlyDoc), false);
 });
 
 test("无权项目资料命中时返回权限提示且不泄露引用", () => {

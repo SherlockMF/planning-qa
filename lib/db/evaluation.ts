@@ -11,7 +11,11 @@ import { DEFAULT_CITY } from "../city.ts";
 import { withUsageTracking } from "@/lib/ai/usage";
 import { ensureSeeded, getStore } from "./store";
 import { generateAnswer } from "@/lib/rag/generateAnswer";
-import { MOCK_EVALUATION } from "./mockEvaluation";
+import {
+  ENTERPRISE_EVALUATION,
+  MOCK_EVALUATION,
+  resolveEvaluationUserId,
+} from "./mockEvaluation";
 import { saveEvaluationFile } from "./persist";
 
 export async function listEvaluation(): Promise<EvaluationItem[]> {
@@ -25,6 +29,18 @@ export async function resetEvaluation(): Promise<EvaluationItem[]> {
   getStore().evaluation = MOCK_EVALUATION.map((e) => ({ ...e }));
   saveEvaluationFile(getStore().evaluation);
   return getStore().evaluation;
+}
+
+export async function addEnterpriseEvaluationSamples(): Promise<EvaluationItem[]> {
+  await ensureSeeded();
+  const store = getStore();
+  const existingIds = new Set(store.evaluation.map((item) => item.id));
+  const additions = ENTERPRISE_EVALUATION.filter(
+    (item) => !existingIds.has(item.id)
+  ).map((item) => ({ ...item }));
+  store.evaluation = [...store.evaluation, ...additions];
+  saveEvaluationFile(store.evaluation);
+  return store.evaluation;
 }
 
 export async function saveEvaluation(
@@ -79,7 +95,7 @@ export async function runEvaluation(
 async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
   // 与问答页同城市运行，保证评测结果反映线上真实行为
   const tracked = await withUsageTracking(() =>
-    generateAnswer(item.question, DEFAULT_CITY)
+    generateAnswer(item.question, DEFAULT_CITY, resolveEvaluationUserId(item))
   );
   const { usage, durationMs: answerDurationMs } = tracked;
   const tokensUsed = usage.totalTokens;

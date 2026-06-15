@@ -43,6 +43,8 @@ export function tokenize(text: string): string[] {
 /** 单个 chunk 的可检索文本融合。 */
 function chunkText(c: Chunk): string {
   return [
+    c.fileName,
+    c.docTitle ?? "",
     c.bm25Text ?? c.content,
     (c.keywords ?? []).join(" "),
     (c.aliases ?? []).join(" "),

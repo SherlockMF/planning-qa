@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { EvaluationItem, EvaluationStats } from "@/lib/types";
+import { KNOWLEDGE_USERS, userLabel } from "@/lib/knowledge/permissions";
 import {
   parseEvaluationImport,
   parseRowsToEvaluation,
@@ -41,6 +42,7 @@ import {
   RotateCcw,
   Upload,
   Download,
+  ShieldCheck,
 } from "lucide-react";
 
 /** 纯客户端统计（与服务端 computeStats 等价），用于本地编辑后实时更新面板。 */
@@ -77,6 +79,9 @@ const EMPTY_ITEM = (): EvaluationItem => ({
   correctArticle: "",
   correctPage: "",
   shouldRefuse: false,
+  scenario: "",
+  userId: "",
+  expectedBehavior: "",
 });
 
 export function EvaluationManager() {
@@ -211,6 +216,22 @@ export function EvaluationManager() {
     }
   }
 
+  async function addEnterpriseSamples() {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/evaluation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "add-enterprise-samples" }),
+      });
+      const data = await res.json();
+      setItems(data.items ?? []);
+      setDirty(false);
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function run(runIds?: string[]) {
     setRunning(true);
     try {
@@ -265,6 +286,18 @@ export function EvaluationManager() {
         <Button variant="outline" onClick={() => setImportOpen(true)}>
           <Upload className="h-4 w-4" />
           导入题库
+        </Button>
+        <Button
+          variant="outline"
+          onClick={addEnterpriseSamples}
+          disabled={saving || running}
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <ShieldCheck className="h-4 w-4" />
+          )}
+          加入企业知识库测试题
         </Button>
         <Button
           variant="outline"
@@ -402,9 +435,24 @@ export function EvaluationManager() {
                 </TableCell>
                 <TableCell className="align-top text-sm text-slate-800">
                   {it.question || <span className="text-muted-foreground">（空）</span>}
+                  {(it.scenario || it.userId) && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {it.scenario && (
+                        <Badge variant="secondary">{it.scenario}</Badge>
+                      )}
+                      {it.userId && (
+                        <Badge variant="outline">{formatEvaluationUser(it.userId)}</Badge>
+                      )}
+                    </div>
+                  )}
                   <p className="mt-1 text-xs text-muted-foreground">
                     标准：{it.standardAnswer || "—"}
                   </p>
+                  {it.expectedBehavior && (
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      预期：{it.expectedBehavior}
+                    </p>
+                  )}
                 </TableCell>
                 <TableCell className="align-top text-xs text-muted-foreground">
                   <div>{it.correctFile || "—"}</div>
@@ -546,6 +594,29 @@ export function EvaluationManager() {
                 />
               </Field>
               <div className="grid grid-cols-3 gap-3">
+                <Field label="场景">
+                  <Input
+                    value={draft.scenario ?? ""}
+                    onChange={(e) =>
+                      setDraft({ ...draft, scenario: e.target.value })
+                    }
+                  />
+                </Field>
+                <Field label="模拟账号">
+                  <Select
+                    value={draft.userId ?? ""}
+                    onChange={(e) =>
+                      setDraft({ ...draft, userId: e.target.value })
+                    }
+                  >
+                    <option value="">默认账号</option>
+                    {KNOWLEDGE_USERS.map((user) => (
+                      <option key={user.id} value={user.id}>
+                        {userLabel(user)}
+                      </option>
+                    ))}
+                  </Select>
+                </Field>
                 <Field label="正确文件">
                   <Input
                     value={draft.correctFile}
@@ -571,6 +642,15 @@ export function EvaluationManager() {
                   />
                 </Field>
               </div>
+              <Field label="预期行为">
+                <Textarea
+                  value={draft.expectedBehavior ?? ""}
+                  onChange={(e) =>
+                    setDraft({ ...draft, expectedBehavior: e.target.value })
+                  }
+                  rows={2}
+                />
+              </Field>
               <Field label="该题是否应当拒答">
                 <Select
                   value={draft.shouldRefuse ? "true" : "false"}
@@ -910,4 +990,9 @@ function formatDuration(ms?: number): string {
 function formatTokens(n?: number): string {
   if (n == null) return "—";
   return n.toLocaleString("zh-CN");
+}
+
+function formatEvaluationUser(userId: string): string {
+  const user = KNOWLEDGE_USERS.find((u) => u.id === userId);
+  return user ? userLabel(user) : userId;
 }

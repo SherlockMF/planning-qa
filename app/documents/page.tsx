@@ -4,21 +4,27 @@ import { useCallback, useEffect, useState } from "react";
 import type { Document } from "@/lib/types";
 import { DocumentUploader } from "@/components/DocumentUploader";
 import { DocumentTable } from "@/components/DocumentTable";
+import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
 import { Loader2 } from "lucide-react";
 
 export default function DocumentsPage() {
+  const { currentUser } = useKnowledgeUser();
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const load = useCallback(async () => {
-    const res = await fetch("/api/documents", { cache: "no-store" });
+  const load = useCallback(async (options?: { showLoading?: boolean }) => {
+    if (options?.showLoading) setLoading(true);
+    const res = await fetch(
+      `/api/documents?userId=${encodeURIComponent(currentUser.id)}`,
+      { cache: "no-store" }
+    );
     const data = await res.json();
     setDocuments(data.documents ?? []);
     setLoading(false);
-  }, []);
+  }, [currentUser.id]);
 
   useEffect(() => {
-    load();
+    load({ showLoading: true });
   }, [load]);
 
   return (
@@ -32,7 +38,7 @@ export default function DocumentsPage() {
         </p>
       </div>
 
-      <DocumentUploader onUploaded={() => load()} />
+      <DocumentUploader onUploaded={() => load({ showLoading: false })} />
 
       {loading ? (
         <div className="flex items-center gap-2 py-8 text-sm text-muted-foreground">
@@ -40,7 +46,11 @@ export default function DocumentsPage() {
           加载文档列表…
         </div>
       ) : (
-        <DocumentTable documents={documents} onChange={load} />
+        <DocumentTable
+          documents={documents}
+          currentUser={currentUser}
+          onChange={() => load({ showLoading: false })}
+        />
       )}
     </div>
   );

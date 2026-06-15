@@ -7,16 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
+import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
+import { PLANNING_FILE_TYPES } from "@/lib/knowledge/fileTypes";
 import { Upload, Loader2, FileUp, X, CheckCircle2, AlertCircle } from "lucide-react";
 
-const FILE_TYPES: FileType[] = [
-  "技术规定",
-  "用地分类",
-  "控规导则",
-  "停车标准",
-  "公共服务设施标准",
-  "其他",
-];
+const FILE_TYPES: FileType[] = PLANNING_FILE_TYPES;
 
 interface FileItem {
   key: string;
@@ -38,9 +33,10 @@ export function DocumentUploader({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const uid = useId();
+  const { currentUser } = useKnowledgeUser();
   const [items, setItems] = useState<FileItem[]>([]);
   const [defaultCity, setDefaultCity] = useState("北京");
-  const [defaultType, setDefaultType] = useState<FileType>("技术规定");
+  const [defaultType, setDefaultType] = useState<FileType>("项目资料");
   const [uploading, setUploading] = useState(false);
   const [globalError, setGlobalError] = useState<string | null>(null);
 
@@ -121,6 +117,7 @@ export function DocumentUploader({
           form.append("file", item.file);
           form.append("city", item.city.trim() || "未知");
           form.append("fileType", item.fileType);
+          form.append("userId", currentUser.id);
           if (item.effectiveDate) form.append("effectiveDate", item.effectiveDate);
           const res = await fetch("/api/documents/upload", {
             method: "POST",
@@ -145,9 +142,12 @@ export function DocumentUploader({
               : i
           )
         );
-        const processRes = await fetch(`/api/documents/${docId}/process`, {
-          method: "POST",
-        });
+        const processRes = await fetch(
+          `/api/documents/${docId}/process?userId=${encodeURIComponent(
+            currentUser.id
+          )}`,
+          { method: "POST" }
+        );
         const pd = await processRes.json().catch(() => ({}));
         if (!processRes.ok) {
           throw new Error(pd.error ?? `解析失败：${processRes.status}`);

@@ -34,6 +34,7 @@ export interface CreateDocumentInput {
   projectId?: string;
   projectName?: string;
   projectOwnerId?: string;
+  accessibleUserIds?: string[];
   /** 文件生效日期（YYYY-MM-DD），可手动填写，用于多版本优先级判断 */
   effectiveDate?: string;
 }
@@ -54,6 +55,7 @@ export async function createDocument(
     ...(input.projectId ? { projectId: input.projectId } : {}),
     ...(input.projectName ? { projectName: input.projectName } : {}),
     ...(input.projectOwnerId ? { projectOwnerId: input.projectOwnerId } : {}),
+    ...normalizeAccessibleUserIds(input.projectOwnerId, input.accessibleUserIds),
     enabled: true,
     status: "pending",
     createdAt: new Date().toISOString(),
@@ -62,6 +64,16 @@ export async function createDocument(
   getStore().documents.unshift(doc);
   saveDocuments(getStore().documents);
   return doc;
+}
+
+function normalizeAccessibleUserIds(
+  projectOwnerId?: string,
+  accessibleUserIds?: string[]
+): Pick<Document, "accessibleUserIds"> | object {
+  if (!projectOwnerId && !accessibleUserIds) return {};
+  const ids = new Set(accessibleUserIds ?? []);
+  if (projectOwnerId) ids.add(projectOwnerId);
+  return { accessibleUserIds: [...ids] };
 }
 
 export async function updateDocument(

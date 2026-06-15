@@ -98,20 +98,72 @@ export function getKnowledgeUserByRole(
 
 export function canAccessDocument(user: KnowledgeUser, doc: Document): boolean {
   if (!doc.enabled || doc.status !== "indexed") return false;
+  return canViewDocumentByAcl(user, doc);
+}
+
+export function canViewDocumentInManagement(
+  user: KnowledgeUser,
+  doc: Document
+): boolean {
+  return canViewDocumentByAcl(user, doc);
+}
+
+export function canManageDocumentInManagement(
+  user: KnowledgeUser,
+  doc: Document
+): boolean {
+  const role = KNOWLEDGE_ROLES[user.role];
+  if (!role) return false;
+  if (role.id === "admin" || role.id === "developer") return true;
+  if (role.id !== "project_manager") return false;
+
+  if (doc.projectOwnerId === user.id) return true;
+  if (
+    !doc.projectOwnerId &&
+    doc.projectId &&
+    user.ownedProjectIds.includes(doc.projectId)
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function canViewDocumentByAcl(user: KnowledgeUser, doc: Document): boolean {
   const role = KNOWLEDGE_ROLES[user.role];
   if (!role) return false;
 
   const level: PermissionLevel = doc.permissionLevel ?? 1;
   if (role.id === "admin" || role.id === "developer") return true;
-  if (level <= 1 && !doc.projectId) return true;
 
+  const isProjectScoped = Boolean(
+    doc.projectId || doc.projectOwnerId || doc.category === "项目资料"
+  );
   const projectId = doc.projectId;
-  if (projectId) {
-    if (user.projectIds.includes(projectId)) return true;
-    if (user.ownedProjectIds.includes(projectId)) return true;
+
+  if (isProjectScoped) {
+    const hasExplicitOwner = Boolean(doc.projectOwnerId);
+    const hasExplicitAccessList = Array.isArray(doc.accessibleUserIds);
+
+    if (doc.projectOwnerId === user.id) return true;
+    if (doc.accessibleUserIds?.includes(user.id)) return true;
+    if (
+      projectId &&
+      !hasExplicitAccessList &&
+      user.projectIds.includes(projectId)
+    ) {
+      return true;
+    }
+    if (
+      projectId &&
+      !hasExplicitOwner &&
+      user.ownedProjectIds.includes(projectId)
+    ) {
+      return true;
+    }
+    return false;
   }
 
-  return level <= role.maxPermissionLevel && !projectId;
+  return level <= role.maxPermissionLevel;
 }
 
 export function resolveKnowledgeUser(input?: {

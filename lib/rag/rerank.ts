@@ -36,6 +36,7 @@ const WEIGHTS = {
   chunkType: 0.12,
   queryIntent: 0.18,
   version: 0.16,
+  sourceTitle: 0.28,
 };
 
 /**
@@ -77,7 +78,9 @@ export function rerank(
   const phrases = queryPhrases(ctx.question);
   const hays = results.map((r) => {
     const c = r.chunk;
-    return `${c.bm25Text ?? c.content} ${c.rowKey ?? ""} ${(c.aliases ?? []).join(" ")} ${
+    return `${c.fileName} ${c.docTitle ?? ""} ${c.bm25Text ?? c.content} ${
+      c.rowKey ?? ""
+    } ${(c.aliases ?? []).join(" ")} ${
       c.tableTitle ?? ""
     } ${(c.keywords ?? []).join(" ")} ${c.sectionPath ?? ""}`;
   });
@@ -114,6 +117,15 @@ export function rerank(
       const PHRASE_FOCUS_REF = 180;
       const focus = Math.min(1, PHRASE_FOCUS_REF / Math.max(c.content.length, PHRASE_FOCUS_REF));
       score += WEIGHTS.phrase * (matchedW / totalPhraseW) * focus;
+
+      const sourceTitle = `${c.fileName} ${c.docTitle ?? ""}`;
+      let sourceMatchedW = 0;
+      for (const p of phrases) {
+        if (p.text.length >= 3 && sourceTitle.includes(p.text)) {
+          sourceMatchedW += phraseIdf.get(p.text) ?? 0;
+        }
+      }
+      score += WEIGHTS.sourceTitle * Math.min(1, sourceMatchedW / totalPhraseW);
     }
 
     // 精确主键命中：问题字面包含该行/项的 rowKey、code 或别名（长度≥3，避免短词误命中）。

@@ -5,6 +5,18 @@
 
 /** 文件业务类型 */
 export type FileType =
+  | "项目资料"
+  | "规划法规"
+  | "技术标准"
+  | "设计指引"
+  | "成果要求"
+  | "审查报批"
+  | "图纸图则"
+  | "企业制度"
+  | "流程指引"
+  | "FAQ"
+  | "IT与行政"
+  | "财务与报销"
   | "技术规定"
   | "用地分类"
   | "控规导则"
@@ -282,6 +294,8 @@ export interface Document {
   projectId?: string;
   projectName?: string;
   projectOwnerId?: string;
+  /** 指定可访问该项目文档的人员。用于项目负责人/管理员做文档级授权。 */
+  accessibleUserIds?: string[];
   accessibleDepartments?: string[];
   /** 是否参与检索 */
   enabled: boolean;
@@ -455,6 +469,12 @@ export interface RetrieveDebugResponse {
 /** 评测题目与结果 */
 export interface EvaluationItem {
   id: string;
+  /** 评测场景标签，用于区分法规回归、项目权限、开发工具等。 */
+  scenario?: string;
+  /** 指定本题使用的 mock 账号；为空时沿用默认普通员工。 */
+  userId?: string;
+  /** 面向人工验收的预期行为说明。 */
+  expectedBehavior?: string;
   /** 题目序号（导入时自动识别，可选；仅用于展示与排序） */
   seq?: string;
   /** 测试问题 */

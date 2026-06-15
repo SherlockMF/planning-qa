@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDocument, updateDocument } from "@/lib/db/documents";
+import {
+  canManageDocumentInManagement,
+  resolveKnowledgeUser,
+} from "@/lib/knowledge/permissions";
 import { processDocument } from "@/lib/db/chunks";
 import { getStore } from "@/lib/db/store";
 import { extractText } from "@/lib/parse/extractText";
@@ -16,12 +20,19 @@ export const maxDuration = 300;
  * 再生成 embedding → 入库。
  */
 export async function POST(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: { id: string } }
 ) {
   const doc = await getDocument(params.id);
   if (!doc) {
     return NextResponse.json({ error: "文档不存在" }, { status: 404 });
+  }
+
+  const user = resolveKnowledgeUser({
+    userId: req.nextUrl.searchParams.get("userId") ?? undefined,
+  });
+  if (!canManageDocumentInManagement(user, doc)) {
+    return NextResponse.json({ error: "当前账号无权管理该文档" }, { status: 403 });
   }
 
   await updateDocument(doc.id, { status: "processing" });

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { EvaluationItem } from "@/lib/types";
 import {
+  addEnterpriseEvaluationSamples,
   computeStats,
   listEvaluation,
   resetEvaluation,
@@ -25,6 +26,11 @@ export async function POST(req: NextRequest) {
   try {
     if (body?.action === "reset") {
       const items = await resetEvaluation();
+      return NextResponse.json({ items, stats: computeStats(items) });
+    }
+
+    if (body?.action === "add-enterprise-samples") {
+      const items = await addEnterpriseEvaluationSamples();
       return NextResponse.json({ items, stats: computeStats(items) });
     }
 

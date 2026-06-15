@@ -1,20 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { Document, FileType, KnowledgeCategory } from "@/lib/types";
 import { KNOWLEDGE_CATEGORIES } from "@/lib/knowledge/categories";
-import { KNOWLEDGE_USERS } from "@/lib/knowledge/permissions";
+import { ALL_FILE_TYPES } from "@/lib/knowledge/fileTypes";
+import { KNOWLEDGE_USERS, resolveKnowledgeUser } from "@/lib/knowledge/permissions";
 import { createDocument } from "@/lib/db/documents";
 import { getStore } from "@/lib/db/store";
 import { saveRawBuffer } from "@/lib/db/persist";
 import { getUploadFiles } from "@/lib/documents/uploadForm";
 
-const VALID_TYPES: FileType[] = [
-  "技术规定",
-  "用地分类",
-  "控规导则",
-  "停车标准",
-  "公共服务设施标准",
-  "其他",
-];
+const VALID_TYPES: FileType[] = ALL_FILE_TYPES;
 
 /**
  * 上传文档并保存元数据。
@@ -45,6 +39,9 @@ export async function POST(req: NextRequest) {
     (form.get("projectName") as string | null)?.trim() || undefined;
   const projectOwnerIdRaw =
     (form.get("projectOwnerId") as string | null)?.trim() || undefined;
+  const currentUser = resolveKnowledgeUser({
+    userId: (form.get("userId") as string | null)?.trim() || undefined,
+  });
   // 仅接受 YYYY-MM-DD；格式不对静默忽略（可选字段）
   const effectiveDate = /^\d{4}-\d{2}-\d{2}$/.test(effectiveDateRaw ?? "")
     ? effectiveDateRaw!
@@ -70,6 +67,8 @@ export async function POST(req: NextRequest) {
   const projectOwnerId =
     projectOwnerIdRaw && KNOWLEDGE_USERS.some((u) => u.id === projectOwnerIdRaw)
       ? projectOwnerIdRaw
+      : currentUser.role === "project_manager"
+      ? currentUser.id
       : undefined;
 
   const documents: Document[] = [];
@@ -91,12 +90,13 @@ export async function POST(req: NextRequest) {
       fileType,
       effectiveDate,
       category,
-      owner,
-      department,
+      owner: owner ?? currentUser.name,
+      department: department ?? currentUser.department,
       permissionLevel,
       projectId,
       projectName,
       projectOwnerId,
+      accessibleUserIds: projectOwnerId ? [projectOwnerId] : undefined,
     });
     getStore().rawBuffers[doc.id] = buf;
     saveRawBuffer(doc.id, buf);
