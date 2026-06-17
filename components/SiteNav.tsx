@@ -6,8 +6,8 @@ import { cn } from "@/lib/utils";
 import { Select } from "@/components/ui/select";
 import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
 import {
+  getSelectableKnowledgeUsers,
   KNOWLEDGE_ROLES,
-  KNOWLEDGE_USERS,
 } from "@/lib/knowledge/permissions";
 import { visibleNavItemsForUser } from "@/lib/knowledge/navigation";
 import {
@@ -31,6 +31,7 @@ export function SiteNav() {
   const pathname = usePathname();
   const { currentUser, setCurrentUserId } = useKnowledgeUser();
   const navItems = visibleNavItemsForUser(currentUser);
+  const selectableUsers = getSelectableKnowledgeUsers();
 
   return (
     <header className="sticky top-0 z-40 border-b bg-primary text-primary-foreground shadow-sm">
@@ -73,7 +74,7 @@ export function SiteNav() {
               onChange={(e) => setCurrentUserId(e.target.value)}
               className="h-8 w-[240px] border-primary-foreground/20 bg-primary text-primary-foreground shadow-none"
             >
-              {KNOWLEDGE_USERS.map((u) => (
+              {selectableUsers.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name} · {KNOWLEDGE_ROLES[u.role].label}
                 </option>

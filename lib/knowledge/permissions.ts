@@ -90,6 +90,10 @@ export function getDefaultKnowledgeUser(): KnowledgeUser {
   );
 }
 
+export function getSelectableKnowledgeUsers(): KnowledgeUser[] {
+  return KNOWLEDGE_USERS.filter((u) => u.role !== "developer");
+}
+
 export function getKnowledgeUser(userId?: string): KnowledgeUser | undefined {
   if (userId) {
     const user = KNOWLEDGE_USERS.find((u) => u.id === userId);

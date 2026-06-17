@@ -7,6 +7,7 @@ import {
 } from "../lib/knowledge/navigation.ts";
 import {
   canAccessDocument,
+  getSelectableKnowledgeUsers,
   getKnowledgeUser,
 } from "../lib/knowledge/permissions.ts";
 import type { Document } from "../lib/types.ts";
@@ -60,5 +61,18 @@ test("开发工具入口暂时对所有角色隐藏", () => {
   assert.deepEqual(
     visibleNavItemsForUser(developer!).map((item) => item.href),
     ["/", "/documents"]
+  );
+});
+
+test("人员切换列表暂时隐藏开发人员账号", () => {
+  assert.deepEqual(
+    getSelectableKnowledgeUsers().map((user) => user.id),
+    [
+      "user-employee-riverfront",
+      "user-employee-industrial",
+      "user-manager-riverfront",
+      "user-manager-tod",
+      "user-admin",
+    ]
   );
 });
