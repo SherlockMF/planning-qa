@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
 
 export function DeveloperOnly({ children }: { children: ReactNode }) {
-  const { canUseDeveloperTools, currentUser } = useKnowledgeUser();
+  const { canUseDeveloperTools } = useKnowledgeUser();
 
   if (canUseDeveloperTools) return <>{children}</>;
 
@@ -19,14 +19,14 @@ export function DeveloperOnly({ children }: { children: ReactNode }) {
         </div>
         <div>
           <h2 className="text-base font-semibold text-slate-800">
-            仅开发人员可见
+            功能暂时关闭
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            当前账号为 {currentUser.name}，此页面包含检索、切片或评测调试信息。
+            检索调试、切分查看、评测等开发人员功能已临时隐藏。
           </p>
         </div>
         <div>
-          <Badge variant="warning">请在顶部切换为开发人员账号</Badge>
+          <Badge variant="warning">暂未开放</Badge>
         </div>
       </CardContent>
     </Card>

@@ -3,19 +3,18 @@
 import {
   createContext,
   useContext,
-  useEffect,
   useMemo,
   useState,
   type ReactNode,
 } from "react";
 import type { KnowledgeUser } from "@/lib/types";
 import {
+  DEFAULT_KNOWLEDGE_USER_ID,
+  getDefaultKnowledgeUser,
   getKnowledgeUser,
   KNOWLEDGE_USERS,
 } from "@/lib/knowledge/permissions";
 import { canUseDeveloperTools } from "@/lib/knowledge/navigation";
-
-const STORAGE_KEY = "qa-current-user-v1";
 
 interface KnowledgeUserContextValue {
   currentUser: KnowledgeUser;
@@ -29,29 +28,18 @@ const KnowledgeUserContext = createContext<KnowledgeUserContextValue | null>(
 );
 
 export function KnowledgeUserProvider({ children }: { children: ReactNode }) {
-  const [currentUserId, setCurrentUserIdState] = useState(KNOWLEDGE_USERS[0].id);
-
-  useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored && getKnowledgeUser(stored)) setCurrentUserIdState(stored);
-    } catch {
-      // localStorage 不可用时保持默认账号。
-    }
-  }, []);
+  const [currentUserId, setCurrentUserIdState] = useState(
+    DEFAULT_KNOWLEDGE_USER_ID
+  );
 
   function setCurrentUserId(userId: string) {
     const next = getKnowledgeUser(userId);
     if (!next) return;
     setCurrentUserIdState(next.id);
-    try {
-      localStorage.setItem(STORAGE_KEY, next.id);
-    } catch {
-      // 忽略本地存储失败，不影响问答链路。
-    }
   }
 
-  const currentUser = getKnowledgeUser(currentUserId) ?? KNOWLEDGE_USERS[0];
+  const currentUser =
+    getKnowledgeUser(currentUserId) ?? getDefaultKnowledgeUser();
   const developerTools = canUseDeveloperTools(currentUser);
   const value = useMemo(
     () => ({

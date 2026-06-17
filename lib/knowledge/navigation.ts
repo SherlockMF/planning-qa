@@ -14,8 +14,10 @@ export const KNOWLEDGE_NAV_ITEMS: KnowledgeNavItem[] = [
   { href: "/evaluation", label: "评测", kind: "developer" },
 ];
 
+export const DEVELOPER_TOOLS_ENABLED = false;
+
 export function canUseDeveloperTools(user: KnowledgeUser): boolean {
-  return user.role === "developer";
+  return DEVELOPER_TOOLS_ENABLED && user.role === "developer";
 }
 
 export function visibleNavItemsForUser(

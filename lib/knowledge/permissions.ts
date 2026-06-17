@@ -81,12 +81,21 @@ export const KNOWLEDGE_USERS: KnowledgeUser[] = [
   },
 ];
 
+export const DEFAULT_KNOWLEDGE_USER_ID = "user-admin";
+
+export function getDefaultKnowledgeUser(): KnowledgeUser {
+  return (
+    KNOWLEDGE_USERS.find((u) => u.id === DEFAULT_KNOWLEDGE_USER_ID) ??
+    KNOWLEDGE_USERS[0]
+  );
+}
+
 export function getKnowledgeUser(userId?: string): KnowledgeUser | undefined {
   if (userId) {
     const user = KNOWLEDGE_USERS.find((u) => u.id === userId);
     if (user) return user;
   }
-  return KNOWLEDGE_USERS[0];
+  return getDefaultKnowledgeUser();
 }
 
 export function getKnowledgeUserByRole(
@@ -173,7 +182,7 @@ export function resolveKnowledgeUser(input?: {
   return (
     (input?.userId ? getKnowledgeUser(input.userId) : undefined) ??
     getKnowledgeUserByRole(input?.userRole) ??
-    KNOWLEDGE_USERS[0]
+    getDefaultKnowledgeUser()
   );
 }
 

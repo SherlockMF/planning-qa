@@ -31,20 +31,34 @@ test("开发人员可访问全部项目资料", () => {
   assert.equal(canAccessDocument(developer!, restrictedProjectDoc), true);
 });
 
-test("只有开发人员显示开发工具入口", () => {
+test("默认用户是管理员", () => {
+  const defaultUser = getKnowledgeUser();
+
+  assert.equal(defaultUser?.id, "user-admin");
+  assert.equal(defaultUser?.role, "admin");
+});
+
+test("开发工具入口暂时对所有角色隐藏", () => {
   const employee = getKnowledgeUser("user-employee-riverfront");
+  const admin = getKnowledgeUser("user-admin");
   const developer = getKnowledgeUser("user-developer");
   assert.ok(employee);
+  assert.ok(admin);
   assert.ok(developer);
 
   assert.equal(canUseDeveloperTools(employee!), false);
-  assert.equal(canUseDeveloperTools(developer!), true);
+  assert.equal(canUseDeveloperTools(admin!), false);
+  assert.equal(canUseDeveloperTools(developer!), false);
   assert.deepEqual(
     visibleNavItemsForUser(employee!).map((item) => item.href),
     ["/", "/documents"]
   );
   assert.deepEqual(
+    visibleNavItemsForUser(admin!).map((item) => item.href),
+    ["/", "/documents"]
+  );
+  assert.deepEqual(
     visibleNavItemsForUser(developer!).map((item) => item.href),
-    ["/", "/documents", "/chunks", "/debug", "/evaluation"]
+    ["/", "/documents"]
   );
 });
