@@ -402,8 +402,8 @@ export function EvaluationManager() {
                 />
               </TableHead>
               <TableHead className="w-14">序号</TableHead>
-              <TableHead className="min-w-[220px]">问题 / 标准答案</TableHead>
-              <TableHead className="min-w-[150px]">正确文件 / 条款 / 页码</TableHead>
+              <TableHead className="min-w-[190px]">问题 / 标准答案</TableHead>
+              <TableHead className="min-w-[130px]">正确文件 / 条款 / 页码</TableHead>
               <TableHead>应拒答</TableHead>
               <TableHead>进Top5</TableHead>
               <TableHead>引用正确</TableHead>
@@ -411,7 +411,7 @@ export function EvaluationManager() {
               <TableHead>答案得分</TableHead>
               <TableHead className="w-20">耗时</TableHead>
               <TableHead className="w-20">Token</TableHead>
-              <TableHead className="min-w-[130px]">错误原因</TableHead>
+              <TableHead className="min-w-[110px]">错误原因</TableHead>
               <TableHead className="text-right">操作</TableHead>
             </TableRow>
           </TableHeader>
