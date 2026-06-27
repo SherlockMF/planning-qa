@@ -91,6 +91,33 @@ export async function extractPdfPages(buffer: Buffer): Promise<PdfPage[]> {
   return pages;
 }
 
+/**
+ * 逐页提取 pdfjs 原始拼接文本（不做几何重建 / 列检测）。
+ * 几何重建会把紧贴表格的正文条文切成乱序假单元格；原始文本则保留干净顺序，
+ * 供 sidecar 在表格页救回被吞掉的条文句。
+ */
+export async function extractPdfRawPageText(
+  buffer: Buffer
+): Promise<{ pageNo: number; text: string }[]> {
+  const pdfjsLib = await getPdfLib();
+  const loadingTask = pdfjsLib.getDocument({
+    data: new Uint8Array(buffer),
+    useSystemFonts: true,
+    verbosity: 0,
+  });
+  const pdf = await loadingTask.promise;
+  const out: { pageNo: number; text: string }[] = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const tc = await page.getTextContent({ disableCombineTextItems: false });
+    out.push({
+      pageNo: i,
+      text: tc.items.map((it: { str?: string }) => it.str ?? "").join(""),
+    });
+  }
+  return out;
+}
+
 // ── 页面渲染 ─────────────────────────────────────────────────────────────────
 
 /**

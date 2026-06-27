@@ -17,6 +17,7 @@ import path from "path";
 import type { Block, TableModel } from "../types";
 import { buildTableModelFromMatrix } from "../rag/tableModel.ts";
 import { extractBlocks } from "./ir.ts";
+import { extractPdfRawPageText } from "./extractText.ts";
 import { headerFingerprint, fingerprintSimilar } from "./headerFingerprint.ts";
 import { extractTablesFromCoords } from "./coordTables.ts";
 import { summarizeTableComparison } from "../debug/coordTableCompare.ts";
@@ -303,6 +304,15 @@ function looksLikeTableFragment(text: string): boolean {
   return units >= 3 && nums >= 8;
 }
 
+// 正文条文保护：含条文号（如 3.0.1）或「第N条」后接中文的 block 属于正文，
+// 即使与表格同页、几何重建时混入表头/页眉数字而被 looksLikeTableFragment 误判，
+// 也必须保留——否则紧贴表格的关键条文（如「共分为65主类78小类」）会连同表格碎片一起被删。
+function looksLikeClauseText(text: string): boolean {
+  return /(?:\d+\.\d+(?:\.\d+)?|第[一二三四五六七八九十百千零〇\d]+条)\s*[一-龥]/.test(
+    text
+  );
+}
+
 // ── 顶层：几何 IR + sidecar 表格按页拼接 ──
 
 /** 按页稳定合并：同页内文本块在前、表格块在后。 */
@@ -351,11 +361,53 @@ export async function extractBlocksWithTables(buffer: Buffer): Promise<Block[]> 
     if (
       (b.type === "paragraph" || b.type === "list_item") &&
       tablePages.has(b.pageStart) &&
-      looksLikeTableFragment(b.normalizedText)
+      looksLikeTableFragment(b.normalizedText) &&
+      !looksLikeClauseText(b.normalizedText)
     ) {
       return false;
     }
     return true;
   });
-  return mergeByPage(nonTable, tableBlocks);
+  // 几何重建会把「紧贴表格的正文条文」揉进 table 块（列检测把整句切成乱序假单元格），
+  // 随后被整体丢弃 → 关键条文（如「共分为65主类78小类」）丢失。
+  // 这里改用 pdfjs 原始页文本（无几何重建、顺序干净），从表格页救回成句的条文。
+  const salvaged = await salvageClausesFromTablePages(buffer, tablePages, nonTable);
+  return mergeByPage([...nonTable, ...salvaged], tableBlocks);
+}
+
+// 从表格页的 pdfjs 原始文本里抽取「成句条文」（以条文号/「第N条」开头、以句号或分号收尾），
+// 补回被几何并入表格而丢失的正文。仅取干净成句、且不像表格数值碎片的内容。
+async function salvageClausesFromTablePages(
+  buffer: Buffer,
+  tablePages: Set<number>,
+  existing: Block[]
+): Promise<Block[]> {
+  if (tablePages.size === 0) return [];
+  const rawPages = await extractPdfRawPageText(buffer);
+  const clauseRe =
+    /(?:\d+\.\d+(?:\.\d+)?|第[一二三四五六七八九十百千零〇\d]+条)[^。；]{4,140}[。；]/g;
+  const existingText = existing.map((b) => b.normalizedText).join("\n");
+  const seen = new Set<string>();
+  const out: Block[] = [];
+  for (const pg of rawPages) {
+    if (!tablePages.has(pg.pageNo)) continue;
+    for (const m of pg.text.matchAll(clauseRe)) {
+      const s = m[0].replace(/\s+/g, " ").trim();
+      if (s.length < 10 || seen.has(s)) continue;
+      if (looksLikeTableFragment(s)) continue; // 跳过单元格数值碎片
+      if (existingText.includes(s.slice(0, 16))) {
+        seen.add(s);
+        continue; // 正文里已有，不重复
+      }
+      seen.add(s);
+      out.push({
+        type: "paragraph",
+        pageStart: pg.pageNo,
+        pageEnd: pg.pageNo,
+        rawText: s,
+        normalizedText: s,
+      });
+    }
+  }
+  return out;
 }
