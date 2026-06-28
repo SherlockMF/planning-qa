@@ -195,14 +195,20 @@ export function ChatPanel() {
               rows={3}
               className="resize-none"
               onKeyDown={(e) => {
-                if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
+                // Enter 直接提问；Shift+Enter 换行；输入法组词时的 Enter 不触发
+                if (
+                  e.key === "Enter" &&
+                  !e.shiftKey &&
+                  !e.nativeEvent.isComposing
+                ) {
+                  e.preventDefault();
                   ask(question);
                 }
               }}
             />
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs text-muted-foreground">
-                仅基于当前账号可访问的知识作答 · 无依据或无权限则拒答（Ctrl/⌘ + Enter 提交）
+                仅基于当前账号可访问的知识作答 · 无依据或无权限则拒答（Enter 提交，Shift+Enter 换行）
               </p>
               <Button onClick={() => ask(question)} disabled={loading || !question.trim()}>
                 {loading ? (
