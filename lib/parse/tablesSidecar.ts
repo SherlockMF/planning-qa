@@ -351,12 +351,19 @@ export async function extractBlocksWithTables(buffer: Buffer): Promise<Block[]> 
   rawTables = rawTables.filter(
     (t) => Array.isArray(t.rows) && t.rows.length > 0
   );
-  if (!rawTables.length && !ocrBlocks.length) return geom; // 回退：保留几何表格
+  if (!rawTables.length && !ocrBlocks.length) return geom.map(normalizeBlockCjk); // 回退：保留几何表格
 
   const tableBlocks = [...tablesToBlocks(rawTables), ...ocrBlocks];
   const tablePages = new Set(rawTables.map((t) => t.page));
+  // 救援候选页：pdfplumber 检测到表格的页 ∪ 几何把内容误判为 table 而丢弃的页。
+  // 后者很关键——有些页 pdfplumber 没认定有表格，但几何层仍把正文条文切成 table 块丢掉
+  // （如「1.0.2 本标准适用于…」），只看 tablePages 会漏。
+  const candidatePages = new Set<number>(tablePages);
   const nonTable = geom.filter((b) => {
-    if (b.type === "table" || b.type === "table_row") return false;
+    if (b.type === "table" || b.type === "table_row") {
+      candidatePages.add(b.pageStart);
+      return false;
+    }
     // 表格页上的几何碎片（与 sidecar 表格重复的乱序文本）剔除；标题/页码等保留
     if (
       (b.type === "paragraph" || b.type === "list_item") &&
@@ -368,11 +375,40 @@ export async function extractBlocksWithTables(buffer: Buffer): Promise<Block[]> 
     }
     return true;
   });
-  // 几何重建会把「紧贴表格的正文条文」揉进 table 块（列检测把整句切成乱序假单元格），
-  // 随后被整体丢弃 → 关键条文（如「共分为65主类78小类」）丢失。
-  // 这里改用 pdfjs 原始页文本（无几何重建、顺序干净），从表格页救回成句的条文。
-  const salvaged = await salvageClausesFromTablePages(buffer, tablePages, nonTable);
-  return mergeByPage([...nonTable, ...salvaged], tableBlocks);
+  // 几何重建会把「紧贴表格 / 被误判为表格的正文条文」揉进 table 块并整体丢弃 → 关键条文
+  // （如「共分为65主类78小类」「本标准适用于…」）丢失。
+  // 这里改用 pdfjs 原始页文本（无几何重建、顺序干净），在候选页救回成句的条文。
+  const salvaged = await salvageClausesFromTablePages(buffer, candidatePages, nonTable);
+  return mergeByPage([...nonTable, ...salvaged], tableBlocks).map(normalizeBlockCjk);
+}
+
+/**
+ * 归一化 CJK 字间多余空格：删除「两个汉字之间」的空格/制表符/全角空格。
+ * 政府 PDF 文字层常逐字带空格（如「本 指 标 构 建 了」），会污染切片、检索与展示。
+ * 只删汉字与汉字之间的空白，不动换行、不动数字/字母旁的空格（如「12大类 66项」保留）。
+ */
+function collapseCjkSpaces(text: string): string {
+  if (!text) return text;
+  return text.replace(/(?<=[一-龥])[ \t　]+(?=[一-龥])/g, "");
+}
+
+/** 对单个块做 CJK 空格归一化（含表格模型单元格）。 */
+function normalizeBlockCjk(b: Block): Block {
+  const next: Block = {
+    ...b,
+    normalizedText: collapseCjkSpaces(b.normalizedText),
+  };
+  if (b.rowCells) next.rowCells = b.rowCells.map(collapseCjkSpaces);
+  if (b.table) {
+    next.table = {
+      ...b.table,
+      title: b.table.title ? collapseCjkSpaces(b.table.title) : b.table.title,
+      headers: b.table.headers.map(collapseCjkSpaces),
+      rows: b.table.rows.map((r) => r.map(collapseCjkSpaces)),
+      markdown: collapseCjkSpaces(b.table.markdown),
+    };
+  }
+  return next;
 }
 
 // 从表格页的 pdfjs 原始文本里抽取「成句条文」（以条文号/「第N条」开头、以句号或分号收尾），
