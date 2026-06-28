@@ -195,7 +195,17 @@ async function searchChunkSet(
   const exactResults = exactSearchChunks(chunks, question);
   const bm25 = new BM25Index(chunks);
   const keywordResults = keywordSearch(bm25, question, extractedKeywords);
-  const vectorResults = await vectorSearch(chunks, question);
+  // 向量检索依赖外部 embedding 接口；一旦其不可用（额度耗尽/限流/断网），
+  // 不应让整条查询崩溃，而是降级为「精确 + BM25」关键词检索继续作答。
+  let vectorResults: RetrievedChunk[] = [];
+  try {
+    vectorResults = await vectorSearch(chunks, question);
+  } catch (e) {
+    console.warn(
+      "[retrieve] 向量检索不可用，已降级为关键词检索：",
+      String(e instanceof Error ? e.message : e).slice(0, 160)
+    );
+  }
 
   const merged = new Map<string, RetrievedChunk>();
   for (const r of exactResults) merged.set(r.chunk.id, { ...r });
