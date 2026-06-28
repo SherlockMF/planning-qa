@@ -419,6 +419,8 @@ export type RelevanceLevel = "高" | "中" | "低";
 /** 引用依据 */
 export interface Citation {
   id: string;
+  /** 来源文档 id，用于按页渲染真实 PDF 页面（演示/纯文本文档可能无此能力）。 */
+  documentId?: string;
   fileName: string;
   sectionPath?: string;
   articleNo?: string;

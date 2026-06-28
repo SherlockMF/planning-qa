@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import type { Citation } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -8,8 +11,9 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText, Hash, BookMarked, Table2, Eye } from "lucide-react";
+import { FileText, Hash, BookMarked, Table2, Eye, Image as ImageIcon, FileType2 } from "lucide-react";
 import { TableBlock, hasTableStructure } from "@/components/TableBlock";
+import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
 
 const RELEVANCE_VARIANT: Record<
   Citation["relevance"],
@@ -28,6 +32,15 @@ export function CitationCard({
   index?: number;
 }) {
   const isTable = hasTableStructure(citation.excerpt);
+  const { currentUser } = useKnowledgeUser();
+  const canPage = !!citation.documentId && citation.pageNumber != null;
+  const [view, setView] = useState<"page" | "text">(canPage ? "page" : "text");
+  const [pageFailed, setPageFailed] = useState(false);
+  const pageSrc = canPage
+    ? `/api/documents/${citation.documentId}/page?n=${citation.pageNumber}&userId=${encodeURIComponent(
+        currentUser.id
+      )}&dpi=150`
+    : "";
   const sourceMeta = [
     citation.sectionPath,
     citation.articleNo,
@@ -128,12 +141,61 @@ export function CitationCard({
             )}
           </div>
 
-          {isTable ? (
+          {canPage && !pageFailed && (
+            <div className="inline-flex rounded-md border border-sky-200 p-0.5 text-xs">
+              <button
+                type="button"
+                onClick={() => setView("page")}
+                className={`flex items-center gap-1 rounded px-2.5 py-1 transition-colors ${
+                  view === "page"
+                    ? "bg-sky-600 text-white"
+                    : "text-slate-600 hover:bg-sky-50"
+                }`}
+              >
+                <ImageIcon className="h-3.5 w-3.5" />
+                原文页面
+              </button>
+              <button
+                type="button"
+                onClick={() => setView("text")}
+                className={`flex items-center gap-1 rounded px-2.5 py-1 transition-colors ${
+                  view === "text"
+                    ? "bg-sky-600 text-white"
+                    : "text-slate-600 hover:bg-sky-50"
+                }`}
+              >
+                <FileType2 className="h-3.5 w-3.5" />
+                提取片段
+              </button>
+            </div>
+          )}
+
+          {canPage && view === "page" && !pageFailed ? (
+            <div className="overflow-auto rounded-lg border border-sky-200 bg-slate-50 p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={pageSrc}
+                alt={`${citation.fileName} 第 ${citation.pageNumber} 页`}
+                className="mx-auto h-auto w-full max-w-full"
+                onError={() => setPageFailed(true)}
+              />
+            </div>
+          ) : isTable ? (
             <div className="overflow-auto rounded-lg border border-sky-200 bg-white p-2">
+              {pageFailed && (
+                <p className="mb-2 text-xs text-amber-600">
+                  原始页面暂不可用（该文档可能无原始 PDF），已回退到提取内容。
+                </p>
+              )}
               <TableBlock text={citation.excerpt} />
             </div>
           ) : (
             <div className="rounded-lg border border-sky-200 bg-sky-50/70 p-5 text-[15px] leading-8 text-slate-800">
+              {pageFailed && (
+                <p className="mb-2 text-xs text-amber-600">
+                  原始页面暂不可用（该文档可能无原始 PDF），已回退到提取片段。
+                </p>
+              )}
               {citation.excerpt}
             </div>
           )}
