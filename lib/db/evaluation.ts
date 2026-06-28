@@ -133,10 +133,44 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
       .replace(/\.(pdf|docx?|txt|md|markdown)$/i, "")
       .replace(/[《》【】\s]/g, "");
   const targetFile = normFile(item.correctFile);
+  // 题库历史标注常把「《文件标题》+章节」或「项目资料/IT与行政知识/停车标准」等
+  // 泛称写进 correctFile，而真实文件名往往带后缀（如 …京政发〔2025〕25号、…-2022年9月版）。
+  // 直接整串匹配几乎必不中 → 额外支持：①抽出《》中的标题做子串匹配；②泛称别名映射。
+  const rawCorrect = String(item.correctFile ?? "");
+  const targetTitle = normFile(rawCorrect.match(/《([^》]+)》/)?.[1] ?? "");
+  const FILE_ALIASES: { pattern: RegExp; key: string }[] = [
+    { pattern: /停车/, key: "停车配建" },
+    { pattern: /报销|财务|企业制度/, key: "财务报销" },
+    { pattern: /IT与行政|设计软件|账号|软件/, key: "ITAndAdmin" }, // 见下方多关键词处理
+    { pattern: /建筑方案报审|报审资料/, key: "建筑方案报审" },
+    { pattern: /片区控规优化/, key: "片区控规优化" },
+    { pattern: /产业园/, key: "产业园城市设计" },
+    { pattern: /TOD/i, key: "TOD" },
+  ];
+  const aliasMatches = (chunkFileName: string): boolean => {
+    const fn = String(chunkFileName ?? "");
+    for (const { pattern, key } of FILE_ALIASES) {
+      if (!pattern.test(rawCorrect)) continue;
+      if (key === "ITAndAdmin") {
+        if (/IT|账号|软件|行政/.test(fn)) return true;
+      } else if (fn.includes(key)) {
+        return true;
+      }
+    }
+    return false;
+  };
   const fileMatches = (chunkFileName: string): boolean => {
     const a = normFile(chunkFileName);
-    if (!a || !targetFile) return false;
-    return a === targetFile || a.includes(targetFile) || targetFile.includes(a);
+    if (!a) return false;
+    if (
+      targetFile &&
+      (a === targetFile || a.includes(targetFile) || targetFile.includes(a))
+    )
+      return true;
+    // 用《标题》做子串匹配，容忍真实文件名的版本/文号后缀
+    if (targetTitle && targetTitle.length >= 4 && a.includes(targetTitle))
+      return true;
+    return aliasMatches(chunkFileName);
   };
   const hasArticle = !!item.correctArticle && item.correctArticle !== "—";
   const hasPage = !!item.correctPage && item.correctPage !== "—";
