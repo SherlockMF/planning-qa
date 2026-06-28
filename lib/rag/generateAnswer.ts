@@ -128,12 +128,32 @@ export async function generateAnswer(
     };
   }
 
-  // 5. 表格装配：命中表格行 → 回查 RagTable → TableSlice（真实表格展示）。
-  //    表格本体由程序渲染，LLM 结论仅作引导/解释文字（核心原则 3）。
-  const tableSlices = await assembleTableSlices(top, q);
+  // 5. 表格装配：仅当「最相关证据本身是表格」时才渲染，避免计数/文字题被检索分高
+  //    但与结论无关的表格蹭进来（如问「分为多少类」却挂出整张用地分类表）。
+  const topIsTable = top
+    .slice(0, 2)
+    .some((h) => TABLE_CHUNK_TYPES.has(h.chunk.chunkType));
+  let tableSlices = topIsTable ? await assembleTableSlices(top, q) : [];
+  // 只在「确有一张表真正支撑结论」时渲染表格。实测：当某张表就是答案时其支撑度
+  // 极高（0.9+）；当答案其实在条文、表只是蹭检索分时，最高支撑度也只有 ~0.46。
+  // 故以 0.5 为界：低于则一张不渲染（避免问停车挂出体育设施表这类噪声），
+  // 高于则只保留强支撑（≥最高的 0.6 倍）的表。
+  if (tableSlices.length > 0) {
+    const scored = tableSlices.map((s) => ({
+      s,
+      sup: conclusionSupport(conclusion, sliceText(s)),
+    }));
+    const maxSup = Math.max(...scored.map((x) => x.sup));
+    tableSlices =
+      maxSup < 0.5
+        ? []
+        : scored.filter((x) => x.sup >= maxSup * 0.6).map((x) => x.s);
+  }
 
   // 6. 拼装结构化回答 + 引用卡片
-  const citations = context.slice(0, MAX_CITATIONS).map((r) => toCitation(r));
+  //    依据不再无脑铺满 Top-N：先按内容去重（同句的 clause/requirement 双胞胎），
+  //    再按「对结论的支撑度」过滤，只保留真正支撑结论的条文。
+  const { citations, bestSupport } = selectCitations(context, conclusion, topIsTable);
   const answer = buildAnswerText(conclusion, citations);
 
   let answerBlocks: AnswerBlock[] | undefined;
@@ -164,14 +184,94 @@ export async function generateAnswer(
       foundEvidence: true,
       citations,
       answerBlocks,
-      confidence: citations.length >= 2 ? "high" : "medium",
+      confidence: citations.length >= 2 || bestSupport >= 0.55 ? "high" : "medium",
       confidenceLabel:
         citations.length >= 2
           ? "高置信度 · 多段依据交叉印证"
-          : "中置信度 · 建议结合引用原文确认",
+          : bestSupport >= 0.55
+            ? "高置信度 · 依据与结论高度一致"
+            : "中置信度 · 建议结合引用原文确认",
       feedbackTargetId: `answer-${Date.now()}`,
     },
     retrieval,
+  };
+}
+
+/** 表格类 chunk 类型（用于判断「最相关证据是否为表格」）。 */
+const TABLE_CHUNK_TYPES = new Set(["table_full", "table_row"]);
+
+/** 字符二元组集合（去空格与标点），用于衡量结论与片段的字面重叠。 */
+function bigrams(s: string): Set<string> {
+  const t = (s || "").replace(/[\s\p{P}]/gu, "");
+  const g = new Set<string>();
+  for (let i = 0; i < t.length - 1; i++) g.add(t.slice(i, i + 2));
+  return g;
+}
+
+/** 序列化一张 TableSlice 的可读文本（标题 + 各行单元格），用于支撑度衡量。 */
+function sliceText(s: { tableTitle: string; rows: { cells: Record<string, string> }[] }): string {
+  const cells = s.rows.flatMap((r) => Object.values(r.cells));
+  return [s.tableTitle, ...cells].filter(Boolean).join(" ");
+}
+
+/** 片段对结论的支撑度：结论的二元组中有多少比例能在片段里找到（0~1）。 */
+function conclusionSupport(conclusion: string, text: string): number {
+  const cg = bigrams(conclusion);
+  if (cg.size === 0) return 0;
+  const tg = bigrams(text);
+  let hit = 0;
+  for (const g of cg) if (tg.has(g)) hit++;
+  return hit / cg.size;
+}
+
+/** 去重用规范化键：去空白与常见标点。 */
+function normForDedup(text: string): string {
+  return (text || "").replace(/\s+/g, "").replace(/[，。、；：,.:;]/g, "");
+}
+
+/**
+ * 选取依据，去掉「无脑铺满 Top-N」带来的噪声：
+ *  ① 文字/计数题（最相关证据非表格）不把表格行当文字依据；
+ *  ② 同一张表最多保留一条依据（避免多行重复刷屏）；
+ *  ③ 内容去重（同句的 clause/requirement 双胞胎、互为子串的片段）；
+ *  ④ 兜底至少保留一条，避免「有结论却无依据」。
+ */
+function selectCitations(
+  context: RetrievedChunk[],
+  conclusion: string,
+  topIsTable: boolean
+): { citations: Citation[]; bestSupport: number } {
+  const kept: RetrievedChunk[] = [];
+  const seenTables = new Set<string>();
+  for (const r of context) {
+    const c = r.chunk;
+    const isTable = TABLE_CHUNK_TYPES.has(c.chunkType);
+    if (!topIsTable && isTable) continue; // 文字/计数题不挂表格行
+    if (isTable && c.tableId) {
+      const key = `${c.documentId}__${c.tableId}`;
+      if (seenTables.has(key)) continue; // 同表只留一条
+      seenTables.add(key);
+    }
+    const norm = normForDedup(cleanExcerpt(c.content));
+    if (!norm) continue;
+    const dup = kept.some((k) => {
+      const kn = normForDedup(cleanExcerpt(k.chunk.content));
+      return (
+        kn === norm ||
+        (norm.length >= 10 && (kn.includes(norm) || norm.includes(kn)))
+      );
+    });
+    if (!dup) kept.push(r);
+  }
+
+  const finalKept = kept.length > 0 ? kept : context.slice(0, 1);
+  const bestSupport = finalKept.reduce(
+    (m, r) => Math.max(m, conclusionSupport(conclusion, r.chunk.content)),
+    0
+  );
+  return {
+    citations: finalKept.slice(0, MAX_CITATIONS).map((r) => toCitation(r)),
+    bestSupport,
   };
 }
 
@@ -179,6 +279,7 @@ function toCitation(r: RetrievedChunk): Citation {
   const c = r.chunk;
   return {
     id: c.id,
+    documentId: c.documentId,
     fileName: c.fileName,
     sectionPath: c.sectionPath,
     articleNo: c.articleNo,
@@ -246,7 +347,12 @@ function isLLMSelfRefusal(text: string): boolean {
     /知识库.{0,20}(没有|未包含|不包含|无法)/.test(lead) ||
     /无法.{0,10}(回答|作答|给出)/.test(lead) ||
     /未.{0,10}(检索到|找到).{0,20}(依据|条文|内容)/.test(lead) ||
-    /片段.{0,20}(没有|不包含|未包含)/.test(lead)
+    /片段.{0,20}(没有|不包含|未包含)/.test(lead) ||
+    // LLM 常把"无依据"表述成"未找到…的具体要求/规定/标准/数值"，结尾不是"依据/条文"，
+    // 需单独覆盖，否则会被当成正常作答（导致应拒答题误判为"应拒答却作答"）。
+    /(未|没有|无法|查无).{0,12}(找到|检索到|查到|包含|提及|涉及|给出).{0,30}(要求|规定|标准|数值|指标|条文|内容|依据|信息|说明)/.test(
+      lead
+    )
   );
 }
 
