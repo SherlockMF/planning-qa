@@ -1,0 +1,36 @@
+<svg viewBox="0 0 760 300" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI','Microsoft YaHei',sans-serif">
+  <rect x="0" y="0" width="760" height="300" fill="#ffffff"/>
+  <text x="24" y="30" font-size="16" font-weight="700" fill="#1e293b">导航可见性（当前状态）</text>
+  <text x="24" y="50" font-size="12" fill="#64748b">visibleNavItemsForUser() · DEVELOPER_TOOLS_ENABLED = false</text>
+
+  <!-- header bar mock -->
+  <rect x="24" y="70" width="712" height="56" rx="10" fill="#3730a3"/>
+  <text x="44" y="103" font-size="13.5" font-weight="700" fill="#e0e7ff">🏛 规划设计院知识库</text>
+
+  <!-- visible tabs -->
+  <g font-size="13" text-anchor="middle">
+    <rect x="250" y="84" width="78" height="28" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#c7d2fe"/>
+    <text x="289" y="103" fill="#ffffff" font-weight="600">问答</text>
+    <rect x="336" y="84" width="98" height="28" rx="6" fill="#ffffff" fill-opacity="0.22" stroke="#c7d2fe"/>
+    <text x="385" y="103" fill="#ffffff" font-weight="600">文档管理</text>
+  </g>
+  <!-- user selector -->
+  <rect x="600" y="84" width="120" height="28" rx="6" fill="#ffffff" fill-opacity="0.12" stroke="#818cf8"/>
+  <text x="660" y="103" font-size="11.5" text-anchor="middle" fill="#e0e7ff">👤 王磊·管理员 ▾</text>
+
+  <!-- hidden tabs row -->
+  <text x="24" y="168" font-size="12.5" fill="#475569" font-weight="600">当前隐藏（kind: developer，URL 仍可直达）：</text>
+  <g font-size="13" text-anchor="middle">
+    <rect x="24" y="182" width="98" height="30" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="5 4"/>
+    <text x="73" y="202" fill="#94a3b8">🔒 切分查看</text>
+    <rect x="132" y="182" width="98" height="30" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="5 4"/>
+    <text x="181" y="202" fill="#94a3b8">🔒 检索调试</text>
+    <rect x="240" y="182" width="78" height="30" rx="6" fill="#f8fafc" stroke="#cbd5e1" stroke-dasharray="5 4"/>
+    <text x="279" y="202" fill="#94a3b8">🔒 评测</text>
+  </g>
+
+  <!-- rule note -->
+  <rect x="24" y="234" width="712" height="50" rx="9" fill="#fffbeb" stroke="#f59e0b" stroke-width="1.3"/>
+  <text x="40" y="256" font-size="12" fill="#92400e">规则：kind=primary 始终显示；kind=developer 仅当 DEVELOPER_TOOLS_ENABLED &amp;&amp; role=developer 才显示。</text>
+  <text x="40" y="274" font-size="12" fill="#92400e">开关现为 false → 三项开发工具对所有角色（含开发账号）统一隐藏，待后续放开。</text>
+</svg>

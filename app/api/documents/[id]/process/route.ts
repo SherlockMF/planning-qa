@@ -40,8 +40,17 @@ export async function POST(
   try {
     const buf = getStore().rawBuffers[doc.id];
     if (!buf) {
-      // 没有原始文件就没有可解析内容；以前会落"占位 chunk"并标 indexed，
-      // 让用户误以为入库成功 —— 改为明确失败。
+      // 内置演示/种子文档没有原始文件，但带预置切片。对它们点"处理"不应标失败、
+      // 踢出检索 —— 检测到已有切片则保持 indexed 并提示无需解析。
+      const hasChunks = getStore().chunks.some((c) => c.documentId === doc.id);
+      if (hasChunks) {
+        await updateDocument(doc.id, { status: "indexed" });
+        return NextResponse.json(
+          { skipped: true, message: "该文档为内置演示文档，已预置切片，无需重新解析。" },
+          { status: 200 }
+        );
+      }
+      // 真正缺内容的上传文档：以前会落"占位 chunk"误导用户，改为明确失败。
       await updateDocument(doc.id, { status: "failed" });
       return NextResponse.json(
         { error: "原始文件缺失，无法解析。请删除该记录后重新上传文件。" },
