@@ -7,6 +7,24 @@
 // ============================================================================
 
 import type { EvaluationItem } from "@/lib/types";
+import { NUMERIC_GOLDEN_QUESTIONS } from "../rag/eval/goldenQuestions.ts";
+
+const NUMERIC_EVALUATION: EvaluationItem[] = NUMERIC_GOLDEN_QUESTIONS.map(
+  (question, index) => ({
+    id: `eval-numeric-${String(index + 1).padStart(3, "0")}`,
+    seq: `N${String(index + 1).padStart(3, "0")}`,
+    scenario: "PDF数值回归",
+    question: question.query,
+    standardAnswer: question.expectedAnswerValues.join("；"),
+    correctFile: question.sourceHint,
+    correctArticle: "",
+    correctPage: "",
+    shouldRefuse: false,
+    expectedAnswerValues: question.expectedAnswerValues,
+    forbiddenAnswerValues: question.forbiddenAnswerValues,
+    expectedBehavior: "必须输出正确数值，且不得出现 PDF 解析乱序值。",
+  })
+);
 
 export const MOCK_EVALUATION: EvaluationItem[] = [
   {
@@ -123,6 +141,7 @@ export const MOCK_EVALUATION: EvaluationItem[] = [
     correctPage: "42",
     shouldRefuse: false,
   },
+  ...NUMERIC_EVALUATION,
 ];
 
 export const ENTERPRISE_EVALUATION: EvaluationItem[] = [

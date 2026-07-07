@@ -22,7 +22,7 @@ export interface TableConfidence {
 // ── tableType 候选信号（按单元格全文 + 列结构） ──
 
 const TYPE_SIGNALS: { type: TableType; re: RegExp }[] = [
-  { type: "indicator_table", re: /(指标|配建|建筑面积|用地面积|千人指标|服务规模|一般规模|容积率|建筑高度|建筑规模)/ },
+  { type: "indicator_table", re: /(配置指标|控制指标|规模性指标|千人指标|配建|建筑面积|用地面积|服务规模|一般规模|容积率|建筑高度|建筑规模)/ },
   { type: "requirement_table", re: /(配置要求|布局要求|布局引导|管控要求|技术要求|审查要求|详细配置要求|使用说明|要求内容)/ },
   { type: "code_table", re: /(类别代码|用地代码|用地分类|主类|中类|小类|类别名称)/ },
   { type: "deliverable_table", re: /(成果|图纸|附表|附件|清单|数据库|比例尺|格式要求|提交材料|申报材料|图面要素)/ },
@@ -53,6 +53,9 @@ interface Structure {
   stability: number;
   stable2D: boolean;
   hasShortLabels: boolean;
+  emptyHeaderRatio: number;
+  proseDensity: number;
+  avgCellLength: number;
 }
 
 function analyzeStructure(cellRows: string[][]): Structure {
@@ -77,11 +80,34 @@ function analyzeStructure(cellRows: string[][]): Structure {
 
   const allCells = cellRows.flat().map((c) => c.trim()).filter(Boolean);
   const hasShortLabels = allCells.some((c) => c.length <= 12);
+  const firstRow = cellRows[0] ?? [];
+  const emptyHeaderRatio =
+    firstRow.length > 0
+      ? firstRow.filter((c) => c.trim() === "").length / firstRow.length
+      : 0;
+  const surface = allCells.join("");
+  const proseDensity =
+    surface.length > 0
+      ? (surface.match(/[，。；：、,.!?！？]/g) ?? []).length / surface.length
+      : 0;
+  const avgCellLength =
+    allCells.length > 0
+      ? allCells.reduce((sum, c) => sum + c.length, 0) / allCells.length
+      : 0;
 
   // 稳定二维：≥3 行、众数列 ≥2、且列数大体稳定
   const stable2D = rowCount >= 3 && modalCols >= 2 && stability >= 0.6;
 
-  return { rowCount, modalCols, stability, stable2D, hasShortLabels };
+  return {
+    rowCount,
+    modalCols,
+    stability,
+    stable2D,
+    hasShortLabels,
+    emptyHeaderRatio,
+    proseDensity,
+    avgCellLength,
+  };
 }
 
 /**
@@ -125,6 +151,15 @@ export function scoreTableRegion(cellRows: string[][]): TableConfidence {
     reasons.push("has_short_labels");
   }
 
+  const looksLikeProseGrid =
+    s.emptyHeaderRatio > 1 / 3 && s.avgCellLength >= 24 && s.proseDensity >= 0.035;
+  if (s.emptyHeaderRatio > 1 / 3) negativeReasons.push("empty_header_ratio");
+  if (s.proseDensity >= 0.035) negativeReasons.push("prose_density");
+  if (looksLikeProseGrid) {
+    score = Math.min(score, 0.2);
+    negativeReasons.push("looks_like_prose_grid");
+  }
+
   // 明显散文：单列 + 行少 + 无类型信号 → 进一步压低
   if (s.modalCols < 2 && candidates.length === 0) {
     score = Math.min(score, 0.15);
@@ -144,6 +179,7 @@ const LOW_SCORE = 0.3;
  * 仅当「分数极低 且 无 tableType 命中 且 无稳定二维结构」时回退为段落。
  */
 export function shouldKeepAsTable(c: TableConfidence): boolean {
+  if (c.negativeReasons.includes("looks_like_prose_grid")) return false;
   if (c.tableTypeCandidates.length > 0) return true;
   if (c.reasons.includes("stable_2d_grid")) return true;
   return c.score >= LOW_SCORE;

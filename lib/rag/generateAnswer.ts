@@ -23,6 +23,20 @@ import {
   buildNoAccessChatResponse,
   shouldReturnNoAccess,
 } from "@/lib/knowledge/noAccess";
+import {
+  applyLowFidelityFallback,
+  classifyEvidenceQuality,
+  type EvidenceQuality,
+} from "./evidenceQuality.ts";
+import {
+  finalizeConclusionText,
+  sanitizeConclusionText,
+} from "./answerFormatting.ts";
+import {
+  preferCleanStructuredCitations,
+  rankStructuredEvidenceForQuestion,
+  recoverConclusionFromStructuredEvidence,
+} from "./structuredFieldSelector.ts";
 
 // LLM 可见的上下文窗口（要覆盖到依据判断所用的 Top-N，避免“能搜到却答不出”）
 const LLM_CONTEXT = 5;
@@ -107,7 +121,7 @@ export async function generateAnswer(
         : chunk;
     }),
   });
-  const conclusion = stripInternalMarkers(rawConclusion);
+  const conclusion = sanitizeConclusionText(rawConclusion);
 
   if (!conclusion.trim()) {
     return {
@@ -153,13 +167,33 @@ export async function generateAnswer(
   // 6. 拼装结构化回答 + 引用卡片
   //    依据不再无脑铺满 Top-N：先按内容去重（同句的 clause/requirement 双胞胎），
   //    再按「对结论的支撑度」过滤，只保留真正支撑结论的条文。
-  const { citations, bestSupport } = selectCitations(context, conclusion, topIsTable);
-  const answer = buildAnswerText(conclusion, citations);
+  const selected = selectCitations(context, conclusion, topIsTable);
+  const citations = preferCleanStructuredCitations(
+    rankStructuredEvidenceForQuestion(selected.citations, q),
+    q
+  );
+  const { bestSupport } = selected;
+  const needsSourceReview = citations.some(
+    (c) =>
+      c.lowFidelity ||
+      c.excerptDisplayPolicy === "source_page_required" ||
+      (c.extractionWarnings?.length ?? 0) > 0
+  );
+  const finalizedConclusion = finalizeConclusionText(conclusion, citations);
+  const hasReflectionFallback = finalizedConclusion.reflection.needsFallback;
+  const recoveredConclusion = recoverConclusionFromStructuredEvidence(citations, q);
+  const displayConclusion = recoveredConclusion ?? applyLowFidelityFallback(
+    finalizedConclusion.text,
+    citations
+  );
+  const unresolvedReflectionFallback = hasReflectionFallback && !recoveredConclusion;
+  if (needsSourceReview || unresolvedReflectionFallback) tableSlices = [];
+  const answer = buildAnswerText(displayConclusion, citations);
 
   let answerBlocks: AnswerBlock[] | undefined;
   if (tableSlices.length > 0) {
     answerBlocks = [
-      { type: "text", content: conclusion },
+      { type: "text", content: displayConclusion },
       ...tableSlices.map(
         (s): AnswerBlock => ({
           type: "table_slice",
@@ -184,9 +218,17 @@ export async function generateAnswer(
       foundEvidence: true,
       citations,
       answerBlocks,
-      confidence: citations.length >= 2 || bestSupport >= 0.55 ? "high" : "medium",
+      confidence: needsSourceReview || unresolvedReflectionFallback
+        ? "low"
+        : citations.length >= 2 || bestSupport >= 0.55
+          ? "high"
+          : "medium",
       confidenceLabel:
-        citations.length >= 2
+        needsSourceReview
+          ? "低置信度 · 表格解析疑似低保真，请核对原文页面"
+          : unresolvedReflectionFallback
+          ? "低置信度 · 输出前校验发现结论不完整，请核对原文"
+          : citations.length >= 2
           ? "高置信度 · 多段依据交叉印证"
           : bestSupport >= 0.55
             ? "高置信度 · 依据与结论高度一致"
@@ -277,6 +319,28 @@ function selectCitations(
 
 function toCitation(r: RetrievedChunk): Citation {
   const c = r.chunk;
+  const evidenceQuality = classifyEvidenceQuality({
+    chunkType: c.chunkType,
+    text: c.content,
+  });
+  const extractionWarnings = [
+    ...new Set([...(c.extractionWarnings ?? []), ...evidenceQuality.warnings]),
+  ];
+  const evidenceCategories = [
+    ...new Set([...(c.evidenceCategories ?? []), ...evidenceQuality.categories]),
+  ];
+  const excerptDisplayPolicy =
+    c.lowFidelity ||
+    extractionWarnings.length > 0 ||
+    evidenceQuality.displayPolicy === "source_page_required"
+      ? "source_page_required"
+      : "show_extracted_text";
+  const citationQuality: EvidenceQuality = {
+    ...evidenceQuality,
+    warnings: extractionWarnings as EvidenceQuality["warnings"],
+    categories: evidenceCategories as EvidenceQuality["categories"],
+    displayPolicy: excerptDisplayPolicy,
+  };
   return {
     id: c.id,
     documentId: c.documentId,
@@ -284,9 +348,26 @@ function toCitation(r: RetrievedChunk): Citation {
     sectionPath: c.sectionPath,
     articleNo: c.articleNo,
     pageNumber: c.pageNumber,
-    excerpt: cleanExcerpt(c.content),
+    chunkType: c.chunkType,
+    excerpt: buildCitationExcerpt(c, citationQuality),
+    lowFidelity: c.lowFidelity || evidenceQuality.blocksAnswer,
+    extractionWarnings,
+    evidenceCategories,
+    excerptDisplayPolicy,
     relevance: relevanceLabel(r.rerankScore),
   };
+}
+
+function buildCitationExcerpt(
+  chunk: RetrievedChunk["chunk"],
+  evidenceQuality: EvidenceQuality
+): string {
+  if (evidenceQuality.displayPolicy === "source_page_required") {
+    return "已定位到相关原文页面；当前自动提取片段存在阅读顺序噪声，建议切换到“原文页面”核对。";
+  }
+
+  const structured = renderChunkAnswerContext(chunk);
+  return cleanExcerpt(structured || chunk.content);
 }
 
 /**
@@ -354,24 +435,6 @@ function isLLMSelfRefusal(text: string): boolean {
       lead
     )
   );
-}
-
-/**
- * 剥离 LLM 结论中残留的内部结构化标记。
- * 主要场景：mock LLM 直接返回 renderChunkAnswerContext 前缀（【结构化XX】…原文：…），
- * 真实 LLM 偶尔在结论中回显这些标记。
- */
-function stripInternalMarkers(text: string): string {
-  // Mock LLM 场景：内容以「【结构化XX】…\n原文：\n…」格式开头，只保留原文部分
-  if (/^【结构化/.test(text.trimStart())) {
-    const m = text.match(/\n原文[：:]\n?([\s\S]+)/);
-    if (m) return m[1].replace(/\n{3,}/g, "\n\n").trim();
-  }
-  // 真实 LLM 偶发回显：去掉散落的结构化标记
-  return text
-    .replace(/【结构化[^】]+】/g, "")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
 }
 
 function buildRefusal(reason: string, reasonCode: string): ChatResponse {

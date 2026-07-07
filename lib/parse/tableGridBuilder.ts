@@ -30,6 +30,20 @@ function joinCell(current: string | null, text: string): string {
   return [current, text].filter(Boolean).join(" ").replace(/\s+/g, " ").trim();
 }
 
+function repairCellReadingOrder(text: string | null): string | null {
+  if (!text) return text;
+  return text
+    .replace(/(\d+)\s*万\s*\.\s*(\d+)\s*人\s*(\d+)/g, "$1.$2$3万人")
+    .replace(/万\s*(\d+)\s*\.\s*(\d+)\s*人/g, "$1.$2万人")
+    .replace(/(\d+)\s*万\s*(\d+)\s*\.\s*人\s*(\d+)/g, "$1$2.$3万人")
+    .replace(/岁\s*(\d+)\s*以下/g, "$1岁以下")
+    .replace(/(\d+)\s*-\s*岁\s*(\d+)/g, "$1-$2岁");
+}
+
+function repairGridCells(matrix: (string | null)[][]): (string | null)[][] {
+  return matrix.map((row) => row.map((cell) => repairCellReadingOrder(cell)));
+}
+
 export function buildTableGrid(
   region: TableRegion,
   items: PdfTextItem[],
@@ -141,7 +155,7 @@ export function buildTableGrid(
   );
   const textGrid: TableGrid = {
     region,
-    matrix: trimmedText.matrix,
+    matrix: repairGridCells(trimmedText.matrix),
     warnings: [...new Set(warnings)],
     cellBBoxes: trimmedText.boxes,
   };
@@ -240,7 +254,7 @@ function buildGridFromBoundaries(
   const cleaned = trimEmptyEdges(matrix, boxes);
   return {
     region,
-    matrix: cleaned.matrix,
+    matrix: repairGridCells(cleaned.matrix),
     warnings: [...new Set(["line_grid", ...warnings])],
     cellBBoxes: cleaned.boxes,
   };

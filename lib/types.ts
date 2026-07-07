@@ -140,6 +140,10 @@ export interface TableRow {
   pageStart: number;
   pageEnd: number;
   bbox?: number[];
+  /** 自动提取疑似低保真：只允许引导核原文，不作为高置信表格展示。 */
+  lowFidelity?: boolean;
+  extractionWarnings?: string[];
+  evidenceCategories?: string[];
   /** 仅用于 embedding / BM25，不用于展示 */
   searchText: string;
 }
@@ -170,6 +174,7 @@ export interface TableSlice {
   sourceDocTitle: string;
   pageStart: number;
   pageEnd: number;
+  warnings?: string[];
   columns: TableColumn[];
   rows: TableRow[];
   selectedRowIds: string[];
@@ -339,6 +344,10 @@ export interface Chunk {
   rowKey?: string;
   /** table_row 字段 JSON（列名→单元格值） */
   fields?: Record<string, string>;
+  /** 自动提取疑似低保真：由 RagTable 生成阶段回填，供展示/引用降级。 */
+  lowFidelity?: boolean;
+  extractionWarnings?: string[];
+  evidenceCategories?: string[];
   /** 绑定到 RagTable.rows 的稳定行 id（`${docId}_${tableId}_row_${rowIndex}`） */
   rowId?: string;
   /** 表格语义类型（由 buildRagTables 回填，供检索/装配判别） */
@@ -425,7 +434,12 @@ export interface Citation {
   sectionPath?: string;
   articleNo?: string;
   pageNumber?: number;
+  chunkType?: ChunkType;
   excerpt: string;
+  lowFidelity?: boolean;
+  extractionWarnings?: string[];
+  evidenceCategories?: string[];
+  excerptDisplayPolicy?: "show_extracted_text" | "source_page_required";
   relevance: RelevanceLevel;
 }
 
@@ -491,6 +505,10 @@ export interface EvaluationItem {
   correctPage: string;
   /** 该题是否应当拒答 */
   shouldRefuse: boolean;
+  /** 答案必须包含的精确数值/短语，用于数值型回归题。 */
+  expectedAnswerValues?: string[];
+  /** 答案不得包含的乱序数值/短语，用于 PDF 解析噪声回归题。 */
+  forbiddenAnswerValues?: string[];
 
   // ---- 系统运行后回填的结果字段 ----
   /** 系统回答 */

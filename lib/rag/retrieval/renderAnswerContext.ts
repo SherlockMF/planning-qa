@@ -169,12 +169,17 @@ function escapeCell(value: string): string {
 
 function renderFields(fields: Record<string, string> | undefined): string | undefined {
   if (!fields) return undefined;
-  const pairs = Object.entries(fields)
-    .filter(([, value]) => value.trim())
-    .slice(0, 16)
-    .map(([key, value]) => `${key}：${value.trim()}`);
+  const entries = Object.entries(fields).filter(([, value]) => value.trim());
+  const prioritized = [
+    ...entries.filter(([key]) => IMPORTANT_FIELD_RE.test(key)),
+    ...entries.filter(([key]) => !IMPORTANT_FIELD_RE.test(key)),
+  ].slice(0, 18);
+  const pairs = prioritized.map(([key, value]) => `${key}：${value.trim()}`);
   return pairs.length ? pairs.join("\n") : undefined;
 }
+
+const IMPORTANT_FIELD_RE =
+  /设施名称|指标对象|服务范围|服务规模|服务半径|一般规模|规模性指标|千人指标|建筑面积|用地面积|详细配置要求|配置要求|业务用房|比例/;
 
 function renderFieldsAsMarkdown(fields: Record<string, string> | undefined): string | undefined {
   if (!fields) return undefined;

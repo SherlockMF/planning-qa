@@ -88,6 +88,25 @@ test("两列纯散文碎片（无类型信号、列数不稳）→ 回退", () =
   assert.ok(!shouldKeepAsTable(c), `应回退, score=${c.score}, cand=${c.tableTypeCandidates}`);
 });
 
+test("空表头 + 长散文单元格 + 高标点密度 → 回退为段落", () => {
+  const c = scoreTableRegion(
+    rows(
+      ["", ""],
+      [
+        "综合考虑出生人口变化趋势、各年龄组占居住人口比例、公共服务设施承载能力等因素，延续既有核算标准。",
+        "核算说明仅用于解释指标测算口径，不构成可按行列检索的配置指标表。",
+      ],
+      [
+        "实际使用中，应结合所在地区人口结构、服务半径、建设条件等进行校核。",
+        "如相关专项规划另有规定，应以经批准的专项规划和原文页面为准。",
+      ]
+    )
+  );
+  assert.ok(!shouldKeepAsTable(c), `应回退, score=${c.score}, reasons=${c.reasons}`);
+  assert.ok(c.negativeReasons.includes("empty_header_ratio"));
+  assert.ok(c.negativeReasons.includes("prose_density"));
+});
+
 test("成果/图纸清单表：长文本要求 → 保留，候选 deliverable", () => {
   const c = scoreTableRegion(
     rows(

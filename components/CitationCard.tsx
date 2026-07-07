@@ -11,9 +11,19 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText, Hash, BookMarked, Table2, Eye, Image as ImageIcon, FileType2 } from "lucide-react";
-import { TableBlock, hasTableStructure } from "@/components/TableBlock";
+import {
+  AlertTriangle,
+  FileText,
+  Hash,
+  BookMarked,
+  Table2,
+  Eye,
+  Image as ImageIcon,
+  FileType2,
+} from "lucide-react";
+import { TableBlock } from "@/components/TableBlock";
 import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
+import { isCitationTable } from "@/lib/ui/tableDisplay";
 
 const RELEVANCE_VARIANT: Record<
   Citation["relevance"],
@@ -31,7 +41,11 @@ export function CitationCard({
   citation: Citation;
   index?: number;
 }) {
-  const isTable = hasTableStructure(citation.excerpt);
+  const isTable = isCitationTable(citation);
+  const needsSourceReview =
+    citation.excerptDisplayPolicy === "source_page_required" ||
+    citation.lowFidelity ||
+    (citation.extractionWarnings?.length ?? 0) > 0;
   const { currentUser } = useKnowledgeUser();
   const canPage = !!citation.documentId && citation.pageNumber != null;
   const [view, setView] = useState<"page" | "text">(canPage ? "page" : "text");
@@ -71,6 +85,12 @@ export function CitationCard({
                 <Badge variant="secondary" className="gap-1 text-[10px]">
                   <Table2 className="h-3 w-3" />
                   表格
+                </Badge>
+              )}
+              {needsSourceReview && (
+                <Badge variant="warning" className="gap-1 text-[10px]">
+                  <AlertTriangle className="h-3 w-3" />
+                  需核原文
                 </Badge>
               )}
               <Badge variant={RELEVANCE_VARIANT[citation.relevance]}>
@@ -123,6 +143,12 @@ export function CitationCard({
                 <Badge variant="secondary" className="gap-1">
                   <Table2 className="h-3 w-3" />
                   表格片段
+                </Badge>
+              )}
+              {needsSourceReview && (
+                <Badge variant="warning" className="gap-1">
+                  <AlertTriangle className="h-3 w-3" />
+                  解析需核原文
                 </Badge>
               )}
               <Badge variant={RELEVANCE_VARIANT[citation.relevance]}>

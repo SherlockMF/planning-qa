@@ -3,7 +3,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { CitationCard } from "@/components/CitationCard";
-import { TableBlock, hasTableStructure } from "@/components/TableBlock";
 import { AnswerBlocks } from "@/components/AnswerBlocks";
 import { CheckCircle2, AlertTriangle, Info, ShieldAlert } from "lucide-react";
 
@@ -79,10 +78,6 @@ export function AnswerCard({ response }: { response: ChatResponse }) {
             </div>
             {hasBlocks ? (
               <AnswerBlocks blocks={response.answerBlocks!} />
-            ) : hasTableStructure(get("结论")) ? (
-              <div className="overflow-auto rounded-md border bg-white p-1">
-                <TableBlock text={get("结论")} />
-              </div>
             ) : (
               <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800">
                 {get("结论")}

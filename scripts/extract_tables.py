@@ -149,6 +149,125 @@ def drop_empty_rows(rows):
     ]
 
 
+PUNCT_NO_SPACE_BEFORE = set("，。；：、,.!?;:%)]}）】》")
+PUNCT_NO_SPACE_AFTER = set("([({（【《")
+
+
+def is_cjk(ch):
+    return bool(ch) and "\u4e00" <= ch[-1] <= "\u9fff"
+
+
+def should_insert_space(prev_text, cur_text, gap, avg_width):
+    if gap <= max(avg_width * 0.55, 2.2):
+        return False
+    if not prev_text or not cur_text:
+        return False
+    prev = prev_text[-1]
+    cur = cur_text[0]
+    if cur in PUNCT_NO_SPACE_BEFORE or prev in PUNCT_NO_SPACE_AFTER:
+        return False
+    if is_cjk(prev) or is_cjk(cur):
+        return False
+    if prev.isdigit() and (cur == "%" or cur == "％"):
+        return False
+    return True
+
+
+def join_visual_line(chars):
+    """Join characters in one visual line while preserving real word gaps."""
+    ordered = sorted(chars, key=lambda ch: (float(ch.get("x0", 0)), float(ch.get("top", 0))))
+    if not ordered:
+        return ""
+    widths = [
+        max(0.1, float(ch.get("x1", 0)) - float(ch.get("x0", 0)))
+        for ch in ordered
+    ]
+    avg_width = sum(widths) / len(widths)
+    text = ""
+    prev_x1 = None
+    for ch in ordered:
+        cur = ch.get("text") or ""
+        if not cur:
+            continue
+        x0 = float(ch.get("x0", 0))
+        if prev_x1 is not None and should_insert_space(text, cur, x0 - prev_x1, avg_width):
+            text += " "
+        text += cur
+        prev_x1 = float(ch.get("x1", x0))
+    return text.strip()
+
+
+def group_chars_by_visual_row(chars):
+    if not chars:
+        return []
+    heights = [
+        max(0.1, float(ch.get("bottom", 0)) - float(ch.get("top", 0)))
+        for ch in chars
+    ]
+    avg_height = sum(heights) / len(heights)
+    tolerance = max(6.0, avg_height * 0.92)
+    rows = []
+    for ch in sorted(chars, key=lambda c: (float(c.get("top", 0)), float(c.get("x0", 0)))):
+        top = float(ch.get("top", 0))
+        last = rows[-1] if rows else None
+        if last and abs(top - last["anchor_top"]) <= tolerance:
+            last["chars"].append(ch)
+        else:
+            rows.append({"anchor_top": top, "chars": [ch]})
+    return rows
+
+
+def char_in_bbox(ch, bbox, pad=0.8):
+    x0, top, x1, bottom = bbox
+    cx = (float(ch.get("x0", 0)) + float(ch.get("x1", 0))) / 2
+    cy = (float(ch.get("top", 0)) + float(ch.get("bottom", 0))) / 2
+    return x0 - pad <= cx <= x1 + pad and top - pad <= cy <= bottom + pad
+
+
+def clean_cell_text(text):
+    text = re.sub(r"[ \t\r\f\v]+", " ", text)
+    text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", text)
+    text = re.sub(r"(?<=\d)\s+(?=[\u4e00-\u9fff%％])", "", text)
+    text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=\d)", "", text)
+    text = re.sub(r"\s+([，。；：、,.!?;:%％）)])", r"\1", text)
+    text = re.sub(r"([（(])\s+", r"\1", text)
+    text = re.sub(r"([%％])([\u4e00-\u9fff])。", r"\1。\2", text)
+    text = re.sub(
+        r"([。；])([\u4e00-\u9fff][^。；]*?)(\d{1,2}[.．])。$",
+        r"\1\3\2。",
+        text,
+    )
+    text = re.sub(r"(\d+)\s*万\s*\.\s*(\d+)\s*人\s*(\d+)", r"\1.\2\3万人", text)
+    text = re.sub(r"万\s*(\d+)\s*\.\s*(\d+)\s*人", r"\1.\2万人", text)
+    text = re.sub(r"(\d+)\s*万\s*(\d+)\s*\.\s*人\s*(\d+)", r"\1\2.\3万人", text)
+    text = re.sub(r"岁\s*(\d+)\s*以下", r"\1岁以下", text)
+    text = re.sub(r"(\d+)\s*-\s*岁\s*(\d+)", r"\1-\2岁", text)
+    return text.strip()
+
+
+def extract_ordered_cell_text(page, bbox):
+    """Rebuild one cell from glyph coordinates instead of pdfplumber's text stream."""
+    chars = [ch for ch in page.chars if char_in_bbox(ch, bbox)]
+    if not chars:
+        return ""
+    lines = [join_visual_line(row["chars"]) for row in group_chars_by_visual_row(chars)]
+    return clean_cell_text("".join(line for line in lines if line))
+
+
+def extract_ordered_table_rows(page, table):
+    rows = []
+    for row in table.rows:
+        out = []
+        for cell in row.cells:
+            if cell is None:
+                out.append(None)
+                continue
+            text = extract_ordered_cell_text(page, cell)
+            out.append(text if text else None)
+        rows.append(out)
+    return drop_empty_rows(rows)
+
+
 def looks_like_toc(rows):
     """目录/散文误检：含点引导符的单元格占比 ≥20% → 判为目录，拒绝。"""
     leader = 0
@@ -263,7 +382,9 @@ def extract_page_pdfplumber(page):
             tables = []
         for t in tables:
             try:
-                rows = drop_empty_rows(t.extract())
+                rows = extract_ordered_table_rows(page, t)
+                if not rows:
+                    rows = drop_empty_rows(t.extract())
             except Exception:
                 continue
             if not valid_shape(rows) or looks_like_toc(rows):

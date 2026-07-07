@@ -10,6 +10,7 @@
 import type { RetrievedChunk, TableSlice } from "@/lib/types";
 import { getRagTable } from "@/lib/db/ragTables";
 import { getTableSlice } from "./tableSlice";
+import { shouldSuppressHighConfidenceTableSlice } from "./ragTable";
 import { tokenize } from "./bm25";
 
 const ROW_CHUNK_TYPES = new Set([
@@ -84,7 +85,9 @@ export async function assembleTableSlices(
       maxRows: MAX_SLICE_ROWS,
       columnMode: "relevant",
     });
-    if (slice) slices.push(slice);
+    if (slice && !shouldSuppressHighConfidenceTableSlice(slice.rows, slice.warnings)) {
+      slices.push(slice);
+    }
   }
   return slices;
 }
@@ -102,7 +105,11 @@ async function secondaryRowSearch(
   if (qTokens.size === 0) return [];
 
   const scored = table.rows
-    .filter((r) => r.rowType === "data")
+    .filter(
+      (r) =>
+        r.rowType === "data" &&
+        !shouldSuppressHighConfidenceTableSlice([r])
+    )
     .map((r) => {
       const rTokens = tokenize(`${r.rowKey ?? ""} ${r.searchText}`);
       let score = 0;

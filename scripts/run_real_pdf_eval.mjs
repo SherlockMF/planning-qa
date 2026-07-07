@@ -4,6 +4,8 @@ import path from "node:path";
 import { extractBlocksWithTables } from "../lib/parse/tablesSidecar.ts";
 import { buildChunksWithObjects } from "../lib/rag/chunk.ts";
 import { writeRagPipelineDebug } from "../lib/rag/debug.ts";
+import { summarizeParseQuality } from "../lib/rag/eval/parseQualityMetrics.ts";
+import { runNumericObjectEval } from "../lib/rag/eval/runEval.ts";
 
 // 用法：node --experimental-strip-types scripts/run_real_pdf_eval.mjs <pdf1> [pdf2] ...
 // 不传参数时使用此默认列表（按需填入本地 PDF 路径）
@@ -36,7 +38,9 @@ for (const pdfPath of inputs) {
     }
     const buffer = fs.readFileSync(pdfPath);
     const blocks = await extractBlocksWithTables(buffer);
+    const parseQuality = summarizeParseQuality(blocks);
     const result = buildChunksWithObjects(doc, { blocks });
+    const numericObjectEval = runNumericObjectEval(result.knowledgeObjects);
     const debugDir = writeRagPipelineDebug({
       docId,
       blocks: result.blocks,
@@ -64,6 +68,11 @@ for (const pdfPath of inputs) {
       retrievalChunkCount: result.drafts.length,
       objectCount: result.knowledgeObjects.length,
       objectTypes: countBy(result.knowledgeObjects.map((obj) => obj.objectType)),
+      parseQuality,
+      numericObjectEval,
+      numericObjectEvalPassCount: numericObjectEval.filter((item) => item.pass)
+        .length,
+      numericObjectEvalTotal: numericObjectEval.length,
       tableTypes: countBy(
         result.knowledgeObjects
           .filter((obj) => obj.objectType === "structured_table")
@@ -120,8 +129,8 @@ function renderMarkdown(rows) {
     "",
     `Generated at: ${new Date().toISOString()}`,
     "",
-    "| File | OK | Objects | Chunks | Tables | Key object types | Debug |",
-    "| --- | --- | ---: | ---: | ---: | --- | --- |",
+    "| File | OK | Objects | Chunks | Tables | Quality | Numeric | Key object types | Debug |",
+    "| --- | --- | ---: | ---: | ---: | --- | --- | --- | --- |",
   ];
   for (const row of rows) {
     const keyTypes = row.objectTypes
@@ -147,6 +156,8 @@ function renderMarkdown(rows) {
         row.objectCount ?? 0,
         row.retrievalChunkCount ?? 0,
         row.objectTypes?.structured_table ?? 0,
+        renderQuality(row.parseQuality),
+        renderNumeric(row.numericObjectEval),
         keyTypes || "",
         row.debugDir ?? "",
       ]
@@ -157,4 +168,28 @@ function renderMarkdown(rows) {
     );
   }
   return `${lines.join("\n")}\n`;
+}
+
+function renderNumeric(rows) {
+  if (!rows) return "";
+  const pass = rows.filter((row) => row.pass).length;
+  const failed = rows
+    .filter((row) => !row.pass)
+    .map((row) => row.query)
+    .slice(0, 3)
+    .join("<br>");
+  return failed ? `${pass}/${rows.length}<br>${failed}` : `${pass}/${rows.length}`;
+}
+
+function renderQuality(q) {
+  if (!q) return "";
+  return [
+    `emptyHeader:${formatPct(q.emptyHeaderRatio)}`,
+    `untitled:${q.untitledTableCount}/${q.tableCount}`,
+    `lowFidelityCells:${q.lowFidelityCellCount}`,
+  ].join("<br>");
+}
+
+function formatPct(value) {
+  return `${Math.round((value ?? 0) * 1000) / 10}%`;
 }

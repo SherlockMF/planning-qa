@@ -11,6 +11,7 @@ import { DEFAULT_CITY } from "../city.ts";
 import { withUsageTracking } from "@/lib/ai/usage";
 import { ensureSeeded, getStore } from "./store";
 import { generateAnswer } from "@/lib/rag/generateAnswer";
+import { checkAnswerValueAssertions } from "@/lib/rag/eval/answerValueAssertions";
 import {
   ENTERPRISE_EVALUATION,
   MOCK_EVALUATION,
@@ -224,6 +225,10 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
 
   // 是否正确拒答（仅对应拒答题有意义）
   const refusedCorrectly = item.shouldRefuse ? !answered : undefined;
+  const valueAssertion =
+    !item.shouldRefuse && answered && item.expectedAnswerValues?.length
+      ? checkAnswerValueAssertions(response.answer, item)
+      : undefined;
 
   // 答案得分与错误原因
   let answerScore: 0 | 1 | 2;
@@ -240,6 +245,17 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     if (!answered) {
       answerScore = 0;
       errorReason = "召回不足 / 误拒答";
+    } else if (valueAssertion && !valueAssertion.pass) {
+      answerScore = 0;
+      const parts = [
+        valueAssertion.missingValues.length
+          ? `缺少数值：${valueAssertion.missingValues.join("、")}`
+          : "",
+        valueAssertion.forbiddenValuesFound.length
+          ? `出现禁用值：${valueAssertion.forbiddenValuesFound.join("、")}`
+          : "",
+      ].filter(Boolean);
+      errorReason = parts.join("；") || "答案数值断言失败";
     } else if (hasTarget) {
       if (citationCorrect) {
         answerScore = 2;

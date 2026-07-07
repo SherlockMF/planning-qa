@@ -18,6 +18,7 @@ import type {
   TableRow,
   TableType,
 } from "@/lib/types";
+import { classifyEvidenceQuality } from "./evidenceQuality.ts";
 import type {
   KnowledgeObject,
   StructuredTableObject,
@@ -155,6 +156,61 @@ function cleanCells(cells: Record<string, string>): {
   return { cells: out, removed };
 }
 
+function classifyTableRowQuality(
+  cells: Record<string, string>,
+  fallbackText: string,
+  chunkType: Chunk["chunkType"] = "table_row"
+): Pick<TableRow, "lowFidelity" | "extractionWarnings" | "evidenceCategories"> {
+  const warnings = new Set<string>();
+  const categories = new Set<string>();
+  for (const text of [...Object.values(cells), fallbackText]) {
+    if (!text.trim()) continue;
+    const quality = classifyEvidenceQuality({ chunkType, text });
+    for (const warning of quality.warnings) warnings.add(warning);
+    for (const category of quality.categories) categories.add(category);
+  }
+
+  if (warnings.size === 0) return {};
+  return {
+    lowFidelity: true,
+    extractionWarnings: [...warnings],
+    evidenceCategories: [...categories],
+  };
+}
+
+function addQualityWarnings(
+  warnings: Set<string>,
+  quality: Pick<TableRow, "lowFidelity" | "extractionWarnings">
+): void {
+  if (!quality.lowFidelity && !(quality.extractionWarnings?.length)) return;
+  warnings.add("low_fidelity_table");
+  for (const warning of quality.extractionWarnings ?? []) warnings.add(warning);
+}
+
+function applyRowQualityToChunk(
+  chunk: Chunk,
+  row: Pick<TableRow, "lowFidelity" | "extractionWarnings" | "evidenceCategories">
+): void {
+  if (!row.lowFidelity && !(row.extractionWarnings?.length)) return;
+  chunk.lowFidelity = true;
+  chunk.extractionWarnings = row.extractionWarnings;
+  chunk.evidenceCategories = row.evidenceCategories;
+}
+
+export function shouldSuppressHighConfidenceTableSlice(
+  rows: Pick<TableRow, "lowFidelity" | "extractionWarnings">[],
+  tableWarnings: string[] = []
+): boolean {
+  if (
+    tableWarnings.includes("low_fidelity_table") ||
+    tableWarnings.includes("scrambled_numeric_unit") ||
+    tableWarnings.includes("noisy_extraction_text")
+  ) {
+    return true;
+  }
+  return rows.some((row) => row.lowFidelity || (row.extractionWarnings?.length ?? 0) > 0);
+}
+
 // ── code 行判定（P1 #4：续写归并）──
 
 const CODE_TOKEN_RE = /(?:^|[^A-Za-z0-9])(?:[A-Za-z]\d{1,3}|\d{4,6})(?:$|[^A-Za-z0-9])/;
@@ -223,9 +279,12 @@ export function buildRagTablesFromObjects(
     const headers = table.headers.map((header) => header.name);
     const columns = buildColumns(headers.length ? headers : deriveHeadersFromObjects(objectRows));
     const tableType = tableTypeFromStructured(table.tableType);
+    const tableWarnings = new Set(table.warnings ?? []);
     const rows: TableRow[] = objectRows.map((row, index) => {
       const cells = normalizeCells(row.fields, columns);
       const rowId = `${table.docId}_${tableId}_row_${row.rowIndex ?? index}`;
+      const quality = classifyTableRowQuality(cells, row.content, "table_row");
+      addQualityWarnings(tableWarnings, quality);
       return {
         rowId,
         tableId,
@@ -237,6 +296,7 @@ export function buildRagTablesFromObjects(
         pageStart: row.sourcePageStart ?? table.sourcePageStart ?? 0,
         pageEnd: row.sourcePageEnd ?? table.sourcePageEnd ?? row.sourcePageStart ?? 0,
         searchText: row.content,
+        ...quality,
       };
     });
 
@@ -255,6 +315,7 @@ export function buildRagTablesFromObjects(
       if (rowMatch && ROW_CHUNK_TYPES.has(chunk.chunkType)) {
         chunk.rowId = rowMatch.rowId;
         chunk.rowType = rowMatch.rowType;
+        applyRowQualityToChunk(chunk, rowMatch);
       }
     }
 
@@ -271,7 +332,7 @@ export function buildRagTablesFromObjects(
       rows,
       markdownFull: renderMarkdown(columns.map((column) => column.header), rows),
       confidence: table.confidence,
-      warnings: table.warnings ?? [],
+      warnings: [...tableWarnings],
     });
   }
   return ragTables;
@@ -361,14 +422,17 @@ export function buildRagTablesFromChunks(
 
       const rowId = `${docId}_${tableId}_row_${rowIdx}`;
       const rowType = classifyRowType(rc.rowKey, rc.content);
+      const quality = classifyTableRowQuality(cells, rc.content, "table_row");
       rc.rowId = rowId;
       rc.rowType = rowType;
       rc.tableType = tableType;
+      applyRowQualityToChunk(rc, quality);
 
       if (!rc.rowKey || !rc.rowKey.trim()) warnings.add("row_key_missing");
       if (Object.values(cells).some((v) => v.length > 60)) warnings.add("long_text_cell");
       const filledRatio = columns.length ? Object.keys(cells).length / columns.length : 1;
       if (filledRatio < 0.5) warnings.add("too_many_empty_cells");
+      addQualityWarnings(warnings, quality);
 
       rows.push({
         rowId,
@@ -381,6 +445,7 @@ export function buildRagTablesFromChunks(
         pageStart: rc.pageStart ?? sample.pageStart ?? 0,
         pageEnd: rc.pageEnd ?? sample.pageEnd ?? 0,
         searchText: rc.content,
+        ...quality,
       });
       rowIdx++;
     }
@@ -404,6 +469,7 @@ export function buildRagTablesFromChunks(
       dc.tableType = tableType;
       dc.tableHeaders = dc.tableHeaders ?? headers;
       dc.tableTitle = dc.tableTitle ?? tableTitle;
+      applyRowQualityToChunk(dc, fallbackRow);
     }
 
     // 回填 tableType 到尚未赋值的 chunk（table_full 等）

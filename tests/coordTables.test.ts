@@ -182,6 +182,34 @@ test("builds a matrix, merges multiline cells, and keeps merged cells as null", 
   assert.ok(grid.warnings.includes("page_footer_removed"));
 });
 
+test("orders same-cell text fragments by visual row then x coordinate", () => {
+  const items = [
+    item("Name", 10, 30),
+    item("Value", 100, 30),
+    item("托幼", 10, 50),
+    item("人6", 130, 50, 1, 15),
+    item("0万.", 100, 50, 1, 20),
+    item("9", 122, 50, 1, 8),
+    item("以下", 130, 66, 1, 20),
+    item("岁", 100, 66, 1, 10),
+    item("6", 112, 66, 1, 8),
+  ];
+  const region = {
+    regionId: "p1-order",
+    pageNumber: 1,
+    bbox: [5, 25, 180, 85] as [number, number, number, number],
+    confidence: 0.9,
+    reasons: ["test"],
+  };
+
+  const grid = buildTableGrid(region, items);
+
+  assert.deepEqual(grid.matrix, [
+    ["Name", "Value"],
+    ["托幼", "0.96万人 6岁以下"],
+  ]);
+});
+
 test("merges sparse continuation rows into empty cells on the previous row", () => {
   const items = [
     item("No", 10, 30),

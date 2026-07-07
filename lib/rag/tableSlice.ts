@@ -60,6 +60,7 @@ export async function getTableSlice(
     sourceDocTitle: table.docTitle,
     pageStart: Number.isFinite(pageStart) ? pageStart : table.pageStart,
     pageEnd,
+    warnings: table.warnings,
     columns,
     rows: selected,
     selectedRowIds: selected.map((r) => r.rowId),
