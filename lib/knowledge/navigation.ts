@@ -10,14 +10,12 @@ export const KNOWLEDGE_NAV_ITEMS: KnowledgeNavItem[] = [
   { href: "/", label: "问答", kind: "primary" },
   { href: "/documents", label: "文档管理", kind: "primary" },
   { href: "/chunks", label: "切分查看", kind: "developer" },
-  { href: "/debug", label: "检索调试", kind: "developer" },
-  { href: "/evaluation", label: "评测", kind: "developer" },
+  { href: "/debug", label: "解释台", kind: "developer" },
+  { href: "/evaluation", label: "质量控制", kind: "developer" },
 ];
 
-export const DEVELOPER_TOOLS_ENABLED = false;
-
 export function canUseDeveloperTools(user: KnowledgeUser): boolean {
-  return DEVELOPER_TOOLS_ENABLED && user.role === "developer";
+  return user.role === "admin" || user.role === "developer";
 }
 
 export function visibleNavItemsForUser(

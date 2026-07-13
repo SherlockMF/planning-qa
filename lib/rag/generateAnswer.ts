@@ -32,6 +32,7 @@ import {
   finalizeConclusionText,
   sanitizeConclusionText,
 } from "./answerFormatting.ts";
+import { buildAnswerDiagnostics } from "./answerDiagnostics.ts";
 import {
   preferCleanStructuredCitations,
   rankStructuredEvidenceForQuestion,
@@ -167,7 +168,7 @@ export async function generateAnswer(
   // 6. 拼装结构化回答 + 引用卡片
   //    依据不再无脑铺满 Top-N：先按内容去重（同句的 clause/requirement 双胞胎），
   //    再按「对结论的支撑度」过滤，只保留真正支撑结论的条文。
-  const selected = selectCitations(context, conclusion, topIsTable);
+  const selected = selectCitations(context, conclusion, topIsTable, q);
   const citations = preferCleanStructuredCitations(
     rankStructuredEvidenceForQuestion(selected.citations, q),
     q
@@ -189,6 +190,12 @@ export async function generateAnswer(
   const unresolvedReflectionFallback = hasReflectionFallback && !recoveredConclusion;
   if (needsSourceReview || unresolvedReflectionFallback) tableSlices = [];
   const answer = buildAnswerText(displayConclusion, citations);
+  const answerDiagnostics = buildAnswerDiagnostics({
+    rawConclusion,
+    sanitizedConclusion: conclusion,
+    displayConclusion,
+    fallbackReasons: finalizedConclusion.reflection.reasons,
+  });
 
   let answerBlocks: AnswerBlock[] | undefined;
   if (tableSlices.length > 0) {
@@ -218,6 +225,7 @@ export async function generateAnswer(
       foundEvidence: true,
       citations,
       answerBlocks,
+      answerDiagnostics,
       confidence: needsSourceReview || unresolvedReflectionFallback
         ? "low"
         : citations.length >= 2 || bestSupport >= 0.55
@@ -281,8 +289,21 @@ function normForDedup(text: string): string {
 function selectCitations(
   context: RetrievedChunk[],
   conclusion: string,
-  topIsTable: boolean
+  topIsTable: boolean,
+  question = ""
 ): { citations: Citation[]; bestSupport: number } {
+  const serviceScaleRows = selectServiceScaleRows(context, question);
+  if (serviceScaleRows.length > 0) {
+    const bestSupport = serviceScaleRows.reduce(
+      (m, r) => Math.max(m, conclusionSupport(conclusion, r.chunk.content)),
+      0
+    );
+    return {
+      citations: serviceScaleRows.slice(0, MAX_CITATIONS).map((r) => toCitation(r)),
+      bestSupport,
+    };
+  }
+
   const kept: RetrievedChunk[] = [];
   const seenTables = new Set<string>();
   for (const r of context) {
@@ -306,7 +327,11 @@ function selectCitations(
     if (!dup) kept.push(r);
   }
 
-  const finalKept = kept.length > 0 ? kept : context.slice(0, 1);
+  const finalKept = includeServiceScaleSiblingCitations(
+    kept.length > 0 ? kept : context.slice(0, 1),
+    context,
+    question
+  );
   const bestSupport = finalKept.reduce(
     (m, r) => Math.max(m, conclusionSupport(conclusion, r.chunk.content)),
     0
@@ -317,24 +342,127 @@ function selectCitations(
   };
 }
 
+function selectServiceScaleRows(
+  context: RetrievedChunk[],
+  question: string
+): RetrievedChunk[] {
+  if (!/服务规模|多少处|几处/.test(question.trim())) return [];
+
+  const rows = context
+    .filter(isCategorizedServiceScaleChunk)
+    .sort((a, b) => {
+      const tableCompare = (a.chunk.tableId ?? "").localeCompare(b.chunk.tableId ?? "");
+      return tableCompare || serviceScaleRowOrder(a) - serviceScaleRowOrder(b);
+    });
+  if (rows.length < 2) return [];
+
+  const first = rows[0];
+  const tableId = first.chunk.tableId ?? first.chunk.sourceTableId;
+  const facility = serviceScaleFacilityKey(first);
+  const seenCategories = new Set<string>();
+  return rows.filter((item) => {
+    const category = item.chunk.fields?.["列4"]?.trim();
+    if (
+      !category ||
+      seenCategories.has(category) ||
+      item.chunk.documentId !== first.chunk.documentId ||
+      (item.chunk.tableId ?? item.chunk.sourceTableId) !== tableId ||
+      serviceScaleFacilityKey(item) !== facility
+    ) {
+      return false;
+    }
+    seenCategories.add(category);
+    return true;
+  });
+}
+
+function includeServiceScaleSiblingCitations(
+  kept: RetrievedChunk[],
+  context: RetrievedChunk[],
+  question: string
+): RetrievedChunk[] {
+  if (!/服务规模|多少处|几处/.test(question.trim())) return kept;
+
+  const out = [...kept];
+  const seen = new Set(out.map((item) => item.chunk.id));
+  for (const anchor of kept) {
+    if (!isCategorizedServiceScaleChunk(anchor)) continue;
+    const tableId = anchor.chunk.tableId ?? anchor.chunk.sourceTableId;
+    const facility = serviceScaleFacilityKey(anchor);
+    if (!tableId || !facility) continue;
+
+    const siblings = context
+      .filter(
+        (item) =>
+          !seen.has(item.chunk.id) &&
+          item.chunk.documentId === anchor.chunk.documentId &&
+          (item.chunk.tableId ?? item.chunk.sourceTableId) === tableId &&
+          serviceScaleFacilityKey(item) === facility &&
+          isCategorizedServiceScaleChunk(item)
+      )
+      .sort((a, b) => serviceScaleRowOrder(a) - serviceScaleRowOrder(b));
+
+    for (const sibling of siblings) {
+      seen.add(sibling.chunk.id);
+      out.push(sibling);
+    }
+  }
+
+  return out.sort((a, b) => serviceScaleRowOrder(a) - serviceScaleRowOrder(b));
+}
+
+function isCategorizedServiceScaleChunk(item: RetrievedChunk): boolean {
+  return Boolean(
+    item.chunk.fields?.["服务规模"] &&
+      /^[ABC]类$/.test(item.chunk.fields?.["列4"]?.trim() ?? "")
+  );
+}
+
+function serviceScaleFacilityKey(item: RetrievedChunk): string {
+  return (
+    item.chunk.fields?.["设施名称"] ??
+    item.chunk.fields?.["指标对象"] ??
+    item.chunk.rowKey ??
+    item.chunk.itemName ??
+    ""
+  ).trim();
+}
+
+function serviceScaleRowOrder(item: RetrievedChunk): number {
+  const category = item.chunk.fields?.["列4"]?.trim();
+  if (category === "A类") return 1;
+  if (category === "B类") return 2;
+  if (category === "C类") return 3;
+  return Number.POSITIVE_INFINITY;
+}
+
 function toCitation(r: RetrievedChunk): Citation {
   const c = r.chunk;
-  const evidenceQuality = classifyEvidenceQuality({
-    chunkType: c.chunkType,
-    text: c.content,
-  });
-  const extractionWarnings = [
-    ...new Set([...(c.extractionWarnings ?? []), ...evidenceQuality.warnings]),
-  ];
-  const evidenceCategories = [
-    ...new Set([...(c.evidenceCategories ?? []), ...evidenceQuality.categories]),
-  ];
-  const excerptDisplayPolicy =
-    c.lowFidelity ||
-    extractionWarnings.length > 0 ||
-    evidenceQuality.displayPolicy === "source_page_required"
-      ? "source_page_required"
-      : "show_extracted_text";
+  const structuredServiceScale = isCategorizedServiceScaleChunk(r);
+  const evidenceQuality: EvidenceQuality = structuredServiceScale
+    ? {
+        warnings: [],
+        categories: [],
+        blocksAnswer: false,
+        displayPolicy: "show_extracted_text",
+      }
+    : classifyEvidenceQuality({
+        chunkType: c.chunkType,
+        text: c.content,
+      });
+  const extractionWarnings = structuredServiceScale
+    ? []
+    : [...new Set([...(c.extractionWarnings ?? []), ...evidenceQuality.warnings])];
+  const evidenceCategories = structuredServiceScale
+    ? []
+    : [...new Set([...(c.evidenceCategories ?? []), ...evidenceQuality.categories])];
+  const excerptDisplayPolicy = structuredServiceScale
+    ? "show_extracted_text"
+    : c.lowFidelity ||
+      extractionWarnings.length > 0 ||
+      evidenceQuality.displayPolicy === "source_page_required"
+        ? "source_page_required"
+        : "show_extracted_text";
   const citationQuality: EvidenceQuality = {
     ...evidenceQuality,
     warnings: extractionWarnings as EvidenceQuality["warnings"],
@@ -350,7 +478,9 @@ function toCitation(r: RetrievedChunk): Citation {
     pageNumber: c.pageNumber,
     chunkType: c.chunkType,
     excerpt: buildCitationExcerpt(c, citationQuality),
-    lowFidelity: c.lowFidelity || evidenceQuality.blocksAnswer,
+    lowFidelity: structuredServiceScale
+      ? false
+      : c.lowFidelity || evidenceQuality.blocksAnswer,
     extractionWarnings,
     evidenceCategories,
     excerptDisplayPolicy,

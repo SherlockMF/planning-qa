@@ -87,6 +87,23 @@ test("structured field selector aggregates service scale rows for the same facil
   assert.ok(recovered.indexOf("办学规模：8") < recovered.indexOf("办学规模：12"));
 });
 
+test("structured field selector does not collapse service-scale answer to a single row", () => {
+  const recovered = recoverConclusionFromStructuredEvidence(
+    [
+      citation([
+        "【结构化指标项】",
+        "指标对象：社区卫生服务中心",
+        "设施名称：社区卫生服务中心",
+        "列4：B类",
+        "服务规模：每个街道1处,5-7万人(含)街道适用",
+      ]),
+    ],
+    "社区卫生服务中心的服务规模是多少？"
+  );
+
+  assert.equal(recovered, null);
+});
+
 test("structured field selector drops low-fidelity citations when clean structured evidence answers the question", () => {
   const clean = citation([
     "【结构化指标项】",
@@ -106,6 +123,49 @@ test("structured field selector drops low-fidelity citations when clean structur
   );
 
   assert.deepEqual(filtered, [clean]);
+});
+
+test("structured field selector does not recover indicator rows for drawing deliverable questions", () => {
+  const recovered = recoverConclusionFromStructuredEvidence(
+    [
+      citation([
+        "【结构化指标项】",
+        "指标对象：说明",
+        "来源表格：表 — 基础教育类设施配置指标表",
+        "设施名称：说明",
+        "详细配置要求：综合考虑出生人口变化趋势各年龄组占居住人口比例。",
+      ]),
+    ],
+    "片区控规优化项目需要提交哪些图纸和说明文件？"
+  );
+
+  assert.equal(recovered, null);
+});
+
+test("structured field selector drops noisy indicator citations for drawing deliverable questions", () => {
+  const cleanDrawing = {
+    chunkType: "deliverable",
+    excerptDisplayPolicy: "show_extracted_text" as const,
+    excerpt:
+      "规划图纸包括现状分析图纸和规划分析图纸，分为必选和可选，也可根据项目区位条件和自身情况增补其他论证图纸。",
+  };
+  const noisyIndicator = {
+    ...citation([
+      "【结构化指标项】",
+      "指标对象：说明",
+      "来源表格：表 — 基础教育类设施配置指标表",
+      "详细配置要求：综合考虑出生人口变化趋势各年龄组占居住人口比例。",
+    ]),
+    lowFidelity: true,
+    excerptDisplayPolicy: "source_page_required" as const,
+  };
+
+  const filtered = preferCleanStructuredCitations(
+    [noisyIndicator, cleanDrawing],
+    "片区控规优化项目需要提交哪些图纸和说明文件？"
+  );
+
+  assert.deepEqual(filtered, [cleanDrawing]);
 });
 
 function citation(lines: string[]) {

@@ -99,16 +99,18 @@ export function canonicalize(header: string): string {
     .toLowerCase();
 }
 
-function buildColumns(headers: string[]): TableColumn[] {
+function buildColumns(headers: string[], headerPaths?: string[][]): TableColumn[] {
   const seen = new Map<string, number>();
   return headers.map((raw, i) => {
     const header = raw.trim() || `列${i + 1}`;
-    // flatten 路径：切分阶段用 "-" 连接多级表头
-    const headerPath = header
-      .replace(/[（(][^）)]*[）)]/g, "")
-      .split("-")
-      .map((s) => s.trim())
-      .filter(Boolean);
+    const explicitPath = headerPaths?.[i]?.map((s) => s.trim()).filter(Boolean);
+    const headerPath = explicitPath?.length
+      ? explicitPath
+      : header
+          .replace(/[（(][^）)]*[）)]/g, "")
+          .split("-")
+          .map((s) => s.trim())
+          .filter(Boolean);
     // 保证 header 唯一（重名补序号，满足「建筑面积/建筑面积」不可重复）
     let uniq = header;
     const n = seen.get(header) ?? 0;
@@ -198,7 +200,8 @@ function applyRowQualityToChunk(
 }
 
 export function shouldSuppressHighConfidenceTableSlice(
-  rows: Pick<TableRow, "lowFidelity" | "extractionWarnings">[],
+  rows: (Pick<TableRow, "lowFidelity" | "extractionWarnings"> &
+    Partial<TableRow>)[],
   tableWarnings: string[] = []
 ): boolean {
   if (
@@ -277,7 +280,10 @@ export function buildRagTablesFromObjects(
     if (!objectRows.length) continue;
 
     const headers = table.headers.map((header) => header.name);
-    const columns = buildColumns(headers.length ? headers : deriveHeadersFromObjects(objectRows));
+    const columns = buildColumns(
+      headers.length ? headers : deriveHeadersFromObjects(objectRows),
+      table.headers.map((header) => header.path)
+    );
     const tableType = tableTypeFromStructured(table.tableType);
     const tableWarnings = new Set(table.warnings ?? []);
     const rows: TableRow[] = objectRows.map((row, index) => {

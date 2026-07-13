@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, SearchCode } from "lucide-react";
+import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
 
 function ScoreBar({ label, value }: { label: string; value: number }) {
   const pct = Math.max(0, Math.min(1, value)) * 100;
@@ -95,6 +96,7 @@ export function RetrievalDebugPanel() {
   const [question, setQuestion] = useState("二类居住用地是什么？");
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState<RetrieveDebugResponse | null>(null);
+  const { currentUser } = useKnowledgeUser();
 
   async function run() {
     if (!question.trim() || loading) return;
@@ -103,7 +105,7 @@ export function RetrievalDebugPanel() {
       const res = await fetch("/api/retrieve-debug", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question, city: "北京" }),
+        body: JSON.stringify({ question, city: "北京", userId: currentUser.id }),
       });
       setData((await res.json()) as RetrieveDebugResponse);
     } finally {
@@ -137,6 +139,42 @@ export function RetrievalDebugPanel() {
 
       {data && (
         <>
+          {data.permissionSummary && (
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm">权限与证据闸门</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge variant="secondary">{data.userLabel}</Badge>
+                  <Badge
+                    variant={
+                      data.permissionSummary.deniedHitCount > 0
+                        ? "warning"
+                        : "success"
+                    }
+                  >
+                    {data.permissionSummary.riskLabel}
+                  </Badge>
+                </div>
+                <p className="text-sm leading-relaxed text-slate-700">
+                  {data.permissionSummary.explanation}
+                </p>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <DebugDocList
+                    title={`可访问命中 ${data.permissionSummary.accessibleHitCount}`}
+                    docs={data.permissionSummary.accessibleDocuments}
+                  />
+                  <DebugDocList
+                    title={`无权命中 ${data.permissionSummary.deniedHitCount}`}
+                    docs={data.permissionSummary.deniedDocuments}
+                    warning
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-sm">提取的关键词</CardTitle>
@@ -161,16 +199,27 @@ export function RetrievalDebugPanel() {
               <TabsTrigger value="merged">
                 合并 Top5（{data.mergedTop.length}）
               </TabsTrigger>
+              <TabsTrigger value="exact">
+                精确检索（{data.exactResults?.length ?? 0}）
+              </TabsTrigger>
               <TabsTrigger value="keyword">
                 关键词检索（{data.keywordResults.length}）
               </TabsTrigger>
               <TabsTrigger value="vector">
                 向量检索（{data.vectorResults.length}）
               </TabsTrigger>
+              <TabsTrigger value="denied">
+                无权命中（{data.deniedTop?.length ?? 0}）
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="merged" className="space-y-3">
               {data.mergedTop.map((r, i) => (
+                <ChunkResultRow key={r.chunk.id} r={r} rank={i + 1} mode="merged" />
+              ))}
+            </TabsContent>
+            <TabsContent value="exact" className="space-y-3">
+              {(data.exactResults ?? []).map((r, i) => (
                 <ChunkResultRow key={r.chunk.id} r={r} rank={i + 1} mode="merged" />
               ))}
             </TabsContent>
@@ -194,8 +243,51 @@ export function RetrievalDebugPanel() {
                 />
               ))}
             </TabsContent>
+            <TabsContent value="denied" className="space-y-3">
+              {(data.deniedTop ?? []).length === 0 ? (
+                <p className="rounded-lg border bg-card p-4 text-sm text-muted-foreground">
+                  当前问题没有命中无权资料。
+                </p>
+              ) : (
+                (data.deniedTop ?? []).map((r, i) => (
+                  <ChunkResultRow
+                    key={r.chunk.id}
+                    r={r}
+                    rank={i + 1}
+                    mode="merged"
+                  />
+                ))
+              )}
+            </TabsContent>
           </Tabs>
         </>
+      )}
+    </div>
+  );
+}
+
+function DebugDocList({
+  title,
+  docs,
+  warning,
+}: {
+  title: string;
+  docs: string[];
+  warning?: boolean;
+}) {
+  return (
+    <div className="rounded-md border bg-muted/30 p-3">
+      <div className="mb-2 text-xs font-medium text-slate-700">{title}</div>
+      {docs.length === 0 ? (
+        <p className="text-xs text-muted-foreground">无</p>
+      ) : (
+        <div className="flex flex-wrap gap-1.5">
+          {docs.map((doc) => (
+            <Badge key={doc} variant={warning ? "warning" : "outline"}>
+              {doc}
+            </Badge>
+          ))}
+        </div>
       )}
     </div>
   );

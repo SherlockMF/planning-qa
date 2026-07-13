@@ -25,7 +25,15 @@ function parseSections(answer: string): { title: string; body: string }[] {
   return sections;
 }
 
-export function AnswerCard({ response }: { response: ChatResponse }) {
+export function AnswerCard({
+  response,
+  selectedCitationId,
+  onSelectCitation,
+}: {
+  response: ChatResponse;
+  selectedCitationId?: string;
+  onSelectCitation?: (index: number) => void;
+}) {
   const sections = parseSections(response.answer);
   const get = (t: string) => sections.find((s) => s.title === t)?.body ?? "";
   // P0：命中表格时优先用结构化 answerBlocks 渲染（真实表格，非 LLM 手写）
@@ -94,6 +102,24 @@ export function AnswerCard({ response }: { response: ChatResponse }) {
               {get("注意")}
             </p>
           </div>
+
+          {response.answerDiagnostics?.wasReplaced && (
+            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
+              <div className="mb-1 text-xs font-semibold text-slate-700">
+                自动提炼草稿（未作为确定结论输出）
+              </div>
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">
+                {response.answerDiagnostics.sanitizedConclusion ||
+                  response.answerDiagnostics.rawConclusion}
+              </p>
+              {response.answerDiagnostics.fallbackReasons.length > 0 && (
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  拦截原因：
+                  {response.answerDiagnostics.fallbackReasons.join("、")}
+                </p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -104,7 +130,13 @@ export function AnswerCard({ response }: { response: ChatResponse }) {
           </div>
           <div className="space-y-3">
             {response.citations.map((c, i) => (
-              <CitationCard key={c.id} citation={c} index={i + 1} />
+              <CitationCard
+                key={c.id}
+                citation={c}
+                index={i + 1}
+                selected={selectedCitationId === c.id}
+                onSelect={() => onSelectCitation?.(i)}
+              />
             ))}
           </div>
         </div>

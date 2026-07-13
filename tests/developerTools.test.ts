@@ -39,7 +39,7 @@ test("默认用户是管理员", () => {
   assert.equal(defaultUser?.role, "admin");
 });
 
-test("开发工具入口暂时对所有角色隐藏", () => {
+test("管理员可打开面试展示页，普通员工仍不显示内部工具", () => {
   const employee = getKnowledgeUser("user-employee-riverfront");
   const admin = getKnowledgeUser("user-admin");
   const developer = getKnowledgeUser("user-developer");
@@ -48,19 +48,19 @@ test("开发工具入口暂时对所有角色隐藏", () => {
   assert.ok(developer);
 
   assert.equal(canUseDeveloperTools(employee!), false);
-  assert.equal(canUseDeveloperTools(admin!), false);
-  assert.equal(canUseDeveloperTools(developer!), false);
+  assert.equal(canUseDeveloperTools(admin!), true);
+  assert.equal(canUseDeveloperTools(developer!), true);
   assert.deepEqual(
     visibleNavItemsForUser(employee!).map((item) => item.href),
     ["/", "/documents"]
   );
   assert.deepEqual(
     visibleNavItemsForUser(admin!).map((item) => item.href),
-    ["/", "/documents"]
+    ["/", "/documents", "/chunks", "/debug", "/evaluation"]
   );
   assert.deepEqual(
     visibleNavItemsForUser(developer!).map((item) => item.href),
-    ["/", "/documents"]
+    ["/", "/documents", "/chunks", "/debug", "/evaluation"]
   );
 });
 

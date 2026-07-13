@@ -1,6 +1,7 @@
 "use client";
 
 import type { EvaluationItem, EvaluationStats } from "@/lib/types";
+import type { QualityMetricsSummary } from "@/lib/evaluation/qualityMetrics";
 import {
   Table,
   TableBody,
@@ -165,6 +166,72 @@ export function EvaluationStatsPanel({ stats }: { stats: EvaluationStats }) {
             {errors.map(([reason, count]) => (
               <Badge key={reason} variant="warning">
                 {reason} × {count}
+              </Badge>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export function QualityMetricsPanel({
+  summary,
+}: {
+  summary: QualityMetricsSummary;
+}) {
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-end justify-between gap-2">
+        <div>
+          <h2 className="text-base font-semibold text-slate-800">
+            AI 产品质量控制
+          </h2>
+          <p className="mt-1 text-xs text-muted-foreground">
+            用题库把检索、引用、拒答、权限隔离和表格数值风险转成可复盘指标。
+          </p>
+        </div>
+        <Badge variant="outline">面试演示视角</Badge>
+      </div>
+
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {summary.cards.map((card) => (
+          <div key={card.id} className="rounded-lg border bg-card p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-medium text-slate-700">
+                  {card.label}
+                </div>
+                <div className="mt-2 text-2xl font-semibold tabular-nums text-primary">
+                  {card.value}
+                </div>
+              </div>
+              {card.rate !== undefined && (
+                <Badge variant={card.rate >= 0.8 ? "success" : "warning"}>
+                  {(card.rate * 100).toFixed(0)}%
+                </Badge>
+              )}
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-muted-foreground">
+              {card.description}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-lg border bg-card p-4">
+        <div className="mb-2 text-sm font-medium text-slate-700">
+          主要失败原因
+        </div>
+        {summary.topErrors.length === 0 ? (
+          <p className="text-xs text-muted-foreground">
+            暂无失败原因。运行评测后，这里会沉淀最值得优先改进的 AI 质量问题。
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-2">
+            {summary.topErrors.map((item) => (
+              <Badge key={item.reason} variant="warning">
+                {item.reason} × {item.count}
               </Badge>
             ))}
           </div>

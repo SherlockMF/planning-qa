@@ -19,14 +19,14 @@ export function DeveloperOnly({ children }: { children: ReactNode }) {
         </div>
         <div>
           <h2 className="text-base font-semibold text-slate-800">
-            功能暂时关闭
+            当前账号不可访问
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            检索调试、切分查看、评测等开发人员功能已临时隐藏。
+            切分查看、可信 AI 解释台和质量控制中心仅对管理员开放。
           </p>
         </div>
         <div>
-          <Badge variant="warning">暂未开放</Badge>
+          <Badge variant="warning">需要管理员权限</Badge>
         </div>
       </CardContent>
     </Card>

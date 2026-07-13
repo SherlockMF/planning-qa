@@ -16,15 +16,26 @@ const HEADER_KEYWORDS: Array<[RegExp, string]> = [
   [/阶段/, "stage"],
 ];
 
-export function flattenHeaders(headers: string[]): TableHeader[] {
+export function flattenHeaders(
+  headers: string[],
+  headerPaths?: string[][]
+): TableHeader[] {
   const seen = new Map<string, number>();
   return headers.map((raw, index) => {
     const cleaned = (raw || `列${index + 1}`).replace(/\s+/g, " ").trim();
-    const path = cleaned
-      .split(/[—–-]+/)
-      .map((part) => part.trim())
+    const explicitPath = headerPaths?.[index]
+      ?.map((part) => part.trim())
       .filter(Boolean);
-    const name = (path.length ? path : [cleaned]).join(".");
+    const path = explicitPath?.length
+      ? explicitPath
+      : cleaned
+          .split(/[—–-]+/)
+          .map((part) => part.trim())
+          .filter(Boolean);
+    const pathDisplay = path.join("-");
+    const name = explicitPath?.length && cleaned && cleaned !== pathDisplay
+      ? cleaned
+      : (path.length ? path : [cleaned]).join(".");
     const unit = extractHeaderUnit(cleaned);
     const baseKey = machineKey(name, index);
     const n = seen.get(baseKey) ?? 0;

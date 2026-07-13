@@ -21,17 +21,17 @@ export function detectContinuation(
     !!previous.model.title &&
     stripContinuation(current.model.title) === stripContinuation(previous.model.title);
   const similarHeaders = headerSimilarity(previous.model.headers, current.model.headers);
-  const columnClose =
-    Math.abs(previous.model.headers.length - current.model.headers.length) <= 1;
+  const sameColumnCount =
+    previous.model.headers.length === current.model.headers.length;
   const missingCompleteTitle = !current.model.title || continuationTitle;
 
   if (!adjacentPage) warnings.push("non_adjacent_page");
-  if (!columnClose) warnings.push("column_count_changed");
+  if (!sameColumnCount) warnings.push("column_count_changed");
   if (similarHeaders < 0.75) warnings.push("low_header_similarity");
 
   const isContinuation =
     adjacentPage &&
-    columnClose &&
+    sameColumnCount &&
     (continuationTitle || sameTitle || (missingCompleteTitle && similarHeaders >= 0.75));
 
   return { isContinuation, similarity: similarHeaders, warnings };

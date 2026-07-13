@@ -5,10 +5,10 @@ export default function HomePage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-slate-800 md:text-2xl">
-          城市规划与建筑设计院企业知识库
+          DesignBase AI 项目组知识工作台
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          支持企业通用知识、行业标准与项目资料的可溯源问答；项目资料会按模拟账号权限过滤。
+          面向规划/建筑设计院项目组的可信 RAG 问答：查项目资料、规范表格和成果要求，同时前置权限过滤、引用追溯和依据不足拒答。
         </p>
       </div>
       <ChatPanel />

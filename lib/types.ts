@@ -87,6 +87,8 @@ export interface TableModel {
   title?: string;
   /** 表头（多行表头已合并为单层列名） */
   headers: string[];
+  /** 原始多级表头路径（与 headers 同序），用于保留 colspan/多行表头语义。 */
+  headerPaths?: string[][];
   /** 数据行（不含表头） */
   rows: string[][];
   /** GFM markdown 表示 */
@@ -470,16 +472,34 @@ export interface ChatResponse {
    * 为空/缺省时前端回退到 answer 字符串渲染（向后兼容）。
    */
   answerBlocks?: AnswerBlock[];
+  answerDiagnostics?: {
+    rawConclusion: string;
+    sanitizedConclusion: string;
+    displayConclusion: string;
+    fallbackReasons: string[];
+    wasReplaced: boolean;
+  };
 }
 
 /** /api/retrieve-debug 响应 */
 export interface RetrieveDebugResponse {
   question: string;
   extractedKeywords: string[];
+  userLabel?: string;
+  permissionSummary?: {
+    accessibleHitCount: number;
+    deniedHitCount: number;
+    accessibleDocuments: string[];
+    deniedDocuments: string[];
+    riskLabel: string;
+    explanation: string;
+  };
+  exactResults?: RetrievedChunk[];
   keywordResults: RetrievedChunk[];
   vectorResults: RetrievedChunk[];
   /** 合并 + 重排序后的 Top5 */
   mergedTop: RetrievedChunk[];
+  deniedTop?: RetrievedChunk[];
 }
 
 /** 评测题目与结果 */

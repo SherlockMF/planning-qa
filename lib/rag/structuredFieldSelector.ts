@@ -12,6 +12,7 @@ export function recoverConclusionFromStructuredEvidence(
 ): string | null {
   const aggregatedServiceScale = aggregateServiceScaleConclusion(citations, question);
   if (aggregatedServiceScale) return aggregatedServiceScale;
+  if (isSingleCategorizedServiceScaleRow(citations, question)) return null;
 
   const candidates: Array<{ lines: string[]; score: number }> = [];
 
@@ -26,7 +27,10 @@ export function recoverConclusionFromStructuredEvidence(
   }
 
   candidates.sort((a, b) => b.score - a.score);
-  return candidates[0] ? joinAsConclusion(candidates[0].lines) : null;
+  const best = candidates[0];
+  return best && (!question.trim() || best.score > 0)
+    ? joinAsConclusion(best.lines)
+    : null;
 }
 
 function aggregateServiceScaleConclusion(
@@ -62,6 +66,20 @@ function aggregateServiceScaleConclusion(
   return joinAsConclusion([...firstMeta, ...uniqueRows]);
 }
 
+function isSingleCategorizedServiceScaleRow(
+  citations: StructuredEvidenceSignal[],
+  question: string
+): boolean {
+  if (!/服务规模|多少处|几处/.test(question.trim())) return false;
+  const rows = citations
+    .map(extractUsefulStructuredLines)
+    .filter((lines) => lines.some((line) => /^服务规模：/.test(line)));
+  return (
+    rows.length === 1 &&
+    rows[0].some((line) => /^列\d+：[ABC]类$/.test(line))
+  );
+}
+
 function numericSortValue(text: string | undefined): number {
   const match = text?.match(/\d+(?:\.\d+)?/);
   return match ? Number(match[0]) : Number.POSITIVE_INFINITY;
@@ -82,18 +100,20 @@ export function preferCleanStructuredCitations<T extends StructuredEvidenceSigna
   citations: T[],
   question: string
 ): T[] {
+  if (isDrawingDeliverableQuestion(question)) {
+    const cleanDeliverables = citations.filter(
+      (citation) => isCleanCitation(citation) && citation.chunkType === "deliverable"
+    );
+    if (cleanDeliverables.length > 0) return cleanDeliverables;
+  }
+
   const hasCleanStructuredAnswer = citations.some((citation) => {
     const lines = extractUsefulStructuredLines(citation);
     return lines.length >= 2 && structuredEvidenceQuestionScore(lines, question) > 0;
   });
   if (!hasCleanStructuredAnswer) return citations;
 
-  const filtered = citations.filter(
-    (citation) =>
-      !citation.lowFidelity &&
-      citation.excerptDisplayPolicy !== "source_page_required" &&
-      (citation.extractionWarnings?.length ?? 0) === 0
-  );
+  const filtered = citations.filter(isCleanCitation);
   if (filtered.length === 0) return citations;
   if (!/服务规模|多少处|几处/.test(question.trim())) return filtered;
   return [...filtered].sort(
@@ -107,6 +127,20 @@ function citationServiceScaleSortValue(citation: StructuredEvidenceSignal): numb
     /办学规模|一般规模|规模性指标/.test(line)
   );
   return numericSortValue(discriminator);
+}
+
+function isCleanCitation(citation: StructuredEvidenceSignal): boolean {
+  return (
+    !citation.lowFidelity &&
+    citation.excerptDisplayPolicy !== "source_page_required" &&
+    (citation.extractionWarnings?.length ?? 0) === 0
+  );
+}
+
+function isDrawingDeliverableQuestion(question: string): boolean {
+  return /图纸|图则|成果|提交|说明文件|说明书|附件|数据库|材料/.test(
+    question.trim()
+  );
 }
 
 function joinAsConclusion(lines: string[]): string {

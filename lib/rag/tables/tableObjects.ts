@@ -21,7 +21,7 @@ export function buildStructuredTableObjects(
   sectionTree?: SectionTree
 ): StructuredTableObject[] {
   return mergeContinuationTables(blocks, sectionTree).map((merged, tableIndex) => {
-    const headers = flattenHeaders(merged.model.headers);
+    const headers = flattenHeaders(merged.model.headers, merged.model.headerPaths);
     const classification = classifyTable({
       title: merged.model.title,
       headers: merged.model.headers,

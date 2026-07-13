@@ -243,6 +243,7 @@ export function tablesToBlocks(raw: RawTable[]): Block[] {
       tableId: g.model.tableId,
       title: g.model.title,
       headers: g.model.headers,
+      headerPaths: g.model.headerPaths,
       rows: g.dataRows,
       markdown: buildMarkdown(g.model.headers, g.dataRows),
     };

@@ -30,7 +30,11 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { EvaluationStatsPanel } from "@/components/EvaluationTable";
+import {
+  EvaluationStatsPanel,
+  QualityMetricsPanel,
+} from "@/components/EvaluationTable";
+import { computeQualityMetrics } from "@/lib/evaluation/qualityMetrics";
 import {
   Play,
   Loader2,
@@ -103,6 +107,7 @@ export function EvaluationManager() {
   const [exporting, setExporting] = useState(false);
 
   const stats = useMemo(() => computeStatsLocal(items), [items]);
+  const qualitySummary = useMemo(() => computeQualityMetrics(items), [items]);
 
   const allSelected = items.length > 0 && selected.size === items.length;
 
@@ -276,6 +281,7 @@ export function EvaluationManager() {
 
   return (
     <div className="space-y-5">
+      <QualityMetricsPanel summary={qualitySummary} />
       <EvaluationStatsPanel stats={stats} />
 
       <div className="flex flex-wrap items-center gap-2">

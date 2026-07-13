@@ -52,18 +52,62 @@ function detectHeaderRowCount(rows: string[][]): number {
   return Math.max(1, count);
 }
 
-/** 合并多行表头：逐列收集非空片段，用 "-" 连接。 */
+function hasLowerHeaderText(
+  headerRows: Array<Array<string | null>>,
+  rowIndex: number,
+  colIndex: number
+): boolean {
+  for (let r = rowIndex + 1; r < headerRows.length; r++) {
+    if ((headerRows[r][colIndex] ?? "").trim()) return true;
+  }
+  return false;
+}
+
+function propagateColspanParents(
+  headerRows: Array<Array<string | null>>
+): string[][] {
+  return headerRows.map((row, rowIndex) => {
+    let parent = "";
+    return row.map((cell, colIndex) => {
+      const value = (cell ?? "").trim();
+      if (value) {
+        parent = value;
+        return value;
+      }
+      if (parent && hasLowerHeaderText(headerRows, rowIndex, colIndex)) {
+        return parent;
+      }
+      return "";
+    });
+  });
+}
+
+/** 合并多行表头：先传播 colspan 父表头，再逐列收集非空片段，用 "-" 连接。 */
 function mergeHeaderRows(headerRows: string[][], cols: number): string[] {
-  const headers: string[] = [];
+  return buildHeaderPaths(headerRows, cols).map(displayHeaderFromPath);
+}
+
+function buildHeaderPaths(headerRows: string[][], cols: number): string[][] {
+  const propagated = propagateColspanParents(headerRows);
+  const paths: string[][] = [];
   for (let c = 0; c < cols; c++) {
     const parts: string[] = [];
-    for (const r of headerRows) {
+    for (const r of propagated) {
       const cell = (r[c] ?? "").trim();
       if (cell && !parts.includes(cell)) parts.push(cell);
     }
-    headers.push(parts.join("-"));
+    paths.push(parts);
   }
-  return headers;
+  return paths;
+}
+
+const STANDALONE_LEAF_HEADER = /^(服务规模)$/;
+
+function displayHeaderFromPath(path: string[]): string {
+  if (path.length > 1 && STANDALONE_LEAF_HEADER.test(path[path.length - 1])) {
+    return path[path.length - 1];
+  }
+  return path.join("-");
 }
 
 function padHeaders(headers: string[], cols: number): string[] {
@@ -107,17 +151,23 @@ export function buildTableModel(
   });
 
   let headers: string[];
+  let headerPaths: string[][] | undefined;
   let dataRows: string[][];
 
   if (opts.inheritHeaders && opts.inheritHeaders.length) {
     headers = padHeaders(opts.inheritHeaders, maxCols);
+    headerPaths = headers.map((header) =>
+      header.split("-").map((part) => part.trim()).filter(Boolean)
+    );
     dataRows = rows;
   } else if (rows.length === 0) {
     headers = [];
+    headerPaths = [];
     dataRows = [];
   } else {
     const hrCount = detectHeaderRowCount(rows);
     headers = mergeHeaderRows(rows.slice(0, hrCount), maxCols);
+    headerPaths = buildHeaderPaths(rows.slice(0, hrCount), maxCols);
     dataRows = rows.slice(hrCount);
   }
 
@@ -127,6 +177,7 @@ export function buildTableModel(
     tableId: opts.tableId,
     title: opts.title,
     headers,
+    headerPaths,
     rows: dataRows,
     markdown: toMarkdown(headers, dataRows),
   };
@@ -157,9 +208,13 @@ export function buildTableModelFromMatrix(
   });
 
   let headers: string[];
+  let headerPaths: string[][] | undefined;
   let dataStart: number;
   if (opts.inheritHeaders && opts.inheritHeaders.length) {
     headers = padHeaders(opts.inheritHeaders, maxCols);
+    headerPaths = headers.map((header) =>
+      header.split("-").map((part) => part.trim()).filter(Boolean)
+    );
     dataStart = 0;
   } else if (rows.length === 0) {
     return { tableId: opts.tableId, title: opts.title, headers: [], rows: [], markdown: "" };
@@ -167,6 +222,7 @@ export function buildTableModelFromMatrix(
     const norm = rows.map((r) => r.map(normCell));
     const hrCount = detectHeaderRowCount(norm);
     headers = mergeHeaderRows(norm.slice(0, hrCount), maxCols);
+    headerPaths = buildHeaderPaths(norm.slice(0, hrCount), maxCols);
     dataStart = hrCount;
   }
 
@@ -193,6 +249,7 @@ export function buildTableModelFromMatrix(
     tableId: opts.tableId,
     title: opts.title,
     headers,
+    headerPaths,
     rows: dataRows,
     markdown: toMarkdown(headers, dataRows),
   };

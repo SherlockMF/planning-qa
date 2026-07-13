@@ -10,6 +10,7 @@ import { BM25Index, tokenize } from "./bm25";
 import { expandHit } from "./expand";
 import { exactSearchChunks } from "./retrieval/exactIndex.ts";
 import { analyzeQuery, topKForQuerySignals } from "./retrieval/searchSignals.ts";
+import { expandServiceScaleSiblingRows } from "./retrieval/serviceScaleSiblings.ts";
 
 const MAX_CONTEXT_CHARS = 12000;
 
@@ -158,8 +159,13 @@ export async function retrieve(
   // 命中扩展：table_row/code 补表头+表名；clause 补父标题/章节路径。
   // 在 chunk 全集上查父块（table_full / 同序列），浅拷贝注入 content。
   const byId = new Map(chunks.map((c) => [c.id, c]));
+  const topSeed = expandServiceScaleSiblingRows(
+    reranked.slice(0, topK),
+    chunks,
+    question
+  );
   const topExpanded = limitContextBudget(
-    reranked.slice(0, topK).map((r) => expandHit(r, byId)),
+    topSeed.map((r) => expandHit(r, byId)),
     MAX_CONTEXT_CHARS
   );
 
