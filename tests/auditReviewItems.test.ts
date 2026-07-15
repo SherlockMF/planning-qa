@@ -61,7 +61,6 @@ test("projects source ids without persisting embeddings", () => {
     sectionPathText: "",
     sourcePageStart: 2,
     sourceBlockIds: ["block-0"],
-    sourceTableId: "tbl-1",
     sourceRowIndex: 0,
     confidence: 0.94,
     warnings: [],
@@ -122,7 +121,49 @@ test("projects source ids without persisting embeddings", () => {
   assert.equal(row?.tableMarkdown, undefined);
   assert.equal(table?.tableMarkdown, ragTable.markdownFull);
   assert.equal(row?.sourceExcerpt, "高度 24m");
+  assert.doesNotMatch(JSON.stringify(items), /"embedding"/);
   assert.doesNotMatch(JSON.stringify(items), /0\.1/);
+});
+
+test("omits blank source blocks from source excerpts", () => {
+  const object = {
+    id: "plain-object",
+    docId: "doc-audit",
+    objectType: "plain_section",
+    title: "有效段落",
+    content: "有效原文",
+    sectionPath: [],
+    sectionPathText: "",
+    sourceBlockIds: ["block-0", "block-1"],
+    confidence: 0.95,
+    warnings: [],
+  } satisfies KnowledgeObject;
+  const blocks: Block[] = [
+    {
+      type: "paragraph",
+      pageStart: 1,
+      pageEnd: 1,
+      rawText: "   ",
+      normalizedText: "   ",
+    },
+    {
+      type: "paragraph",
+      pageStart: 1,
+      pageEnd: 1,
+      rawText: "有效来源文本",
+      normalizedText: "有效来源文本",
+    },
+  ];
+
+  const [item] = buildAuditReviewItems({
+    blocks,
+    knowledgeObjects: [object],
+    chunks: [],
+    ragTables: [],
+    warnings: [],
+  });
+
+  assert.equal(item.sourceExcerpt, "有效来源文本");
 });
 
 test("selects risks first and remains stable", () => {
@@ -171,4 +212,14 @@ test("records a coverage warning when table minimums exceed the cap", () => {
   assert.deepEqual(result.selectionWarnings, [
     "review_table_coverage_truncated",
   ]);
+});
+
+test("rejects duplicate audit item ids before selecting focus items", () => {
+  const duplicateId = "plain_section:duplicate";
+  const items = Array.from({ length: 3 }, () => auditItem(duplicateId));
+
+  assert.throws(
+    () => selectFocusReviewItems(items, "doc-audit:artifact-a", 1),
+    new RegExp(`duplicate auditItemId.*${duplicateId}`)
+  );
 });

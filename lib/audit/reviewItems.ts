@@ -43,7 +43,10 @@ export function buildAuditReviewItems(
     const sourceBlockIds = [...(object.sourceBlockIds ?? [])];
     const sourceExcerpt = sourceBlockIds
       .map((blockId) => blockById.get(blockId)?.normalizedText)
-      .filter((text): text is string => text !== undefined)
+      .filter(
+        (text): text is string =>
+          text !== undefined && text.trim().length > 0
+      )
       .join("\n\n");
     const linkedTableObjectId = tableObjectIdOf(object);
     const ragTableId =
@@ -87,6 +90,14 @@ export function selectFocusReviewItems(
   seed: string,
   limit = DEFAULT_FOCUS_LIMIT
 ): FocusSelectionResult {
+  const auditItemIds = new Set<string>();
+  for (const item of items) {
+    if (auditItemIds.has(item.auditItemId)) {
+      throw new Error(`duplicate auditItemId: ${item.auditItemId}`);
+    }
+    auditItemIds.add(item.auditItemId);
+  }
+
   const cap = Math.max(0, limit);
   const selectedReasons = new Map<string, string>();
   const canSelect = () => selectedReasons.size < cap;
