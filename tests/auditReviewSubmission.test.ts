@@ -24,6 +24,32 @@ const pending: ReviewResult = {
   items: [],
 };
 
+const validDraftBody = {
+  action: "save_draft",
+  items: [
+    {
+      auditItemId: "obj:a",
+      status: "passed",
+      issueTypes: [],
+      comment: "",
+    },
+  ],
+};
+
+function assertSubmissionError(
+  run: () => unknown,
+  message: string,
+  status: 400 | 409
+) {
+  assert.throws(
+    run,
+    (error) =>
+      error instanceof ReviewSubmissionError &&
+      error.status === status &&
+      error.message === message
+  );
+}
+
 test("saves a valid draft and assigns its reviewer", () => {
   const result = applyReviewSubmission({
     manifest,
@@ -133,5 +159,255 @@ test("locks a draft to one reviewer and never overwrites final results", () => {
         body: { action: "save_draft", items: [] },
       }),
     /审核结果已提交/
+  );
+});
+
+test("rejects an empty or whitespace-only reviewer id", () => {
+  for (const reviewerUserId of ["", "   "]) {
+    assertSubmissionError(
+      () =>
+        applyReviewSubmission({
+          manifest,
+          current: pending,
+          reviewerUserId,
+          now: "2026-07-15T01:00:00.000Z",
+          body: validDraftBody,
+        }),
+      "审核用户无效",
+      400
+    );
+  }
+});
+
+test("normalizes the reviewer id before ownership checks and persistence", () => {
+  const owned = {
+    ...pending,
+    status: "draft",
+    reviewerUserId: "user-admin",
+  } as ReviewResult;
+
+  const result = applyReviewSubmission({
+    manifest,
+    current: owned,
+    reviewerUserId: "  user-admin  ",
+    now: "2026-07-15T01:00:00.000Z",
+    body: validDraftBody,
+  });
+
+  assert.equal(result.reviewerUserId, "user-admin");
+});
+
+test("rejects empty, invalid, or noncanonical review timestamps", () => {
+  for (const now of ["", "not-a-date", "2026-07-15T01:00:00Z"]) {
+    assertSubmissionError(
+      () =>
+        applyReviewSubmission({
+          manifest,
+          current: pending,
+          reviewerUserId: "user-admin",
+          now,
+          body: validDraftBody,
+        }),
+      "审核时间无效",
+      400
+    );
+  }
+});
+
+test("fails closed for unsupported stored review versions", () => {
+  assertSubmissionError(
+    () =>
+      applyReviewSubmission({
+        manifest,
+        current: { ...pending, schemaVersion: 2 } as unknown as ReviewResult,
+        reviewerUserId: "",
+        now: "",
+        body: validDraftBody,
+      }),
+    "审核结果版本无效",
+    409
+  );
+});
+
+test("fails closed for unknown stored review statuses", () => {
+  assertSubmissionError(
+    () =>
+      applyReviewSubmission({
+        manifest,
+        current: { ...pending, status: "unknown" } as unknown as ReviewResult,
+        reviewerUserId: "user-admin",
+        now: "2026-07-15T01:00:00.000Z",
+        body: validDraftBody,
+      }),
+    "审核结果状态无效",
+    409
+  );
+});
+
+test("treats terminal statuses as submitted even without finalizedAt", () => {
+  for (const status of ["passed", "issues_found"] as const) {
+    assertSubmissionError(
+      () =>
+        applyReviewSubmission({
+          manifest,
+          current: { ...pending, status },
+          reviewerUserId: "user-admin",
+          now: "2026-07-15T01:00:00.000Z",
+          body: validDraftBody,
+        }),
+      "审核结果已提交",
+      409
+    );
+  }
+});
+
+test("treats any finalizedAt field as submitted", () => {
+  assertSubmissionError(
+    () =>
+      applyReviewSubmission({
+        manifest,
+        current: { ...pending, status: "draft", finalizedAt: "" },
+        reviewerUserId: "user-admin",
+        now: "2026-07-15T01:00:00.000Z",
+        body: validDraftBody,
+      }),
+    "审核结果已提交",
+    409
+  );
+});
+
+test("rejects duplicate issue types", () => {
+  assertSubmissionError(
+    () =>
+      applyReviewSubmission({
+        manifest,
+        current: pending,
+        reviewerUserId: "user-admin",
+        now: "2026-07-15T01:00:00.000Z",
+        body: {
+          action: "save_draft",
+          items: [
+            {
+              auditItemId: "obj:a",
+              status: "issue",
+              issueTypes: ["ocr_error", "ocr_error"],
+              comment: "OCR 重复文本",
+            },
+          ],
+        },
+      }),
+    "问题类型重复",
+    400
+  );
+});
+
+test("finalizes all-passed focus items and strips passed-only details", () => {
+  const now = "2026-07-15T01:00:00.000Z";
+  const result = applyReviewSubmission({
+    manifest,
+    current: pending,
+    reviewerUserId: " user-admin ",
+    now,
+    body: {
+      action: "finalize",
+      items: [
+        {
+          auditItemId: "obj:a",
+          status: "passed",
+          issueTypes: ["ocr_error"],
+          comment: "should be removed",
+        },
+        {
+          auditItemId: "obj:b",
+          status: "passed",
+          issueTypes: [],
+          comment: "",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.status, "passed");
+  assert.equal(result.finalizedAt, now);
+  assert.equal(result.reviewerUserId, "user-admin");
+  assert.deepEqual(result.items[0]?.issueTypes, []);
+  assert.equal(result.items[0]?.comment, "");
+});
+
+test("finalizes reviewed focus items with issues_found when an issue exists", () => {
+  const now = "2026-07-15T01:00:00.000Z";
+  const result = applyReviewSubmission({
+    manifest,
+    current: pending,
+    reviewerUserId: "user-admin",
+    now,
+    body: {
+      action: "finalize",
+      items: [
+        {
+          auditItemId: "obj:a",
+          status: "issue",
+          issueTypes: ["source_location_error"],
+          comment: "定位错误",
+        },
+        {
+          auditItemId: "obj:b",
+          status: "passed",
+          issueTypes: [],
+          comment: "",
+        },
+      ],
+    },
+  });
+
+  assert.equal(result.status, "issues_found");
+  assert.equal(result.finalizedAt, now);
+});
+
+test("rejects unknown and duplicate audit item ids", () => {
+  for (const items of [
+    [{ auditItemId: "obj:unknown", status: "passed" }],
+    [
+      { auditItemId: "obj:a", status: "passed" },
+      { auditItemId: "obj:a", status: "passed" },
+    ],
+  ]) {
+    assertSubmissionError(
+      () =>
+        applyReviewSubmission({
+          manifest,
+          current: pending,
+          reviewerUserId: "user-admin",
+          now: "2026-07-15T01:00:00.000Z",
+          body: { action: "save_draft", items },
+        }),
+      "审核项不存在或重复",
+      400
+    );
+  }
+});
+
+test("rejects comments longer than 2000 characters", () => {
+  assertSubmissionError(
+    () =>
+      applyReviewSubmission({
+        manifest,
+        current: pending,
+        reviewerUserId: "user-admin",
+        now: "2026-07-15T01:00:00.000Z",
+        body: {
+          action: "save_draft",
+          items: [
+            {
+              auditItemId: "obj:a",
+              status: "issue",
+              issueTypes: ["other"],
+              comment: "x".repeat(2001),
+            },
+          ],
+        },
+      }),
+    "备注不能超过 2000 字",
+    400
   );
 });

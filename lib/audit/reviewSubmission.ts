@@ -58,6 +58,9 @@ function parseItems(
     ) {
       throw new ReviewSubmissionError("问题类型无效", 400);
     }
+    if (new Set(rawTypes).size !== rawTypes.length) {
+      throw new ReviewSubmissionError("问题类型重复", 400);
+    }
 
     const comment =
       typeof item.comment === "string" ? item.comment.trim() : "";
@@ -88,12 +91,42 @@ export function applyReviewSubmission(input: {
   now: string;
   body: unknown;
 }): ReviewResult {
-  if (input.current.finalizedAt) {
-    throw new ReviewSubmissionError("审核结果已提交", 409);
+  if (input.current.schemaVersion !== 1) {
+    throw new ReviewSubmissionError("审核结果版本无效", 409);
   }
   if (
-    input.current.reviewerUserId &&
-    input.current.reviewerUserId !== input.reviewerUserId
+    input.current.status !== "pending" &&
+    input.current.status !== "draft" &&
+    input.current.status !== "passed" &&
+    input.current.status !== "issues_found"
+  ) {
+    throw new ReviewSubmissionError("审核结果状态无效", 409);
+  }
+  if (
+    input.current.status === "passed" ||
+    input.current.status === "issues_found" ||
+    input.current.finalizedAt !== undefined
+  ) {
+    throw new ReviewSubmissionError("审核结果已提交", 409);
+  }
+
+  const reviewerUserId = input.reviewerUserId.trim();
+  if (!reviewerUserId) {
+    throw new ReviewSubmissionError("审核用户无效", 400);
+  }
+  const reviewTime = new Date(input.now);
+  if (
+    !input.now ||
+    Number.isNaN(reviewTime.getTime()) ||
+    reviewTime.toISOString() !== input.now
+  ) {
+    throw new ReviewSubmissionError("审核时间无效", 400);
+  }
+
+  const currentReviewerUserId = input.current.reviewerUserId?.trim();
+  if (
+    currentReviewerUserId &&
+    currentReviewerUserId !== reviewerUserId
   ) {
     throw new ReviewSubmissionError("审核草稿已由其他用户领取", 409);
   }
@@ -119,7 +152,7 @@ export function applyReviewSubmission(input: {
   return {
     schemaVersion: 1,
     artifactId: input.manifest.artifactId,
-    reviewerUserId: input.reviewerUserId,
+    reviewerUserId,
     status:
       body.action === "save_draft"
         ? "draft"
