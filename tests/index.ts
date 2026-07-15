@@ -32,3 +32,4 @@ import "./auditReviewItems.test.ts";
 import "./auditRiskSignals.test.ts";
 import "./auditAutoReviewProvider.test.ts";
 import "./auditAutoReviewRun.test.ts";
+import "./auditAutoReviewEval.test.ts";

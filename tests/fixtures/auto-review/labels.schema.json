@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.local/schemas/auto-review-labels-v1.json",
+  "title": "Automatic review evaluation labels",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["datasetVersion", "documents", "items"],
+  "properties": {
+    "datasetVersion": { "type": "string", "minLength": 1 },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["documentId", "fileName"],
+        "properties": {
+          "documentId": { "type": "string", "minLength": 1 },
+          "fileName": { "type": "string", "minLength": 1 }
+        }
+      }
+    },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "auditItemId",
+          "documentId",
+          "sourceImagePath",
+          "parsedItem",
+          "trueStatus",
+          "severity",
+          "issueTypes",
+          "correctSourceLocation"
+        ],
+        "properties": {
+          "auditItemId": { "type": "string", "minLength": 1 },
+          "documentId": { "type": "string", "minLength": 1 },
+          "sourceImagePath": { "type": "string", "minLength": 1 },
+          "parsedItem": { "type": "object" },
+          "trueStatus": { "enum": ["clean", "issue"] },
+          "severity": { "enum": ["severe", "non_severe", "none"] },
+          "issueTypes": {
+            "type": "array",
+            "uniqueItems": true,
+            "items": {
+              "enum": [
+                "reading_order_noise",
+                "row_boundary_contamination",
+                "column_misalignment",
+                "merged_cell_scope_error",
+                "missing_content",
+                "source_mapping_error",
+                "semantic_assignment_error",
+                "other"
+              ]
+            }
+          },
+          "correctSourceLocation": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "pageStart": { "type": "integer", "minimum": 1 },
+              "pageEnd": { "type": "integer", "minimum": 1 },
+              "tableId": { "type": "string" },
+              "rowIndex": { "type": "integer", "minimum": 0 }
+            },
+            "minProperties": 1
+          },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}
