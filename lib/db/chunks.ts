@@ -2,17 +2,24 @@
 // Chunk 数据访问层
 // ============================================================================
 
-import type { Block, Chunk, Document, KnowledgeRoleId } from "@/lib/types";
+import type {
+  Block,
+  Chunk,
+  Document,
+  KnowledgeRoleId,
+  RagTable,
+} from "@/lib/types";
 import { cityMatches } from "../city.ts";
 import { ensureSeeded, getStore } from "./store";
 import { getEmbeddingProvider } from "@/lib/ai/embedding";
 import {
   buildChunksWithObjects,
+  type BuildChunksResult,
   type DraftChunk,
 } from "@/lib/rag/chunk";
 import { buildRagTablesFromChunks, buildRagTablesFromObjects } from "@/lib/rag/ragTable";
-import { replaceRagTablesForDoc } from "./ragTables";
-import { saveChunks } from "./persist";
+import { replaceRagTablesForDocStrict } from "./ragTables";
+import { saveChunksStrict } from "./persist";
 import { writeAllTableDebug, tableDebugEnabled } from "@/lib/debug/tableDebug";
 import { writeRagPipelineDebug } from "@/lib/rag/debug";
 import { splitChunksByUserAccess } from "@/lib/knowledge/permissions";
@@ -48,6 +55,28 @@ export async function listChunksByDocument(
 ): Promise<Chunk[]> {
   await ensureSeeded();
   return getStore().chunks.filter((c) => c.documentId === documentId);
+}
+
+export function buildProcessDocumentResult(
+  buildResult: BuildChunksResult,
+  chunks: Chunk[],
+  ragTables: RagTable[]
+): ProcessDocumentResult {
+  return {
+    chunkCount: chunks.length,
+    auditSnapshot: {
+      blocks: buildResult.cleanedBlocks,
+      knowledgeObjects: buildResult.knowledgeObjects,
+      chunks,
+      ragTables,
+      warnings: [
+        ...buildResult.warnings,
+        ...(buildResult.fallbackUsed
+          ? ["fallback_to_legacy_chunkBlocks"]
+          : []),
+      ],
+    },
+  };
 }
 
 /**
@@ -109,8 +138,8 @@ export async function processDocument(
   }
 
   store.chunks.push(...chunks);
-  saveChunks(store.chunks);
-  replaceRagTablesForDoc(doc.id, ragTables);
+  saveChunksStrict(store.chunks);
+  replaceRagTablesForDocStrict(doc.id, ragTables);
 
   // 调试输出：每张表 json/html/txt，供人工定位错列漏行（DEBUG_TABLES=0 关闭）
   if (tableDebugEnabled() && ragTables.length) {
@@ -138,19 +167,5 @@ export async function processDocument(
   } catch (e) {
     console.error("[processDocument] rag debug write failed:", e);
   }
-  return {
-    chunkCount: chunks.length,
-    auditSnapshot: {
-      blocks: buildResult.blocks,
-      knowledgeObjects: buildResult.knowledgeObjects,
-      chunks,
-      ragTables,
-      warnings: [
-        ...buildResult.warnings,
-        ...(buildResult.fallbackUsed
-          ? ["fallback_to_legacy_chunkBlocks"]
-          : []),
-      ],
-    },
-  };
+  return buildProcessDocumentResult(buildResult, chunks, ragTables);
 }

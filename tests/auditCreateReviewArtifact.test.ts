@@ -3,12 +3,16 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { createHash } from "node:crypto";
 
 import {
   createReviewArtifact,
   tryCreateReviewArtifact,
 } from "../lib/audit/createReviewArtifact.ts";
-import { loadArtifact } from "../lib/audit/artifactStore.ts";
+import {
+  loadArtifact,
+  verifyArtifactIntegrity,
+} from "../lib/audit/artifactStore.ts";
 import type { AuditPipelineSnapshot } from "../lib/audit/types.ts";
 import type { Document } from "../lib/types.ts";
 import type { KnowledgeObject } from "../lib/rag/objects.ts";
@@ -34,7 +38,7 @@ const plainSection = {
   sourcePageStart: 1,
   sourceBlockIds: ["block-0"],
   confidence: 0.95,
-  warnings: [],
+  warnings: ["object-warning"],
 } satisfies KnowledgeObject;
 
 const snapshot: AuditPipelineSnapshot = {
@@ -63,15 +67,16 @@ const snapshot: AuditPipelineSnapshot = {
     },
   ],
   ragTables: [],
-  warnings: [],
+  warnings: ["pipeline-warning"],
 };
 
 test("creates a review artifact without persisting embeddings", () => {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "audit-create-"));
   try {
+    const sourceBuffer = Buffer.from("source file", "utf8");
     const created = createReviewArtifact({
       document,
-      sourceBuffer: Buffer.from("source file", "utf8"),
+      sourceBuffer,
       snapshot,
       now: new Date("2026-07-15T00:00:00.000Z"),
       artifactId: "artifact-a",
@@ -92,8 +97,44 @@ test("creates a review artifact without persisting embeddings", () => {
     ].join("\n");
     assert.doesNotMatch(persisted, /0\.123456789|0\.987654321/);
     assert.doesNotMatch(persisted, /"embedding"/);
+    assert.equal(
+      loaded.manifest.document.sourceFileSha256,
+      createHash("sha256").update(sourceBuffer).digest("hex")
+    );
+    assert.deepEqual(loaded.manifest.summary, {
+      blockCount: 1,
+      knowledgeObjectCount: 1,
+      chunkCount: 1,
+      ragTableCount: 0,
+      warningCount: 2,
+      focusItemCount: 1,
+      selectionWarnings: [],
+    });
     assert.deepEqual(loaded.manifest.items[0]?.chunkIds, ["chunk-1"]);
     assert.equal(loaded.result.status, "pending");
+    assert.deepEqual(verifyArtifactIntegrity(loaded), { ok: true, errors: [] });
+  } finally {
+    assert.equal(path.dirname(root), os.tmpdir());
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("generates a URL-safe artifact id from the current timestamp", () => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "audit-create-id-"));
+  try {
+    const created = createReviewArtifact({
+      document,
+      sourceBuffer: Buffer.from("source file", "utf8"),
+      snapshot,
+      now: new Date("2026-07-15T00:00:00.000Z"),
+      rootDir: root,
+    });
+
+    assert.match(created.artifactId, /^20260715000000-[0-9a-f]{8}$/);
+    assert.equal(
+      loadArtifact(root, document.id, created.artifactId).manifest.artifactId,
+      created.artifactId
+    );
   } finally {
     assert.equal(path.dirname(root), os.tmpdir());
     fs.rmSync(root, { recursive: true, force: true });

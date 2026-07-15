@@ -56,19 +56,15 @@ function readSchemaInfo(): SchemaInfo {
   }
 }
 
-function writeSchemaVersion() {
-  try {
-    ensureDirs();
-    fs.writeFileSync(
-      SCHEMA_FILE,
-      JSON.stringify({
-        version: SCHEMA_VERSION,
-        embedding: getEmbeddingProvider().signature,
-      })
-    );
-  } catch (e) {
-    console.error("[persist] writeSchemaVersion failed:", e);
-  }
+function writeSchemaVersionStrict(): void {
+  ensureDirs();
+  fs.writeFileSync(
+    SCHEMA_FILE,
+    JSON.stringify({
+      version: SCHEMA_VERSION,
+      embedding: getEmbeddingProvider().signature,
+    })
+  );
 }
 
 export interface PersistedData {
@@ -150,20 +146,28 @@ export function saveDocuments(documents: Document[]) {
   }
 }
 
-export function saveChunks(chunks: Chunk[]) {
+export function saveChunksStrict(chunks: Chunk[]): void {
+  ensureDirs();
+  fs.writeFileSync(CHUNKS_FILE, JSON.stringify(chunks));
+  writeSchemaVersionStrict(); // 落盘时标记当前结构版本
+}
+
+export function saveChunks(chunks: Chunk[]): void {
   try {
-    ensureDirs();
-    fs.writeFileSync(CHUNKS_FILE, JSON.stringify(chunks));
-    writeSchemaVersion(); // 落盘时标记当前结构版本
+    saveChunksStrict(chunks);
   } catch (e) {
     console.error("[persist] saveChunks failed:", e);
   }
 }
 
-export function saveRagTables(ragTables: RagTable[]) {
+export function saveRagTablesStrict(ragTables: RagTable[]): void {
+  ensureDirs();
+  fs.writeFileSync(RAGTABLES_FILE, JSON.stringify(ragTables));
+}
+
+export function saveRagTables(ragTables: RagTable[]): void {
   try {
-    ensureDirs();
-    fs.writeFileSync(RAGTABLES_FILE, JSON.stringify(ragTables));
+    saveRagTablesStrict(ragTables);
   } catch (e) {
     console.error("[persist] saveRagTables failed:", e);
   }
