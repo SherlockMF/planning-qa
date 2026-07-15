@@ -28,3 +28,5 @@ import "./rerankIntent.test.ts";
 import "./retrieveServiceScaleExpansion.test.ts";
 import "./importParser.test.ts";
 import "./exportResults.test.ts";
+import "./auditReviewItems.test.ts";
+import "./auditRiskSignals.test.ts";
