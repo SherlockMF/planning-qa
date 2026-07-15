@@ -16,6 +16,7 @@ import { saveChunks } from "./persist";
 import { writeAllTableDebug, tableDebugEnabled } from "@/lib/debug/tableDebug";
 import { writeRagPipelineDebug } from "@/lib/rag/debug";
 import { splitChunksByUserAccess } from "@/lib/knowledge/permissions";
+import type { ProcessDocumentResult } from "@/lib/audit/types";
 
 /** 仅返回参与检索（enabled 且 indexed）文档对应的 chunks。 */
 export async function listSearchableChunks(
@@ -56,7 +57,7 @@ export async function listChunksByDocument(
 export async function processDocument(
   doc: Document,
   input: { blocks?: Block[]; text?: string } = {}
-): Promise<number> {
+): Promise<ProcessDocumentResult> {
   await ensureSeeded();
   const store = getStore();
 
@@ -137,5 +138,19 @@ export async function processDocument(
   } catch (e) {
     console.error("[processDocument] rag debug write failed:", e);
   }
-  return chunks.length;
+  return {
+    chunkCount: chunks.length,
+    auditSnapshot: {
+      blocks: buildResult.blocks,
+      knowledgeObjects: buildResult.knowledgeObjects,
+      chunks,
+      ragTables,
+      warnings: [
+        ...buildResult.warnings,
+        ...(buildResult.fallbackUsed
+          ? ["fallback_to_legacy_chunkBlocks"]
+          : []),
+      ],
+    },
+  };
 }

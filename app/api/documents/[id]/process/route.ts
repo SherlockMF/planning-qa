@@ -9,6 +9,7 @@ import { getStore } from "@/lib/db/store";
 import { extractText } from "@/lib/parse/extractText";
 import { extractBlocksWithTables } from "@/lib/parse/tablesSidecar";
 import type { Block } from "@/lib/types";
+import { tryCreateReviewArtifact } from "@/lib/audit/createReviewArtifact";
 
 // 文本提取与 embedding 可能较慢，放宽超时
 export const maxDuration = 300;
@@ -73,12 +74,24 @@ export async function POST(
       extractedChars = text.length;
     }
 
-    const count = await processDocument(doc, { blocks, text });
+    const processed = await processDocument(doc, { blocks, text });
     const updated = await updateDocument(doc.id, { status: "indexed" });
+    const auditArtifact = tryCreateReviewArtifact({
+      document: updated ?? doc,
+      sourceBuffer: buf,
+      snapshot: processed.auditSnapshot,
+    });
+    if (auditArtifact.status === "failed") {
+      console.error(
+        "[process] review artifact creation failed:",
+        auditArtifact.error
+      );
+    }
     return NextResponse.json({
       document: updated,
-      chunkCount: count,
+      chunkCount: processed.chunkCount,
       extractedChars,
+      auditArtifact,
     });
   } catch (err) {
     await updateDocument(doc.id, { status: "failed" });
