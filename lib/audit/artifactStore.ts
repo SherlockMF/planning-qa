@@ -16,14 +16,99 @@ function validateId(kind: string, value: string): void {
   if (!SAFE_ID.test(value)) throw new Error(`invalid ${kind}`);
 }
 
+function isWithin(root: string, candidate: string): boolean {
+  const relative = path.relative(root, candidate);
+  return (
+    relative === "" ||
+    (relative !== ".." &&
+      !relative.startsWith(`..${path.sep}`) &&
+      !path.isAbsolute(relative))
+  );
+}
+
 function childPath(root: string, ...parts: string[]): string {
   const resolvedRoot = path.resolve(root);
   const resolved = path.resolve(resolvedRoot, ...parts);
-  const relative = path.relative(resolvedRoot, resolved);
-  if (relative.startsWith("..") || path.isAbsolute(relative)) {
+  if (!isWithin(resolvedRoot, resolved)) {
     throw new Error("artifact path escaped root");
   }
   return resolved;
+}
+
+interface RootBoundary {
+  configuredRoot: string;
+  canonicalRoot: string;
+}
+
+function hasPath(target: string): boolean {
+  try {
+    fs.lstatSync(target);
+    return true;
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === "ENOENT") return false;
+    throw error;
+  }
+}
+
+function rootBoundary(root: string, create: boolean): RootBoundary {
+  const configuredRoot = path.resolve(root);
+  if (create) fs.mkdirSync(configuredRoot, { recursive: true });
+  return {
+    configuredRoot,
+    canonicalRoot: fs.realpathSync.native(configuredRoot),
+  };
+}
+
+function assertSafePath(
+  boundary: RootBoundary,
+  target: string,
+  allowMissing: boolean
+): void {
+  const resolvedTarget = path.resolve(target);
+  if (!isWithin(boundary.configuredRoot, resolvedTarget)) {
+    throw new Error("artifact path escaped root");
+  }
+
+  const relative = path.relative(boundary.configuredRoot, resolvedTarget);
+  const parts = relative === "" ? [] : relative.split(path.sep);
+  let current = boundary.configuredRoot;
+  for (const part of parts) {
+    current = path.join(current, part);
+    if (!hasPath(current)) {
+      if (allowMissing) return;
+      fs.lstatSync(current);
+    }
+    const stat = fs.lstatSync(current);
+    if (stat.isSymbolicLink()) {
+      throw new Error("artifact path contains symlink or reparse point");
+    }
+    const canonical = fs.realpathSync.native(current);
+    if (!isWithin(boundary.canonicalRoot, canonical)) {
+      throw new Error("artifact path escaped root");
+    }
+  }
+}
+
+function writeNewFile(
+  boundary: RootBoundary,
+  target: string,
+  content: string
+): void {
+  assertSafePath(boundary, path.dirname(target), false);
+  assertSafePath(boundary, target, true);
+  fs.writeFileSync(target, content, { encoding: "utf8", flag: "wx" });
+  assertSafePath(boundary, target, false);
+}
+
+function readSafeFile(boundary: RootBoundary, target: string): string {
+  assertSafePath(boundary, target, false);
+  return fs.readFileSync(target, "utf8");
+}
+
+function removeSafeFile(boundary: RootBoundary, target: string): void {
+  if (!hasPath(target)) return;
+  assertSafePath(boundary, target, false);
+  fs.rmSync(target, { force: true });
 }
 
 export interface LoadedArtifact {
@@ -32,6 +117,30 @@ export interface LoadedArtifact {
   reviewMd: string;
   reviewHtml: string;
   result: ReviewResult;
+}
+
+function validatePublication(input: {
+  documentId: string;
+  manifest: AuditManifest;
+  reviewMd: string;
+  reviewHtml: string;
+  result: ReviewResult;
+}): void {
+  if (
+    input.manifest.document.id !== input.documentId ||
+    input.result.artifactId !== input.manifest.artifactId
+  ) {
+    throw new Error("artifact identity mismatch");
+  }
+  if (input.manifest.schemaVersion !== 1 || input.result.schemaVersion !== 1) {
+    throw new Error("unsupported schema version");
+  }
+  if (sha256Text(input.reviewMd) !== input.manifest.files.reviewMdSha256) {
+    throw new Error("review_md_hash_mismatch");
+  }
+  if (sha256Text(input.reviewHtml) !== input.manifest.files.reviewHtmlSha256) {
+    throw new Error("review_html_hash_mismatch");
+  }
 }
 
 export function createArtifactDirectory(input: {
@@ -44,38 +153,59 @@ export function createArtifactDirectory(input: {
 }): string {
   validateId("documentId", input.documentId);
   validateId("artifactId", input.manifest.artifactId);
+  validatePublication(input);
   const root = input.rootDir ?? DEFAULT_ARTIFACT_ROOT;
-  const docDir = childPath(root, input.documentId);
-  const finalDir = childPath(docDir, input.manifest.artifactId);
-  const tempDir = childPath(docDir, `.tmp-${input.manifest.artifactId}`);
+  const boundary = rootBoundary(root, true);
+  const docDir = childPath(boundary.configuredRoot, input.documentId);
+  const finalDir = childPath(
+    boundary.configuredRoot,
+    input.documentId,
+    input.manifest.artifactId
+  );
+  const tempDir = childPath(
+    boundary.configuredRoot,
+    input.documentId,
+    `.tmp-${input.manifest.artifactId}`
+  );
 
+  assertSafePath(boundary, docDir, true);
   fs.mkdirSync(docDir, { recursive: true });
+  assertSafePath(boundary, docDir, false);
+  assertSafePath(boundary, finalDir, true);
   if (fs.existsSync(finalDir)) throw new Error("artifact already exists");
+  assertSafePath(boundary, tempDir, true);
   fs.mkdirSync(tempDir);
+  assertSafePath(boundary, tempDir, false);
 
   try {
-    fs.writeFileSync(childPath(tempDir, "review.md"), input.reviewMd, "utf8");
-    fs.writeFileSync(
+    writeNewFile(
+      boundary,
+      childPath(tempDir, "review.md"),
+      input.reviewMd
+    );
+    writeNewFile(
+      boundary,
       childPath(tempDir, "review.html"),
-      input.reviewHtml,
-      "utf8"
+      input.reviewHtml
     );
-    fs.writeFileSync(
+    writeNewFile(
+      boundary,
       childPath(tempDir, "review-result.json"),
-      JSON.stringify(input.result, null, 2),
-      "utf8"
+      JSON.stringify(input.result, null, 2)
     );
-    fs.writeFileSync(
+    writeNewFile(
+      boundary,
       childPath(tempDir, "manifest.json"),
-      JSON.stringify(input.manifest, null, 2),
-      "utf8"
+      JSON.stringify(input.manifest, null, 2)
     );
+    assertSafePath(boundary, tempDir, false);
+    assertSafePath(boundary, finalDir, true);
     fs.renameSync(tempDir, finalDir);
+    assertSafePath(boundary, finalDir, false);
     return finalDir;
   } catch (error) {
-    const resolvedRoot = path.resolve(root);
-    const relative = path.relative(resolvedRoot, tempDir);
-    if (!relative.startsWith("..") && !path.isAbsolute(relative)) {
+    if (hasPath(tempDir)) {
+      assertSafePath(boundary, tempDir, false);
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
     throw error;
@@ -89,12 +219,14 @@ export function loadArtifact(
 ): LoadedArtifact {
   validateId("documentId", documentId);
   validateId("artifactId", artifactId);
-  const directory = childPath(rootDir, documentId, artifactId);
+  const boundary = rootBoundary(rootDir, false);
+  const directory = childPath(boundary.configuredRoot, documentId, artifactId);
+  assertSafePath(boundary, directory, false);
   const manifest: AuditManifest = JSON.parse(
-    fs.readFileSync(childPath(directory, "manifest.json"), "utf8")
+    readSafeFile(boundary, childPath(directory, "manifest.json"))
   );
   const result: ReviewResult = JSON.parse(
-    fs.readFileSync(childPath(directory, "review-result.json"), "utf8")
+    readSafeFile(boundary, childPath(directory, "review-result.json"))
   );
 
   if (
@@ -108,8 +240,8 @@ export function loadArtifact(
   return {
     directory,
     manifest,
-    reviewMd: fs.readFileSync(childPath(directory, "review.md"), "utf8"),
-    reviewHtml: fs.readFileSync(childPath(directory, "review.html"), "utf8"),
+    reviewMd: readSafeFile(boundary, childPath(directory, "review.md")),
+    reviewHtml: readSafeFile(boundary, childPath(directory, "review.html")),
     result,
   };
 }
@@ -143,6 +275,8 @@ export function replaceReviewResult(
     throw new Error("artifact identity mismatch");
   }
 
+  const boundary = rootBoundary(rootDir, false);
+  assertSafePath(boundary, loaded.directory, false);
   const target = childPath(loaded.directory, "review-result.json");
   const token = randomUUID();
   const temp = childPath(loaded.directory, `.review-result-${token}.tmp`);
@@ -150,21 +284,28 @@ export function replaceReviewResult(
   let targetMoved = false;
 
   try {
-    fs.writeFileSync(temp, JSON.stringify(result, null, 2), "utf8");
+    assertSafePath(boundary, target, false);
+    writeNewFile(boundary, temp, JSON.stringify(result, null, 2));
+    assertSafePath(boundary, backup, true);
     fs.renameSync(target, backup);
     targetMoved = true;
+    assertSafePath(boundary, backup, false);
+    assertSafePath(boundary, temp, false);
+    assertSafePath(boundary, target, true);
     fs.renameSync(temp, target);
     targetMoved = false;
-    fs.rmSync(backup, { force: true });
+    assertSafePath(boundary, target, false);
+    removeSafeFile(boundary, backup);
   } catch (error) {
-    fs.rmSync(temp, { force: true });
-    if (targetMoved && fs.existsSync(backup) && !fs.existsSync(target)) {
+    if (targetMoved && hasPath(backup) && !hasPath(target)) {
+      assertSafePath(boundary, backup, false);
+      assertSafePath(boundary, target, true);
       fs.renameSync(backup, target);
+      assertSafePath(boundary, target, false);
     }
+    removeSafeFile(boundary, temp);
+    if (hasPath(target)) removeSafeFile(boundary, backup);
     throw error;
-  } finally {
-    fs.rmSync(temp, { force: true });
-    if (fs.existsSync(target)) fs.rmSync(backup, { force: true });
   }
 }
 
@@ -173,17 +314,26 @@ export function listReviewArtifacts(
   rootDir = DEFAULT_ARTIFACT_ROOT
 ): ReviewArtifactSummary[] {
   validateId("documentId", documentId);
-  const docDir = childPath(rootDir, documentId);
-  if (!fs.existsSync(docDir)) return [];
+  const resolvedRoot = path.resolve(rootDir);
+  if (!hasPath(resolvedRoot)) return [];
+  const boundary = rootBoundary(resolvedRoot, false);
+  const docDir = childPath(boundary.configuredRoot, documentId);
+  assertSafePath(boundary, docDir, true);
+  if (!hasPath(docDir)) return [];
+  assertSafePath(boundary, docDir, false);
 
   return fs
     .readdirSync(docDir, { withFileTypes: true })
     .filter(
       (entry) =>
-        entry.isDirectory() &&
         !entry.name.startsWith(".tmp-") &&
         SAFE_ID.test(entry.name)
     )
+    .filter((entry) => {
+      const artifactDir = childPath(docDir, entry.name);
+      assertSafePath(boundary, artifactDir, false);
+      return entry.isDirectory();
+    })
     .map((entry) => loadArtifact(rootDir, documentId, entry.name))
     .map((artifact) => ({
       documentId,
