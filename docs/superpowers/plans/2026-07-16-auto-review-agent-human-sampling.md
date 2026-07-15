@@ -21,6 +21,33 @@
 - The UI must retain: `本轮只识别切分风险，不修复切分结果；表格仍应按表格结构优化切分。`
 - All production behavior follows red-green-refactor: every production function is introduced only after its focused test fails for the expected missing behavior.
 
+## Execution Policy And Task Boundaries
+
+- Open one new Codex task for each independent feature group below; do not execute all groups in one long-lived task.
+- Use `medium` reasoning for normal TDD implementation. Escalate only a genuinely difficult debugging or architecture problem to `high`.
+- Do not create a subagent for a small edit, focused test adjustment, copy change, or mechanical follow-up. Execute those inline in the owning feature task.
+- During RED and GREEN, run only the test file or smallest directly related test set named by the step.
+- After the complete feature group is green, run `npm.cmd test` once for the group. Do not run the full suite after every small RED/GREEN cycle.
+- Limit displayed test output to the final 120 lines while preserving the native exit code. Use this PowerShell pattern for full-suite gates:
+
+```powershell
+$log = Join-Path $env:TEMP "auto-review-tests-$PID.log"
+& npm.cmd test *> $log
+$code = $LASTEXITCODE
+Get-Content -LiteralPath $log -Tail 120
+if ($code -ne 0) { exit $code }
+```
+
+- Apply the same output cap to type-check and build gates when their normal output exceeds 120 lines.
+
+Feature groups and dependencies:
+
+1. **Risk detection core** — Tasks 1–2; full-suite gate after Task 2.
+2. **Independent Agent and Eval engine** — Tasks 3–4; starts from group 1 and runs a full-suite gate after Task 4.
+3. **Immutable artifact and processing integration** — Tasks 5–6; starts from group 2 and runs a full-suite gate after Task 6.
+4. **Protected APIs and review workbench** — Tasks 7–8; starts from group 3 and runs tests, type-check, and build once after Task 8.
+5. **Real corpus and pilot acceptance** — Task 9; starts from group 4 and owns the final full verification.
+
 ---
 
 ## File Structure
