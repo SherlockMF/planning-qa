@@ -31,5 +31,6 @@ import "./exportResults.test.ts";
 import "./auditReviewItems.test.ts";
 import "./auditArtifactStore.test.ts";
 import "./auditReviewSubmission.test.ts";
+import "./auditReviewRoutes.test.ts";
 import "./auditCreateReviewArtifact.test.ts";
 import "./auditProcessSnapshot.test.ts";

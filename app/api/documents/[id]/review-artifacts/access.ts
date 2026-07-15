@@ -11,6 +11,15 @@ type ReviewArtifactAccess =
   | { ok: true; document: Document; user: KnowledgeUser }
   | { ok: false; response: NextResponse };
 
+export function privateJson(
+  body: unknown,
+  init?: ResponseInit
+): NextResponse {
+  const headers = new Headers(init?.headers);
+  headers.set("Cache-Control", "private, no-store");
+  return NextResponse.json(body, { ...init, headers });
+}
+
 export async function requireReviewArtifactAccess(
   req: NextRequest,
   documentId: string
@@ -19,7 +28,7 @@ export async function requireReviewArtifactAccess(
   if (!document) {
     return {
       ok: false,
-      response: NextResponse.json({ error: "文档不存在" }, { status: 404 }),
+      response: privateJson({ error: "文档不存在" }, { status: 404 }),
     };
   }
 
@@ -29,7 +38,7 @@ export async function requireReviewArtifactAccess(
   if (!canManageDocumentInManagement(user, document)) {
     return {
       ok: false,
-      response: NextResponse.json(
+      response: privateJson(
         { error: "当前账号无权审核该文档" },
         { status: 403 }
       ),

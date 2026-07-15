@@ -9,7 +9,7 @@ import { requireReviewArtifactAccess } from "../access";
 
 const PRIVATE_NO_STORE = "private, no-store";
 const REVIEW_CSP =
-  "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'";
+  "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'";
 
 export const dynamic = "force-dynamic";
 
@@ -72,6 +72,7 @@ export async function GET(
       "Cache-Control": PRIVATE_NO_STORE,
       "Content-Security-Policy": REVIEW_CSP,
       "X-Content-Type-Options": "nosniff",
+      "X-Frame-Options": "DENY",
     },
   });
 }

@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
 import {
   DEFAULT_ARTIFACT_ROOT,
@@ -14,11 +14,15 @@ import {
   ReviewSubmissionError,
 } from "@/lib/audit/reviewSubmission";
 import { getStore } from "@/lib/db/store";
-import { requireReviewArtifactAccess } from "../../access";
+import { privateJson, requireReviewArtifactAccess } from "../../access";
 
 export const dynamic = "force-dynamic";
 
-function loadChecked(documentId: string, artifactId: string): {
+function loadChecked(
+  documentId: string,
+  artifactId: string,
+  requesterUserId: string
+): {
   artifact: LoadedArtifact;
   availability: ReturnType<typeof evaluateReviewAvailability>;
 } {
@@ -38,6 +42,9 @@ function loadChecked(documentId: string, artifactId: string): {
     availability: evaluateReviewAvailability({
       integrityOk: integrity.ok,
       sourceMatches,
+      status: artifact.result.status,
+      reviewerUserId: artifact.result.reviewerUserId,
+      requesterUserId,
       finalizedAt: artifact.result.finalizedAt,
     }),
   };
@@ -53,11 +60,12 @@ export async function GET(
   try {
     const { artifact, availability } = loadChecked(
       params.id,
-      params.artifactId
+      params.artifactId,
+      access.user.id
     );
-    return NextResponse.json({ result: artifact.result, ...availability });
+    return privateJson({ result: artifact.result, ...availability });
   } catch {
-    return NextResponse.json(
+    return privateJson(
       { error: "审核副本不存在" },
       { status: 404 }
     );
@@ -71,24 +79,24 @@ export async function PUT(
   const access = await requireReviewArtifactAccess(req, params.id);
   if (!access.ok) return access.response;
 
+  const body = await req.json().catch(() => null);
   let checked: ReturnType<typeof loadChecked>;
   try {
-    checked = loadChecked(params.id, params.artifactId);
+    checked = loadChecked(params.id, params.artifactId, access.user.id);
   } catch {
-    return NextResponse.json(
+    return privateJson(
       { error: "审核副本不存在" },
       { status: 404 }
     );
   }
 
   if (!checked.availability.canSubmit) {
-    return NextResponse.json(
+    return privateJson(
       { error: checked.availability.error },
       { status: 409 }
     );
   }
 
-  const body = await req.json().catch(() => null);
   try {
     const result = applyReviewSubmission({
       manifest: checked.artifact.manifest,
@@ -103,22 +111,22 @@ export async function PUT(
       params.artifactId,
       result
     );
-    return NextResponse.json({ result });
+    return privateJson({ result });
   } catch (error) {
     if (error instanceof ReviewSubmissionError) {
-      return NextResponse.json(
+      return privateJson(
         { error: error.message },
         { status: error.status }
       );
     }
     if (error instanceof Error && error.message === "review already finalized") {
-      return NextResponse.json(
+      return privateJson(
         { error: "审核结果已提交" },
         { status: 409 }
       );
     }
     console.error("[review] save failed:", error);
-    return NextResponse.json(
+    return privateJson(
       { error: "审核结果保存失败" },
       { status: 500 }
     );

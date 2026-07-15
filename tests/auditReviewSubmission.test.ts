@@ -418,6 +418,8 @@ test("blocks review submission when artifact integrity fails", () => {
     evaluateReviewAvailability({
       integrityOk: false,
       sourceMatches: false,
+      status: "passed",
+      requesterUserId: "user-admin",
       finalizedAt: "2026-07-15T01:00:00.000Z",
     }),
     { canSubmit: false, error: "审核副本完整性校验失败" }
@@ -429,6 +431,8 @@ test("blocks review submission when the source file changed", () => {
     evaluateReviewAvailability({
       integrityOk: true,
       sourceMatches: false,
+      status: "pending",
+      requesterUserId: "user-admin",
     }),
     { canSubmit: false, error: "原文件已变化，旧快照不能提交" }
   );
@@ -439,6 +443,8 @@ test("blocks review submission after the result is finalized", () => {
     evaluateReviewAvailability({
       integrityOk: true,
       sourceMatches: true,
+      status: "draft",
+      requesterUserId: "user-admin",
       finalizedAt: "2026-07-15T01:00:00.000Z",
     }),
     { canSubmit: false, error: "审核结果已提交" }
@@ -450,6 +456,48 @@ test("allows review submission when all availability checks pass", () => {
     evaluateReviewAvailability({
       integrityOk: true,
       sourceMatches: true,
+      status: "pending",
+      requesterUserId: "user-admin",
+    }),
+    { canSubmit: true }
+  );
+});
+
+test("treats terminal review statuses as submitted without finalizedAt", () => {
+  for (const status of ["passed", "issues_found"] as const) {
+    assert.deepEqual(
+      evaluateReviewAvailability({
+        integrityOk: true,
+        sourceMatches: true,
+        status,
+        requesterUserId: "user-admin",
+      }),
+      { canSubmit: false, error: "审核结果已提交" }
+    );
+  }
+});
+
+test("blocks a reviewer from submitting another user's draft", () => {
+  assert.deepEqual(
+    evaluateReviewAvailability({
+      integrityOk: true,
+      sourceMatches: true,
+      status: "draft",
+      reviewerUserId: " user-admin ",
+      requesterUserId: " user-manager-tod ",
+    }),
+    { canSubmit: false, error: "审核草稿已由其他用户领取" }
+  );
+});
+
+test("allows a draft owner to continue reviewing", () => {
+  assert.deepEqual(
+    evaluateReviewAvailability({
+      integrityOk: true,
+      sourceMatches: true,
+      status: "draft",
+      reviewerUserId: " user-admin ",
+      requesterUserId: " user-admin ",
     }),
     { canSubmit: true }
   );
