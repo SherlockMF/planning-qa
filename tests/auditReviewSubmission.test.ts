@@ -5,6 +5,7 @@ import {
   applyReviewSubmission,
   ReviewSubmissionError,
 } from "../lib/audit/reviewSubmission.ts";
+import { evaluateReviewAvailability } from "../lib/audit/reviewAvailability.ts";
 import type { AuditManifest, ReviewResult } from "../lib/audit/types.ts";
 
 const manifest = {
@@ -409,5 +410,47 @@ test("rejects comments longer than 2000 characters", () => {
       }),
     "备注不能超过 2000 字",
     400
+  );
+});
+
+test("blocks review submission when artifact integrity fails", () => {
+  assert.deepEqual(
+    evaluateReviewAvailability({
+      integrityOk: false,
+      sourceMatches: false,
+      finalizedAt: "2026-07-15T01:00:00.000Z",
+    }),
+    { canSubmit: false, error: "审核副本完整性校验失败" }
+  );
+});
+
+test("blocks review submission when the source file changed", () => {
+  assert.deepEqual(
+    evaluateReviewAvailability({
+      integrityOk: true,
+      sourceMatches: false,
+    }),
+    { canSubmit: false, error: "原文件已变化，旧快照不能提交" }
+  );
+});
+
+test("blocks review submission after the result is finalized", () => {
+  assert.deepEqual(
+    evaluateReviewAvailability({
+      integrityOk: true,
+      sourceMatches: true,
+      finalizedAt: "2026-07-15T01:00:00.000Z",
+    }),
+    { canSubmit: false, error: "审核结果已提交" }
+  );
+});
+
+test("allows review submission when all availability checks pass", () => {
+  assert.deepEqual(
+    evaluateReviewAvailability({
+      integrityOk: true,
+      sourceMatches: true,
+    }),
+    { canSubmit: true }
   );
 });
