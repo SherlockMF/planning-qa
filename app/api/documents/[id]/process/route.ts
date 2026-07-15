@@ -9,6 +9,11 @@ import { getStore } from "@/lib/db/store";
 import { extractText } from "@/lib/parse/extractText";
 import { extractBlocksWithTables } from "@/lib/parse/tablesSidecar";
 import type { Block } from "@/lib/types";
+import {
+  createReviewArtifact,
+  createReviewArtifactSafely,
+  newArtifactIdentity,
+} from "@/lib/audit/createReviewArtifact";
 
 // 文本提取与 embedding 可能较慢，放宽超时
 export const maxDuration = 300;
@@ -73,12 +78,20 @@ export async function POST(
       extractedChars = text.length;
     }
 
-    const count = await processDocument(doc, { blocks, text });
+    const processResult = await processDocument(doc, { blocks, text });
     const updated = await updateDocument(doc.id, { status: "indexed" });
+    const identity = newArtifactIdentity();
+    const auditArtifact = await createReviewArtifactSafely(() => createReviewArtifact({
+      ...identity,
+      document: updated ?? { ...doc, status: "indexed" },
+      sourceBuffer: buf,
+      processResult,
+    }));
     return NextResponse.json({
       document: updated,
-      chunkCount: count,
+      chunkCount: processResult.chunkCount,
       extractedChars,
+      auditArtifact,
     });
   } catch (err) {
     await updateDocument(doc.id, { status: "failed" });

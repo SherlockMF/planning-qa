@@ -35,3 +35,4 @@ import "./auditAutoReviewRun.test.ts";
 import "./auditAutoReviewEval.test.ts";
 import "./auditArtifactStore.test.ts";
 import "./auditReviewRounds.test.ts";
+import "./auditCreateArtifact.test.ts";
