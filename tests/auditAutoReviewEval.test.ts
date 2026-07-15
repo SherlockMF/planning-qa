@@ -173,7 +173,12 @@ test("CLI validates a versioned corpus, labels rules-only as baseline, writes re
       documentId: "doc-1",
       items: [{
         auditItemId: "i1",
+        partition: "blind",
+        reviewer: "reviewer-1",
+        reviewedAt: "2026-07-16T00:00:00.000Z",
+        evidence: "人工核对原页，内容一致。",
         sourceImagePath: "page-1.png",
+        sourceImageSha256: "6E340B9CFFB37A989CA544E6BB780A2C78901D3FB33738768511A30617AFA01D",
         parsedItem,
         trueStatus: "clean",
         severity: "none",
@@ -202,4 +207,47 @@ test("CLI validates a versioned corpus, labels rules-only as baseline, writes re
   assert.equal(summary.gate.meetsPilotGate, false);
   assert.equal(summary.gate.label, "rules_only baseline");
   assert.match(markdown, /rules_only baseline/);
+});
+
+test("CLI rejects corpus items missing Task 9 review metadata", () => {
+  const workDir = mkdtempSync(join(tmpdir(), "auto-review-eval-metadata-"));
+  const fixtureDir = join(workDir, "fixture");
+  mkdirSync(fixtureDir, { recursive: true });
+  writeFileSync(join(fixtureDir, "page-1.png"), Buffer.from([0]));
+  const corpusPath = join(fixtureDir, "gold.json");
+  writeFileSync(corpusPath, JSON.stringify({
+    datasetVersion: "test-v1",
+    documents: [{
+      documentId: "doc-1",
+      items: [{
+        auditItemId: "i1",
+        sourceImagePath: "page-1.png",
+        parsedItem: {
+          auditItemId: "i1",
+          objectType: "section",
+          title: "普通条文",
+          content: "普通内容",
+          warnings: [],
+          selectedForReview: true,
+          source: { pageStart: 1, blockIds: [], chunkIds: [] },
+        },
+        trueStatus: "clean",
+        severity: "none",
+        issueTypes: [],
+        correctSource: { pageStart: 1 },
+      }],
+    }],
+  }));
+
+  const scriptPath = fileURLToPath(new URL("../scripts/run_auto_review_eval.mjs", import.meta.url));
+  const result = spawnSync(process.execPath, [
+    "--experimental-strip-types",
+    scriptPath,
+    corpusPath,
+    "--mode",
+    "rules_only",
+  ], { cwd: workDir, encoding: "utf8" });
+
+  assert.equal(result.status, 1, result.stderr || result.stdout);
+  assert.match(result.stderr, /invalid_review_metadata:i1/);
 });

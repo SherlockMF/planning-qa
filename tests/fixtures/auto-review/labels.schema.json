@@ -4,18 +4,25 @@
   "title": "Automatic review evaluation corpus",
   "type": "object",
   "additionalProperties": false,
-  "required": ["datasetVersion", "documents"],
+  "required": ["datasetVersion", "reviewerPolicy", "screenshots", "documents"],
   "properties": {
     "datasetVersion": { "type": "string", "minLength": 1 },
+    "reviewerPolicy": { "type": "string", "minLength": 1 },
+    "screenshots": {
+      "type": "object",
+      "required": ["figure-1.png", "figure-2.png", "figure-3.png"],
+      "additionalProperties": { "$ref": "#/$defs/imageDigest" }
+    },
     "documents": {
       "type": "array",
       "minItems": 1,
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["documentId", "items"],
+        "required": ["documentId", "documentName", "items"],
         "properties": {
           "documentId": { "type": "string", "minLength": 1 },
+          "documentName": { "type": "string", "minLength": 1 },
           "items": {
             "type": "array",
             "minItems": 1,
@@ -26,6 +33,15 @@
     }
   },
   "$defs": {
+    "imageDigest": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["bytes", "sha256"],
+      "properties": {
+        "bytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[A-F0-9]{64}$" }
+      }
+    },
     "source": {
       "type": "object",
       "required": ["pageStart"],
@@ -53,7 +69,12 @@
       "additionalProperties": false,
       "required": [
         "auditItemId",
+        "partition",
+        "reviewer",
+        "reviewedAt",
+        "evidence",
         "sourceImagePath",
+        "sourceImageSha256",
         "parsedItem",
         "trueStatus",
         "severity",
@@ -62,7 +83,12 @@
       ],
       "properties": {
         "auditItemId": { "type": "string", "minLength": 1 },
+        "partition": { "enum": ["calibration", "blind"] },
+        "reviewer": { "type": "string", "minLength": 1 },
+        "reviewedAt": { "type": "string", "format": "date-time" },
+        "evidence": { "type": "string", "minLength": 1 },
         "sourceImagePath": { "type": "string", "minLength": 1 },
+        "sourceImageSha256": { "type": "string", "pattern": "^[A-F0-9]{64}$" },
         "parsedItem": { "type": "object" },
         "trueStatus": { "enum": ["issue", "clean"] },
         "severity": { "enum": ["severe", "non_severe", "none"] },

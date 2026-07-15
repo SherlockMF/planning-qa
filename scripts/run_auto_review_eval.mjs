@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import crypto from "node:crypto";
 
 import { computeAutoReviewEval } from "../lib/audit/autoReviewEval.ts";
 import { createAutoReviewProvider } from "../lib/audit/autoReviewProvider.ts";
@@ -134,9 +135,23 @@ function validateCorpusItem(item, corpusPath, ids) {
     throw new Error("invalid_or_duplicate_audit_item_id");
   }
   ids.add(item.auditItemId);
+  if ((item.partition !== "calibration" && item.partition !== "blind")
+    || !nonEmptyString(item.reviewer)
+    || !nonEmptyString(item.reviewedAt) || !Number.isFinite(Date.parse(item.reviewedAt))
+    || !nonEmptyString(item.evidence)
+    || typeof item.sourceImageSha256 !== "string"
+    || !/^[A-F0-9]{64}$/.test(item.sourceImageSha256)) {
+    throw new Error(`invalid_review_metadata:${item.auditItemId}`);
+  }
   if (!nonEmptyString(item.sourceImagePath)
     || !fs.existsSync(path.resolve(path.dirname(corpusPath), item.sourceImagePath))) {
     throw new Error(`missing_source_image:${item.auditItemId}`);
+  }
+  const sourceImagePath = path.resolve(path.dirname(corpusPath), item.sourceImagePath);
+  const sourceImageSha256 = crypto.createHash("sha256")
+    .update(fs.readFileSync(sourceImagePath)).digest("hex").toUpperCase();
+  if (sourceImageSha256 !== item.sourceImageSha256) {
+    throw new Error(`source_image_hash_mismatch:${item.auditItemId}`);
   }
   if (!isAuditReviewItem(item.parsedItem) || item.parsedItem.auditItemId !== item.auditItemId) {
     throw new Error(`invalid_parsed_item:${item.auditItemId}`);

@@ -1,0 +1,4951 @@
+{
+  "datasetVersion": "gold-v1-2026-07-16",
+  "reviewerPolicy": "人工逐项对照仓库真实PDF页面与RagTable；仅保存可证明定位和非空证据。",
+  "screenshots": {
+    "figure-1.png": {
+      "bytes": 664121,
+      "sha256": "4E23F221B4ED7A19D1F5FC84182219ED16A4DF080BB80A8CA00586C17D15DA0A"
+    },
+    "figure-2.png": {
+      "bytes": 519511,
+      "sha256": "F7C18CE9A9EB8315A3924223C743DD5C96CA8DCD0AFDDD6F367760FC7BA0441D"
+    },
+    "figure-3.png": {
+      "bytes": 806404,
+      "sha256": "9CBD25BB576D0346CC54F7FF44DA424C80B65DF94C7AE5087E0A8AD9B042FA60"
+    }
+  },
+  "documents": [
+    {
+      "documentId": "doc-1782564480335-lkrbih",
+      "documentName": "北京市居住公共服务设施配置指标京政发〔2025〕25号.pdf",
+      "items": [
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-0",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "原页第31页为完整的指标修改说明段落，解析结果将句子拆散并混入编号、标点，阅读顺序不可复原。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-31.png",
+          "sourceImageSha256": "6FB022281C901EC167BEF3CEE5FBAD6879FB6189127BB7EB38418CB153ADB73D",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-0",
+            "objectType": "structured_table_row",
+            "title": "1洗.衣家政等群众:(生1)活常用的其他商业服务设施由街区级下调为,社区级将街道级其他商业。服(2务)设施内、容明确、为提、供综合、",
+            "content": "指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理：1洗.衣家政等群众:(生1)活常用的其他商业服务设施由街区级下调为,社区级将街道级其他商业。服(2务)设施内、容明确、为提、供综合、",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 31,
+              "pageEnd": 31,
+              "blockIds": [],
+              "tableId": "tbl-17",
+              "rowIndex": 0,
+              "ragTableId": "tbl-17",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理"
+              ],
+              "targetRow": [
+                "1洗.衣家政等群众:(生1)活常用的其他商业服务设施由街区级下调为,社区级将街道级其他商业。服(2务)设施内、容明确、为提、供综合、",
+                "1洗.衣家政等群众:(生1)活常用的其他商业服务设施由街区级下调为,社区级将街道级其他商业。服(2务)设施内、容明确、为提、供综合、"
+              ],
+              "nextRow": [
+                "服务、功能的便民商业服务。(3)",
+                "服务、功能的便民商业服务。(3)"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 31,
+            "pageEnd": 31,
+            "tableId": "tbl-17",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-3",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "原页第31页法规依据为连续文本，解析值出现字词拆散和括号、数字错序。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-31.png",
+          "sourceImageSha256": "6FB022281C901EC167BEF3CEE5FBAD6879FB6189127BB7EB38418CB153ADB73D",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-3",
+            "objectType": "structured_table_row",
+            "title": "2建.设使用管理办(法试行京商务):规(1字)号实施北京,市街区商业生态配置指。标(2的)指导《意见京商务规字",
+            "content": "列1：修改。指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理：2建.设使用管理办(法试行京商务):规(1字)号实施北京,市街区商业生态配置指。标(2的)指导《意见京商务规字",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 31,
+              "pageEnd": 31,
+              "blockIds": [],
+              "tableId": "tbl-17",
+              "rowIndex": 3,
+              "ragTableId": "tbl-17",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理"
+              ],
+              "targetRow": [
+                "修改",
+                "2建.设使用管理办(法试行京商务):规(1字)号实施北京,市街区商业生态配置指。标(2的)指导《意见京商务规字"
+              ],
+              "previousRow": [
+                "指标",
+                "指标变化依据新增指标。项依据结合居民生活实际需求增加项目级便民菜店根据居住配套商业服务设施规划"
+              ],
+              "nextRow": [
+                "说明",
+                "号以及社区生活(圈规)划》(技术指南〔2018〕6)、《菜市场为街道级设施为提升居民日常便利》性(配置层级有〔2所01调8〕整31"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 31,
+            "pageEnd": 31,
+            "tableId": "tbl-17",
+            "rowIndex": 3
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-5",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "原页第31页为连续说明，解析值将标准号、项目单位和句读交叉拼接。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-31.png",
+          "sourceImageSha256": "6FB022281C901EC167BEF3CEE5FBAD6879FB6189127BB7EB38418CB153ADB73D",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-5",
+            "objectType": "structured_table_row",
+            "title": "),考虑到《实际建设过程中通常以项》(目T为D/单T位1配06置2-商2业021设)施,原配置指标上限较,低缺乏弹性配置的商业,设施通常无法满足。",
+            "content": "列1：说明。指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理：),考虑到《实际建设过程中通常以项》(目T为D/单T位1配06置2-商2业021设)施,原配置指标上限较,低缺乏弹性配置的商业,设施通常无法满足。",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 31,
+              "pageEnd": 31,
+              "blockIds": [],
+              "tableId": "tbl-17",
+              "rowIndex": 5,
+              "ragTableId": "tbl-17",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理"
+              ],
+              "targetRow": [
+                "说明",
+                "),考虑到《实际建设过程中通常以项》(目T为D/单T位1配06置2-商2业021设)施,原配置指标上限较,低缺乏弹性配置的商业,设施通常无法满足。"
+              ],
+              "previousRow": [
+                "说明",
+                "号以及社区生活(圈规)划》(技术指南〔2018〕6)、《菜市场为街道级设施为提升居民日常便利》性(配置层级有〔2所01调8〕整31"
+              ],
+              "nextRow": [
+                "说明",
+                "(项3)目需求因此对配置指标,上限进行上调实际建设过程中可在,保障基本业态的前提、下结合市场,需求进行弹性配置"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 31,
+            "pageEnd": 31,
+            "tableId": "tbl-17",
+            "rowIndex": 5
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-7",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "原页第31页明确写有5分钟、10分钟、15分钟，解析结果丢失三个数值后的单位与句子结构。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-31.png",
+          "sourceImageSha256": "6FB022281C901EC167BEF3CEE5FBAD6879FB6189127BB7EB38418CB153ADB73D",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-7",
+            "objectType": "structured_table_row",
+            "title": "项目级,社区级街道级便民商业服务设,施分别满足分钟分钟分钟社区生活,圈服务要求。",
+            "content": "列1：说明。指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理：项目级,社区级街道级便民商业服务设,施分别满足分钟分钟分钟社区生活,圈服务要求。",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 31,
+              "pageEnd": 31,
+              "blockIds": [],
+              "tableId": "tbl-17",
+              "rowIndex": 7,
+              "ragTableId": "tbl-17",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理"
+              ],
+              "targetRow": [
+                "说明",
+                "项目级,社区级街道级便民商业服务设,施分别满足分钟分钟分钟社区生活,圈服务要求。"
+              ],
+              "previousRow": [
+                "说明",
+                "(项3)目需求因此对配置指标,上限进行上调实际建设过程中可在,保障基本业态的前提、下结合市场,需求进行弹性配置"
+              ],
+              "nextRow": [
+                "说明",
+                "3.、、 5、10、15。"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "missing_content"
+          ],
+          "correctSource": {
+            "pageStart": 31,
+            "pageEnd": 31,
+            "tableId": "tbl-17",
+            "rowIndex": 7
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-8",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "原页第31页末句是完整服务圈要求，解析标题退化为“3.、、 5、10、15。”。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-31.png",
+          "sourceImageSha256": "6FB022281C901EC167BEF3CEE5FBAD6879FB6189127BB7EB38418CB153ADB73D",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-17-row-8",
+            "objectType": "structured_table_row",
+            "title": "3.、、 5、10、15。",
+            "content": "列1：说明。指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理：3.、、 5、10、15。",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 31,
+              "pageEnd": 31,
+              "blockIds": [],
+              "tableId": "tbl-17",
+              "rowIndex": 8,
+              "ragTableId": "tbl-17",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理"
+              ],
+              "targetRow": [
+                "说明",
+                "3.、、 5、10、15。"
+              ],
+              "previousRow": [
+                "说明",
+                "项目级,社区级街道级便民商业服务设,施分别满足分钟分钟分钟社区生活,圈服务要求。"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 31,
+            "pageEnd": 31,
+            "tableId": "tbl-17",
+            "rowIndex": 8
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-9",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "原页第42页第15行服务规模仅为1000—5000户，解析结果多出相邻第14行的数值20。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-42.png",
+          "sourceImageSha256": "E42D9842C845D980E5CAB0E310E2DFF7D411ED214465F9F4B973A49A69595529",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-9",
+            "objectType": "structured_table_row",
+            "title": "综合通信机房",
+            "content": "层级：社区级。编号：15。设施名称：综合通信机房。服务内容：设置固定通信及移动通信设施。。规模性指标.一般规模.建筑面积(平方米/处)：50—70。用地面积(平方米/处)：—。千人指标.建筑面积(平方米)：—。用地面积(平方米)：—。服务规模：20 /1000—5000户",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 9,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "社区级",
+                "15",
+                "综合通信机房",
+                "设置固定通信及移动通信设施。",
+                "50—70",
+                "—",
+                "—",
+                "—",
+                "20 /1000—5000户"
+              ],
+              "previousRow": [
+                "项目级",
+                "14",
+                "污水处置及再生利用装置",
+                "就地处理污水并回收利用。",
+                "—",
+                "—",
+                "—",
+                "—",
+                "未,与城市再10生00水0管网相)连建筑面积平方米以,上,或可回5收00水00量大于立方米日的居住区和集15中0建筑区/等应设置污水处置及再生利用装置,按照建筑面积平方米/万平方米配置"
+              ],
+              "nextRow": [
+                "社区级",
+                "16",
+                "有线电视机房",
+                "—",
+                "30—50",
+                "—",
+                "—",
+                "—",
+                "1000—5000户"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "row_boundary_contamination"
+          ],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 9
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-0",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第42页，未命名表格第0行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-42.png",
+          "sourceImageSha256": "E42D9842C845D980E5CAB0E310E2DFF7D411ED214465F9F4B973A49A69595529",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-0",
+            "objectType": "structured_table_row",
+            "title": "电缆分界室",
+            "content": "层级：项目级。编号：6。设施名称：电缆分界室。服务内容：—。规模性指标.一般规模.建筑面积(平方米/处)：25—35。用地面积(平方米/处)：—。千人指标.建筑面积(平方米)：—。用地面积(平方米)：—。服务规模：—",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 0,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "项目级",
+                "6",
+                "电缆分界室",
+                "—",
+                "25—35",
+                "—",
+                "—",
+                "—",
+                "—"
+              ],
+              "nextRow": [
+                "项目级",
+                "7",
+                "生活垃圾固定桶站",
+                "—",
+                "—",
+                "10—15",
+                "—",
+                "—",
+                "100—200户"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-1",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第42页，未命名表格第1行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-42.png",
+          "sourceImageSha256": "E42D9842C845D980E5CAB0E310E2DFF7D411ED214465F9F4B973A49A69595529",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-1",
+            "objectType": "structured_table_row",
+            "title": "生活垃圾固定桶站",
+            "content": "层级：项目级。编号：7。设施名称：生活垃圾固定桶站。服务内容：—。规模性指标.一般规模.建筑面积(平方米/处)：—。用地面积(平方米/处)：10—15。千人指标.建筑面积(平方米)：—。用地面积(平方米)：—。服务规模：100—200户",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 1,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "项目级",
+                "7",
+                "生活垃圾固定桶站",
+                "—",
+                "—",
+                "10—15",
+                "—",
+                "—",
+                "100—200户"
+              ],
+              "previousRow": [
+                "项目级",
+                "6",
+                "电缆分界室",
+                "—",
+                "25—35",
+                "—",
+                "—",
+                "—",
+                "—"
+              ],
+              "nextRow": [
+                "项目级",
+                "8",
+                "生活垃圾分类驿站",
+                "—",
+                "—",
+                "15—25",
+                "—",
+                "—",
+                "300—500户"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 1
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-2",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第42页，未命名表格第2行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-42.png",
+          "sourceImageSha256": "E42D9842C845D980E5CAB0E310E2DFF7D411ED214465F9F4B973A49A69595529",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-2",
+            "objectType": "structured_table_row",
+            "title": "生活垃圾分类驿站",
+            "content": "层级：项目级。编号：8。设施名称：生活垃圾分类驿站。服务内容：—。规模性指标.一般规模.建筑面积(平方米/处)：—。用地面积(平方米/处)：15—25。千人指标.建筑面积(平方米)：—。用地面积(平方米)：—。服务规模：300—500户",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 2,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "项目级",
+                "8",
+                "生活垃圾分类驿站",
+                "—",
+                "—",
+                "15—25",
+                "—",
+                "—",
+                "300—500户"
+              ],
+              "previousRow": [
+                "项目级",
+                "7",
+                "生活垃圾固定桶站",
+                "—",
+                "—",
+                "10—15",
+                "—",
+                "—",
+                "100—200户"
+              ],
+              "nextRow": [
+                "项目级",
+                "9",
+                "可回收物交投点",
+                "—",
+                "—",
+                "15—25",
+                "—",
+                "—",
+                "300—500户"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-3",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第42页，未命名表格第3行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-42.png",
+          "sourceImageSha256": "E42D9842C845D980E5CAB0E310E2DFF7D411ED214465F9F4B973A49A69595529",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-3",
+            "objectType": "structured_table_row",
+            "title": "可回收物交投点",
+            "content": "层级：项目级。编号：9。设施名称：可回收物交投点。服务内容：—。规模性指标.一般规模.建筑面积(平方米/处)：—。用地面积(平方米/处)：15—25。千人指标.建筑面积(平方米)：—。用地面积(平方米)：—。服务规模：300—500户",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 3,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "项目级",
+                "9",
+                "可回收物交投点",
+                "—",
+                "—",
+                "15—25",
+                "—",
+                "—",
+                "300—500户"
+              ],
+              "previousRow": [
+                "项目级",
+                "8",
+                "生活垃圾分类驿站",
+                "—",
+                "—",
+                "15—25",
+                "—",
+                "—",
+                "300—500户"
+              ],
+              "nextRow": [
+                "项目级",
+                "10",
+                "能源站",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—",
+                "—"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 3
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-10",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第42页，未命名表格第10行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-42.png",
+          "sourceImageSha256": "E42D9842C845D980E5CAB0E310E2DFF7D411ED214465F9F4B973A49A69595529",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-10",
+            "objectType": "structured_table_row",
+            "title": "有线电视机房",
+            "content": "层级：社区级。编号：16。设施名称：有线电视机房。服务内容：—。规模性指标.一般规模.建筑面积(平方米/处)：30—50。用地面积(平方米/处)：—。千人指标.建筑面积(平方米)：—。用地面积(平方米)：—。服务规模：1000—5000户",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 10,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "社区级",
+                "16",
+                "有线电视机房",
+                "—",
+                "30—50",
+                "—",
+                "—",
+                "—",
+                "1000—5000户"
+              ],
+              "previousRow": [
+                "社区级",
+                "15",
+                "综合通信机房",
+                "设置固定通信及移动通信设施。",
+                "50—70",
+                "—",
+                "—",
+                "—",
+                "20 /1000—5000户"
+              ],
+              "nextRow": [
+                "社区级",
+                "17",
+                "公共厕所",
+                "—",
+                "30—80",
+                "60—120",
+                "10",
+                "—",
+                "3000—8000人"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 10
+          }
+        },
+        {
+          "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-11",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第42页，未命名表格第11行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564480335-lkrbih-page-42.png",
+          "sourceImageSha256": "E42D9842C845D980E5CAB0E310E2DFF7D411ED214465F9F4B973A49A69595529",
+          "parsedItem": {
+            "auditItemId": "doc-1782564480335-lkrbih-tbl-29-row-11",
+            "objectType": "structured_table_row",
+            "title": "公共厕所",
+            "content": "层级：社区级。编号：17。设施名称：公共厕所。服务内容：—。规模性指标.一般规模.建筑面积(平方米/处)：30—80。用地面积(平方米/处)：60—120。千人指标.建筑面积(平方米)：10。用地面积(平方米)：—。服务规模：3000—8000人",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 11,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "社区级",
+                "17",
+                "公共厕所",
+                "—",
+                "30—80",
+                "60—120",
+                "10",
+                "—",
+                "3000—8000人"
+              ],
+              "previousRow": [
+                "社区级",
+                "16",
+                "有线电视机房",
+                "—",
+                "30—50",
+                "—",
+                "—",
+                "—",
+                "1000—5000户"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 11
+          }
+        },
+        {
+          "auditItemId": "figure-1-known-issue",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "图1逐字节保留用户证据：标题退化为“3.、、 5、10、15。”，而原页为完整指标修改说明。",
+          "sourceImagePath": "figure-1.png",
+          "sourceImageSha256": "4E23F221B4ED7A19D1F5FC84182219ED16A4DF080BB80A8CA00586C17D15DA0A",
+          "parsedItem": {
+            "auditItemId": "figure-1-known-issue",
+            "objectType": "structured_table_row",
+            "title": "3.、、 5、10、15。",
+            "content": "列1：说明。指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理：3.、、 5、10、15。",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 31,
+              "pageEnd": 31,
+              "blockIds": [],
+              "tableId": "tbl-17",
+              "rowIndex": 8,
+              "ragTableId": "tbl-17",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "指标变化情况在各层级均明确了蔬菜零售网点配置指标细化了街道级菜市场配置指标将早餐药店理发修理"
+              ],
+              "targetRow": [
+                "说明",
+                "3.、、 5、10、15。"
+              ],
+              "previousRow": [
+                "说明",
+                "项目级,社区级街道级便民商业服务设,施分别满足分钟分钟分钟社区生活,圈服务要求。"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 31,
+            "pageEnd": 31,
+            "tableId": "tbl-17",
+            "rowIndex": 8
+          }
+        },
+        {
+          "auditItemId": "figure-2-known-issue",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "图2逐字节保留用户证据：第15行服务规模被相邻第14行数值20污染。",
+          "sourceImagePath": "figure-2.png",
+          "sourceImageSha256": "F7C18CE9A9EB8315A3924223C743DD5C96CA8DCD0AFDDD6F367760FC7BA0441D",
+          "parsedItem": {
+            "auditItemId": "figure-2-known-issue",
+            "objectType": "structured_table_row",
+            "title": "综合通信机房",
+            "content": "层级：社区级。编号：15。设施名称：综合通信机房。服务内容：设置固定通信及移动通信设施。。规模性指标.一般规模.建筑面积(平方米/处)：50—70。用地面积(平方米/处)：—。千人指标.建筑面积(平方米)：—。用地面积(平方米)：—。服务规模：20 /1000—5000户",
+            "confidence": 0.95,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 42,
+              "pageEnd": 42,
+              "blockIds": [],
+              "tableId": "tbl-29",
+              "rowIndex": 9,
+              "ragTableId": "tbl-29",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "层级",
+                "编号",
+                "设施名称",
+                "服务内容",
+                "规模性指标.一般规模.建筑面积(平方米/处)",
+                "用地面积(平方米/处)",
+                "千人指标.建筑面积(平方米)",
+                "用地面积(平方米)",
+                "服务规模"
+              ],
+              "targetRow": [
+                "社区级",
+                "15",
+                "综合通信机房",
+                "设置固定通信及移动通信设施。",
+                "50—70",
+                "—",
+                "—",
+                "—",
+                "20 /1000—5000户"
+              ],
+              "previousRow": [
+                "项目级",
+                "14",
+                "污水处置及再生利用装置",
+                "就地处理污水并回收利用。",
+                "—",
+                "—",
+                "—",
+                "—",
+                "未,与城市再10生00水0管网相)连建筑面积平方米以,上,或可回5收00水00量大于立方米日的居住区和集15中0建筑区/等应设置污水处置及再生利用装置,按照建筑面积平方米/万平方米配置"
+              ],
+              "nextRow": [
+                "社区级",
+                "16",
+                "有线电视机房",
+                "—",
+                "30—50",
+                "—",
+                "—",
+                "—",
+                "1000—5000户"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "row_boundary_contamination"
+          ],
+          "correctSource": {
+            "pageStart": 42,
+            "pageEnd": 42,
+            "tableId": "tbl-29",
+            "rowIndex": 9
+          }
+        },
+        {
+          "auditItemId": "figure-3-known-issue",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "图3逐字节保留用户证据：“指标修改说明”整段被错误作为设施名称和行标题。",
+          "sourceImagePath": "figure-3.png",
+          "sourceImageSha256": "9CBD25BB576D0346CC54F7FF44DA424C80B65DF94C7AE5087E0A8AD9B042FA60",
+          "parsedItem": {
+            "auditItemId": "figure-3-known-issue",
+            "objectType": "structured_table_row",
+            "title": "根据《新建居住项目〈电动自行车相关配建指标〉》(京规自发〔2023〕2号)增加了电动自行车停车及充电设施配置要求,并结合电动自行车发展趋势适当优化;结合互联网租赁自行车发展及使用情况,居民家庭及个人自行车保有量下降情况,降低了自行车停车位配置标准,增加了互联网租赁自行车结合小区出入口广场停放的规划要求。",
+            "content": "配置要求：指标修改说明。设施名称：根据《新建居住项目〈电动自行车相关配建指标〉》(京规自发〔2023〕2号)增加了电动自行车停车及充电设施配置要求,并结合电动自行车发展趋势适当优化;结合互联网租赁自行车发展及使用情况,居民家庭及个人自行车保有量下降情况,降低了自行车停车位配置标准,增加了互联网租赁自行车结合小区出入口广场停放的规划要求。。列3：自行车停车处。详细配置要求：自行车停车位占地面积为1.2-1.5平方米/车。",
+            "confidence": 0.95,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 36,
+              "pageEnd": 36,
+              "blockIds": [],
+              "tableId": "tbl-22",
+              "rowIndex": 5,
+              "ragTableId": "tbl-22",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "配置要求",
+                "设施名称",
+                "列3",
+                "详细配置要求"
+              ],
+              "targetRow": [
+                "指标修改说明",
+                "根据《新建居住项目〈电动自行车相关配建指标〉》(京规自发〔2023〕2号)增加了电动自行车停车及充电设施配置要求,并结合电动自行车发展趋势适当优化;结合互联网租赁自行车发展及使用情况,居民家庭及个人自行车保有量下降情况,降低了自行车停车位配置标准,增加了互联网租赁自行车结合小区出入口广场停放的规划要求。",
+                "自行车停车处",
+                "自行车停车位占地面积为1.2-1.5平方米/车。"
+              ],
+              "previousRow": [
+                "指标使用说明",
+                "其中",
+                "自行车停车处",
+                "自行车停车位占地面积为1.2-1.5平方米/车。"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "semantic_assignment_error"
+          ],
+          "correctSource": {
+            "pageStart": 36,
+            "pageEnd": 36,
+            "tableId": "tbl-22",
+            "rowIndex": 5
+          }
+        }
+      ]
+    },
+    {
+      "documentId": "doc-1782564510475-qm803w",
+      "documentName": "北京市控制性详细规划编制技术标准与成果规范-2022年9月版.pdf",
+      "items": [
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-0-row-5",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第29页商业商务主导区行被拼入上一行“物流仓储主导区”，且标题带入页眉水印字。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-29.png",
+          "sourceImageSha256": "BF666C367FCEF9B0A4CCBF27678598290009E99BD353B345566B2B8E26E0F1F8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-0-row-5",
+            "objectType": "structured_table_row",
+            "title": "京北商业商务主导区",
+            "content": "序号：3。类别：京北商业商务主导区。列3：京物流仓储主导区。自管控要求（新用地分类）：09商业服务业用地（不含090105和090203）占建设用地总量50%以上",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 29,
+              "pageEnd": 29,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 5,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "序号",
+                "类别",
+                "列3",
+                "自管控要求（新用地分类）"
+              ],
+              "targetRow": [
+                "3",
+                "京北商业商务主导区",
+                "京物流仓储主导区",
+                "09商业服务业用地（不含090105和090203）占建设用地总量50%以上"
+              ],
+              "previousRow": [
+                "2",
+                "其中",
+                "京物流仓储主导区",
+                "11仓储用地占建设用地总量50%以上"
+              ],
+              "nextRow": [
+                "3",
+                "其中",
+                "商业主导区",
+                "0901商业用地（不含090105）、0903娱乐康体用地、0904其他商业服务业用地占建设用地总量50%以上"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "row_boundary_contamination"
+          ],
+          "correctSource": {
+            "pageStart": 29,
+            "pageEnd": 29,
+            "tableId": "tbl-0",
+            "rowIndex": 5
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-0-row-8",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第29页文化教育主导区行的中间列错误沿用了上一类别“商务主导区”。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-29.png",
+          "sourceImageSha256": "BF666C367FCEF9B0A4CCBF27678598290009E99BD353B345566B2B8E26E0F1F8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-0-row-8",
+            "objectType": "structured_table_row",
+            "title": "文化教育主导区",
+            "content": "序号：4。类别：文化教育主导区。列3：商务主导区。自管控要求（新用地分类）：0802科研用地、0803文化用地（市级、区级文化设施）、0804教育用地（不含080403和080404）占建设用地总量50%以上",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 29,
+              "pageEnd": 29,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 8,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "序号",
+                "类别",
+                "列3",
+                "自管控要求（新用地分类）"
+              ],
+              "targetRow": [
+                "4",
+                "文化教育主导区",
+                "商务主导区",
+                "0802科研用地、0803文化用地（市级、区级文化设施）、0804教育用地（不含080403和080404）占建设用地总量50%以上"
+              ],
+              "previousRow": [
+                "3",
+                "其中",
+                "商务主导区",
+                "0902商务金融用地（不含090203）占建设用地总量50%以上"
+              ],
+              "nextRow": [
+                "5",
+                "公共服务主导区",
+                "商务主导区",
+                "0702城镇社区服务设施用地、0803文化用地（街道乡镇级、社区级文化设施）、080403中小学用地、080404幼儿"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "row_boundary_contamination"
+          ],
+          "correctSource": {
+            "pageStart": 29,
+            "pageEnd": 29,
+            "tableId": "tbl-0",
+            "rowIndex": 8
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-0-row-9",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第29页公共服务主导区行的中间列错误沿用了上一类别“商务主导区”。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-29.png",
+          "sourceImageSha256": "BF666C367FCEF9B0A4CCBF27678598290009E99BD353B345566B2B8E26E0F1F8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-0-row-9",
+            "objectType": "structured_table_row",
+            "title": "公共服务主导区",
+            "content": "序号：5。类别：公共服务主导区。列3：商务主导区。自管控要求（新用地分类）：0702城镇社区服务设施用地、0803文化用地（街道乡镇级、社区级文化设施）、080403中小学用地、080404幼儿",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 29,
+              "pageEnd": 29,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 9,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "序号",
+                "类别",
+                "列3",
+                "自管控要求（新用地分类）"
+              ],
+              "targetRow": [
+                "5",
+                "公共服务主导区",
+                "商务主导区",
+                "0702城镇社区服务设施用地、0803文化用地（街道乡镇级、社区级文化设施）、080403中小学用地、080404幼儿"
+              ],
+              "previousRow": [
+                "4",
+                "文化教育主导区",
+                "商务主导区",
+                "0802科研用地、0803文化用地（市级、区级文化设施）、0804教育用地（不含080403和080404）占建设用地总量50%以上"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "row_boundary_contamination"
+          ],
+          "correctSource": {
+            "pageStart": 29,
+            "pageEnd": 29,
+            "tableId": "tbl-0",
+            "rowIndex": 9
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-4",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第30页混合功能主导区说明被页眉水印拆入“会、员”等孤立字符。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-4",
+            "objectType": "structured_table_row",
+            "title": "会鼓励在城市公共活动中心地区、轨员道交通站点周边地区等划定混合功能主导区，另外，以上均不符合，没有任一功能用地占建设用地总量超过50%",
+            "content": "列1：10。列2：混合功能主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：会鼓励在城市公共活动中心地区、轨员道交通站点周边地区等划定混合功能主导区，另外，以上均不符合，没有任一功能用地占建设用地总量超过50%",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 4,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "10",
+                "混合功能主导区",
+                "会鼓励在城市公共活动中心地区、轨员道交通站点周边地区等划定混合功能主导区，另外，以上均不符合，没有任一功能用地占建设用地总量超过50%"
+              ],
+              "previousRow": [
+                "9",
+                "绿地水域主导区",
+                "14绿地与开敞空间用地、1311干渠占建设用地总量50%以上"
+              ],
+              "nextRow": [
+                "11",
+                "特殊功能主导区",
+                "委15特殊用地占建设用地总量50%以上"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "non_severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 4
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-5",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第30页特殊功能主导区说明前混入与正文无关的孤立“委”字。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-5",
+            "objectType": "structured_table_row",
+            "title": "委15特殊用地占建设用地总量50%以上",
+            "content": "列1：11。列2：特殊功能主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：委15特殊用地占建设用地总量50%以上",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 5,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "11",
+                "特殊功能主导区",
+                "委15特殊用地占建设用地总量50%以上"
+              ],
+              "previousRow": [
+                "10",
+                "混合功能主导区",
+                "会鼓励在城市公共活动中心地区、轨员道交通站点周边地区等划定混合功能主导区，另外，以上均不符合，没有任一功能用地占建设用地总量超过50%"
+              ],
+              "nextRow": [
+                "12",
+                "战略留白主导区",
+                "源1601战略留白用地应单独划定主导功能分区"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "non_severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 5
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-11",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第30页林草保护主导区标题被水印字符拆成“市林草京保护主导区”。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-11",
+            "objectType": "structured_table_row",
+            "title": "全市一级林地、二级林地、生态公益林等重要林地、草地资源相对集中，主要用于生态环境保育和生态修复的区域，以03林地、04草地为主",
+            "content": "列1：17。列2：市林草京保护主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：全市一级林地、二级林地、生态公益林等重要林地、草地资源相对集中，主要用于生态环境保育和生态修复的区域，以03林地、04草地为主",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 11,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "17",
+                "市林草京保护主导区",
+                "全市一级林地、二级林地、生态公益林等重要林地、草地资源相对集中，主要用于生态环境保育和生态修复的区域，以03林地、04草地为主"
+              ],
+              "previousRow": [
+                "16",
+                "农田保护主导规区",
+                "划永久基本农田、永久基本农田储备区、耕地保有量储备区相对集中，需严格保护和管理的区域，以01耕地为主"
+              ],
+              "nextRow": [
+                "18",
+                "北一般农业主导区",
+                "以农业发展生产为主的区域，以01耕地、02园地为主"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "non_severe",
+          "issueTypes": [
+            "reading_order_noise"
+          ],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 11
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-0",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第30页，未命名表格第0行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-0",
+            "objectType": "structured_table_row",
+            "title": "0801机关团体用地占建设用地总量50%以上",
+            "content": "列1：6。列2：行政办公主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：0801机关团体用地占建设用地总量50%以上",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 0,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "6",
+                "行政办公主导区",
+                "0801机关团体用地占建设用地总量50%以上"
+              ],
+              "nextRow": [
+                "7",
+                "交通枢纽主导区",
+                "12交通运输用地中，机场、港口、铁路客货运站等大型交通设施用地占建设用地总量50%以上"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-1",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第30页，未命名表格第1行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-1",
+            "objectType": "structured_table_row",
+            "title": "12交通运输用地中，机场、港口、铁路客货运站等大型交通设施用地占建设用地总量50%以上",
+            "content": "列1：7。列2：交通枢纽主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：12交通运输用地中，机场、港口、铁路客货运站等大型交通设施用地占建设用地总量50%以上",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 1,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "7",
+                "交通枢纽主导区",
+                "12交通运输用地中，机场、港口、铁路客货运站等大型交通设施用地占建设用地总量50%以上"
+              ],
+              "previousRow": [
+                "6",
+                "行政办公主导区",
+                "0801机关团体用地占建设用地总量50%以上"
+              ],
+              "nextRow": [
+                "8",
+                "基础设施主导区",
+                "其他12交通运输用地、13公用设施用地（不含1307和1311）占建设用地总量50%以上"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 1
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-2",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第30页，未命名表格第2行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-2",
+            "objectType": "structured_table_row",
+            "title": "其他12交通运输用地、13公用设施用地（不含1307和1311）占建设用地总量50%以上",
+            "content": "列1：8。列2：基础设施主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：其他12交通运输用地、13公用设施用地（不含1307和1311）占建设用地总量50%以上",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 2,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "8",
+                "基础设施主导区",
+                "其他12交通运输用地、13公用设施用地（不含1307和1311）占建设用地总量50%以上"
+              ],
+              "previousRow": [
+                "7",
+                "交通枢纽主导区",
+                "12交通运输用地中，机场、港口、铁路客货运站等大型交通设施用地占建设用地总量50%以上"
+              ],
+              "nextRow": [
+                "9",
+                "绿地水域主导区",
+                "14绿地与开敞空间用地、1311干渠占建设用地总量50%以上"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-3",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第30页，未命名表格第3行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-3",
+            "objectType": "structured_table_row",
+            "title": "14绿地与开敞空间用地、1311干渠占建设用地总量50%以上",
+            "content": "列1：9。列2：绿地水域主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：14绿地与开敞空间用地、1311干渠占建设用地总量50%以上",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 3,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "9",
+                "绿地水域主导区",
+                "14绿地与开敞空间用地、1311干渠占建设用地总量50%以上"
+              ],
+              "previousRow": [
+                "8",
+                "基础设施主导区",
+                "其他12交通运输用地、13公用设施用地（不含1307和1311）占建设用地总量50%以上"
+              ],
+              "nextRow": [
+                "10",
+                "混合功能主导区",
+                "会鼓励在城市公共活动中心地区、轨员道交通站点周边地区等划定混合功能主导区，另外，以上均不符合，没有任一功能用地占建设用地总量超过50%"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 3
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-13",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第30页，未命名表格第13行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-13",
+            "objectType": "structured_table_row",
+            "title": "以林业生产为主和其他生态区域，以03林地、04草地为主",
+            "content": "列1：19。列2：一般生态主导区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：以林业生产为主和其他生态区域，以03林地、04草地为主",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 13,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "19",
+                "一般生态主导区",
+                "以林业生产为主和其他生态区域，以03林地、04草地为主"
+              ],
+              "previousRow": [
+                "18",
+                "北一般农业主导区",
+                "以农业发展生产为主的区域，以01耕地、02园地为主"
+              ],
+              "nextRow": [
+                "20",
+                "有条件建设区",
+                "在城市开发边界内及周边预留的城乡建设用地可调整的范围"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 13
+          }
+        },
+        {
+          "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-14",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第30页，未命名表格第14行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564510475-qm803w-page-30.png",
+          "sourceImageSha256": "D90BAE3D10629596D76781B5D28E59F81299D5FF76C681F921C917FA71388AF8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564510475-qm803w-tbl-1-row-14",
+            "objectType": "structured_table_row",
+            "title": "在城市开发边界内及周边预留的城乡建设用地可调整的范围",
+            "content": "列1：20。列2：有条件建设区。园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上：在城市开发边界内及周边预留的城乡建设用地可调整的范围",
+            "confidence": 0.69,
+            "warnings": [
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 30,
+              "pageEnd": 30,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 14,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "园用地、0805体育用地、0806医疗卫生用地、0807社会福利用地、08A公共事务用地、1307邮政用地占建设用地总量50%以上"
+              ],
+              "targetRow": [
+                "20",
+                "有条件建设区",
+                "在城市开发边界内及周边预留的城乡建设用地可调整的范围"
+              ],
+              "previousRow": [
+                "19",
+                "一般生态主导区",
+                "以林业生产为主和其他生态区域，以03林地、04草地为主"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 30,
+            "pageEnd": 30,
+            "tableId": "tbl-1",
+            "rowIndex": 14
+          }
+        }
+      ]
+    },
+    {
+      "documentId": "doc-1782564681224-w8e22z",
+      "documentName": "全-规划综合实施方案指南2022.12 最终最新.pdf",
+      "items": [
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-2",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第14页两列表格中“更新维护要求”仅对应一行，解析结果把该值及其说明传播到“土地整理及供应”行。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-14.png",
+          "sourceImageSha256": "393246A80E36AED4C816D9D582E29A7313CB54DFE0D654380EA565FFB50BD8E4",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-2",
+            "objectType": "structured_table_row",
+            "title": "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+            "content": "高质量、精细化引导要求：更新维护要求。列2：土地整理及供应。管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。：国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。。列9：土地整理、土地供应方式、征地拆迁安置等内容",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 14,
+              "pageEnd": 14,
+              "blockIds": [],
+              "tableId": "tbl-2",
+              "rowIndex": 2,
+              "ragTableId": "tbl-2",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "高质量、精细化引导要求",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。",
+                "列9",
+                "列10",
+                "列11",
+                "列12",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17"
+              ],
+              "targetRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "",
+                "",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "更新维护要求",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施时序安排",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "实施时序、项目清单等",
+                "",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "merged_cell_scope_error"
+          ],
+          "correctSource": {
+            "pageStart": 14,
+            "pageEnd": 14,
+            "tableId": "tbl-2",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-3",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第14页“实施时序安排”应为独立行，解析结果叠加了前两行的字段和值。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-14.png",
+          "sourceImageSha256": "393246A80E36AED4C816D9D582E29A7313CB54DFE0D654380EA565FFB50BD8E4",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-3",
+            "objectType": "structured_table_row",
+            "title": "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+            "content": "高质量、精细化引导要求：更新维护要求。列2：土地整理及供应。列3：实施时序安排。管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。：国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。。列9：土地整理、土地供应方式、征地拆迁安置等内容。列12：实施时序、项目清单等",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 14,
+              "pageEnd": 14,
+              "blockIds": [],
+              "tableId": "tbl-2",
+              "rowIndex": 3,
+              "ragTableId": "tbl-2",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "高质量、精细化引导要求",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。",
+                "列9",
+                "列10",
+                "列11",
+                "列12",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17"
+              ],
+              "targetRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施时序安排",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "实施时序、项目清单等",
+                "",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "",
+                "",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施时序安排",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "实施举措、建议、应对方案等",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "merged_cell_scope_error"
+          ],
+          "correctSource": {
+            "pageStart": 14,
+            "pageEnd": 14,
+            "tableId": "tbl-2",
+            "rowIndex": 3
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-4",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第14页“实施建议”应仅对应自身说明，解析结果保留多个上游行的重复列。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-14.png",
+          "sourceImageSha256": "393246A80E36AED4C816D9D582E29A7313CB54DFE0D654380EA565FFB50BD8E4",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-4",
+            "objectType": "structured_table_row",
+            "title": "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+            "content": "高质量、精细化引导要求：更新维护要求。列2：土地整理及供应。列3：实施时序安排。列4：实施建议。管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。：国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。。列9：土地整理、土地供应方式、征地拆迁安置等内容。列11：实施举措、建议、应对方案等。列12：实施时序、项目清单等",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 14,
+              "pageEnd": 14,
+              "blockIds": [],
+              "tableId": "tbl-2",
+              "rowIndex": 4,
+              "ragTableId": "tbl-2",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "高质量、精细化引导要求",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。",
+                "列9",
+                "列10",
+                "列11",
+                "列12",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17"
+              ],
+              "targetRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施时序安排",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "实施举措、建议、应对方案等",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施时序安排",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "实施时序、项目清单等",
+                "",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "综合效益评估",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "",
+                "实施举措、建议、应对方案等",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "merged_cell_scope_error"
+          ],
+          "correctSource": {
+            "pageStart": 14,
+            "pageEnd": 14,
+            "tableId": "tbl-2",
+            "rowIndex": 4
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-5",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第14页“综合效益评估”独立行被错误继承“更新维护、土地整理、实施建议”等值。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-14.png",
+          "sourceImageSha256": "393246A80E36AED4C816D9D582E29A7313CB54DFE0D654380EA565FFB50BD8E4",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-5",
+            "objectType": "structured_table_row",
+            "title": "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+            "content": "高质量、精细化引导要求：更新维护要求。列2：土地整理及供应。列3：综合效益评估。列4：实施建议。管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。：国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。。列9：社会、经济、生态、可持续发展等方面的贡献价值。列11：实施举措、建议、应对方案等。列12：实施时序、项目清单等",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 14,
+              "pageEnd": 14,
+              "blockIds": [],
+              "tableId": "tbl-2",
+              "rowIndex": 5,
+              "ragTableId": "tbl-2",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "高质量、精细化引导要求",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。",
+                "列9",
+                "列10",
+                "列11",
+                "列12",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17"
+              ],
+              "targetRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "综合效益评估",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "",
+                "实施举措、建议、应对方案等",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施时序安排",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "土地整理、土地供应方式、征地拆迁安置等内容",
+                "",
+                "实施举措、建议、应对方案等",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施资金测算",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "",
+                "实施举措、建议、应对方案等",
+                "成本测算、收益测算等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "merged_cell_scope_error"
+          ],
+          "correctSource": {
+            "pageStart": 14,
+            "pageEnd": 14,
+            "tableId": "tbl-2",
+            "rowIndex": 5
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-6",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第14页“实施资金测算”独立行被错误扩展为多列并继承相邻行内容。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-14.png",
+          "sourceImageSha256": "393246A80E36AED4C816D9D582E29A7313CB54DFE0D654380EA565FFB50BD8E4",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-6",
+            "objectType": "structured_table_row",
+            "title": "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+            "content": "高质量、精细化引导要求：更新维护要求。列2：土地整理及供应。列3：实施资金测算。列4：实施建议。管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。：国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。。列9：社会、经济、生态、可持续发展等方面的贡献价值。列11：实施举措、建议、应对方案等。列12：成本测算、收益测算等",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 14,
+              "pageEnd": 14,
+              "blockIds": [],
+              "tableId": "tbl-2",
+              "rowIndex": 6,
+              "ragTableId": "tbl-2",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "高质量、精细化引导要求",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。",
+                "列9",
+                "列10",
+                "列11",
+                "列12",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17"
+              ],
+              "targetRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施资金测算",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "",
+                "实施举措、建议、应对方案等",
+                "成本测算、收益测算等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "综合效益评估",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "",
+                "实施举措、建议、应对方案等",
+                "实施时序、项目清单等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "更新维护要求",
+                "经济可行性分析",
+                "实施资金测算",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "项目损益、资金来源、平衡方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "项目损益、资金来源、平衡方案等",
+                "实施举措、建议、应对方案等",
+                "成本测算、收益测算等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "merged_cell_scope_error"
+          ],
+          "correctSource": {
+            "pageStart": 14,
+            "pageEnd": 14,
+            "tableId": "tbl-2",
+            "rowIndex": 6
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-7",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第14页“经济可行性分析”独立行被错误继承相邻多行内容，列范围与原页两列结构不符。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-14.png",
+          "sourceImageSha256": "393246A80E36AED4C816D9D582E29A7313CB54DFE0D654380EA565FFB50BD8E4",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-2-row-7",
+            "objectType": "structured_table_row",
+            "title": "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+            "content": "高质量、精细化引导要求：更新维护要求。列2：经济可行性分析。列3：实施资金测算。列4：实施建议。管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。：国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。。列9：社会、经济、生态、可持续发展等方面的贡献价值。列10：项目损益、资金来源、平衡方案等。列11：实施举措、建议、应对方案等。列12：成本测算、收益测算等",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 14,
+              "pageEnd": 14,
+              "blockIds": [],
+              "tableId": "tbl-2",
+              "rowIndex": 7,
+              "ragTableId": "tbl-2",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "高质量、精细化引导要求",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。",
+                "列9",
+                "列10",
+                "列11",
+                "列12",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17"
+              ],
+              "targetRow": [
+                "更新维护要求",
+                "经济可行性分析",
+                "实施资金测算",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "项目损益、资金来源、平衡方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "项目损益、资金来源、平衡方案等",
+                "实施举措、建议、应对方案等",
+                "成本测算、收益测算等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "更新维护要求",
+                "土地整理及供应",
+                "实施资金测算",
+                "实施建议",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "实施举措、建议、应对方案等",
+                "国土空间规划一张图更新维护方案，使用机动用地指标和建筑规模指标、生态保护红线不可避让论证等的专题说明。",
+                "社会、经济、生态、可持续发展等方面的贡献价值",
+                "",
+                "实施举措、建议、应对方案等",
+                "成本测算、收益测算等",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "merged_cell_scope_error"
+          ],
+          "correctSource": {
+            "pageStart": 14,
+            "pageEnd": 14,
+            "tableId": "tbl-2",
+            "rowIndex": 7
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-0",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第13页，主菜单（基础要求）第0行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-13.png",
+          "sourceImageSha256": "EADBF553896098A0342B1F9340C1626784D18A659875B1BDDF706D128B37C620",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-0",
+            "objectType": "structured_table_row",
+            "title": "编制背景及规划沿革",
+            "content": "列1：编制背景及规划沿革。列4：规划背景、位置、规划范围、规划依据、规划原则等",
+            "confidence": 0.8500000000000001,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 13,
+              "pageEnd": 13,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 0,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "技术要求",
+                "列3",
+                "列4",
+                "具体内容",
+                "列6"
+              ],
+              "targetRow": [
+                "编制背景及规划沿革",
+                "规划背景、位置、规划范围、规划依据、规划原则等",
+                "",
+                "规划背景、位置、规划范围、规划依据、规划原则等",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "现状情况梳理及实施评估",
+                "现状土地资源条件及评价、现状土地使用情况及评价、规划实施评估等",
+                "",
+                "现状土地资源条件及评价、现状土地使用情况及评价、规划实施评估等",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 13,
+            "pageEnd": 13,
+            "tableId": "tbl-0",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-1",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第13页，主菜单（基础要求）第1行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-13.png",
+          "sourceImageSha256": "EADBF553896098A0342B1F9340C1626784D18A659875B1BDDF706D128B37C620",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-1",
+            "objectType": "structured_table_row",
+            "title": "现状情况梳理及实施评估",
+            "content": "列1：现状情况梳理及实施评估。列4：现状土地资源条件及评价、现状土地使用情况及评价、规划实施评估等",
+            "confidence": 0.8500000000000001,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 13,
+              "pageEnd": 13,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 1,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "技术要求",
+                "列3",
+                "列4",
+                "具体内容",
+                "列6"
+              ],
+              "targetRow": [
+                "现状情况梳理及实施评估",
+                "现状土地资源条件及评价、现状土地使用情况及评价、规划实施评估等",
+                "",
+                "现状土地资源条件及评价、现状土地使用情况及评价、规划实施评估等",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "编制背景及规划沿革",
+                "规划背景、位置、规划范围、规划依据、规划原则等",
+                "",
+                "规划背景、位置、规划范围、规划依据、规划原则等",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "上位规划落实及调整论证",
+                "对上位规划空间布局、管控要求等的落实情况和调整论证",
+                "",
+                "对上位规划空间布局、管控要求等的落实情况和调整论证",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 13,
+            "pageEnd": 13,
+            "tableId": "tbl-0",
+            "rowIndex": 1
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-2",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第13页，主菜单（基础要求）第2行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-13.png",
+          "sourceImageSha256": "EADBF553896098A0342B1F9340C1626784D18A659875B1BDDF706D128B37C620",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-2",
+            "objectType": "structured_table_row",
+            "title": "上位规划落实及调整论证",
+            "content": "列1：上位规划落实及调整论证。列4：对上位规划空间布局、管控要求等的落实情况和调整论证",
+            "confidence": 0.8500000000000001,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 13,
+              "pageEnd": 13,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 2,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "技术要求",
+                "列3",
+                "列4",
+                "具体内容",
+                "列6"
+              ],
+              "targetRow": [
+                "上位规划落实及调整论证",
+                "对上位规划空间布局、管控要求等的落实情况和调整论证",
+                "",
+                "对上位规划空间布局、管控要求等的落实情况和调整论证",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "现状情况梳理及实施评估",
+                "现状土地资源条件及评价、现状土地使用情况及评价、规划实施评估等",
+                "",
+                "现状土地资源条件及评价、现状土地使用情况及评价、规划实施评估等",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "重要管控边界",
+                "道路红线、河湖保护线、绿地系统线、基础设施建设控制线、历史文化保护线等",
+                "",
+                "道路红线、河湖保护线、绿地系统线、基础设施建设控制线、历史文化保护线等",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 13,
+            "pageEnd": 13,
+            "tableId": "tbl-0",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-3",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第13页，主菜单（基础要求）第3行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-13.png",
+          "sourceImageSha256": "EADBF553896098A0342B1F9340C1626784D18A659875B1BDDF706D128B37C620",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-3",
+            "objectType": "structured_table_row",
+            "title": "重要管控边界",
+            "content": "列1：重要管控边界。列4：道路红线、河湖保护线、绿地系统线、基础设施建设控制线、历史文化保护线等",
+            "confidence": 0.8500000000000001,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 13,
+              "pageEnd": 13,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 3,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "技术要求",
+                "列3",
+                "列4",
+                "具体内容",
+                "列6"
+              ],
+              "targetRow": [
+                "重要管控边界",
+                "道路红线、河湖保护线、绿地系统线、基础设施建设控制线、历史文化保护线等",
+                "",
+                "道路红线、河湖保护线、绿地系统线、基础设施建设控制线、历史文化保护线等",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "上位规划落实及调整论证",
+                "对上位规划空间布局、管控要求等的落实情况和调整论证",
+                "",
+                "对上位规划空间布局、管控要求等的落实情况和调整论证",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "功能定位及规模",
+                "功能定位、用地规模、建筑规模、人口规模等内容",
+                "",
+                "功能定位、用地规模、建筑规模、人口规模等内容",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 13,
+            "pageEnd": 13,
+            "tableId": "tbl-0",
+            "rowIndex": 3
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-4",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第13页，主菜单（基础要求）第4行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-13.png",
+          "sourceImageSha256": "EADBF553896098A0342B1F9340C1626784D18A659875B1BDDF706D128B37C620",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-4",
+            "objectType": "structured_table_row",
+            "title": "功能定位及规模",
+            "content": "列1：功能定位及规模。列4：功能定位、用地规模、建筑规模、人口规模等内容",
+            "confidence": 0.8500000000000001,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 13,
+              "pageEnd": 13,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 4,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "技术要求",
+                "列3",
+                "列4",
+                "具体内容",
+                "列6"
+              ],
+              "targetRow": [
+                "功能定位及规模",
+                "功能定位、用地规模、建筑规模、人口规模等内容",
+                "",
+                "功能定位、用地规模、建筑规模、人口规模等内容",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "重要管控边界",
+                "道路红线、河湖保护线、绿地系统线、基础设施建设控制线、历史文化保护线等",
+                "",
+                "道路红线、河湖保护线、绿地系统线、基础设施建设控制线、历史文化保护线等",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "土地使用控制与引导",
+                "规划用地分类，用地功能布局、用地兼容性要求、建筑高度、建设强度等",
+                "",
+                "规划用地分类，用地功能布局、用地兼容性要求、建筑高度、建设强度等",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 13,
+            "pageEnd": 13,
+            "tableId": "tbl-0",
+            "rowIndex": 4
+          }
+        },
+        {
+          "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-5",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第13页，主菜单（基础要求）第5行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564681224-w8e22z-page-13.png",
+          "sourceImageSha256": "EADBF553896098A0342B1F9340C1626784D18A659875B1BDDF706D128B37C620",
+          "parsedItem": {
+            "auditItemId": "doc-1782564681224-w8e22z-tbl-0-row-5",
+            "objectType": "structured_table_row",
+            "title": "土地使用控制与引导",
+            "content": "列1：土地使用控制与引导。列4：规划用地分类，用地功能布局、用地兼容性要求、建筑高度、建设强度等",
+            "confidence": 0.8500000000000001,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 13,
+              "pageEnd": 13,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 5,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "技术要求",
+                "列3",
+                "列4",
+                "具体内容",
+                "列6"
+              ],
+              "targetRow": [
+                "土地使用控制与引导",
+                "规划用地分类，用地功能布局、用地兼容性要求、建筑高度、建设强度等",
+                "",
+                "规划用地分类，用地功能布局、用地兼容性要求、建筑高度、建设强度等",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "功能定位及规模",
+                "功能定位、用地规模、建筑规模、人口规模等内容",
+                "",
+                "功能定位、用地规模、建筑规模、人口规模等内容",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "三大设施规划",
+                "包括公共服务设施规划、市政基础设施规划、公共安全设施规划等",
+                "",
+                "包括公共服务设施规划、市政基础设施规划、公共安全设施规划等",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 13,
+            "pageEnd": 13,
+            "tableId": "tbl-0",
+            "rowIndex": 5
+          }
+        }
+      ]
+    },
+    {
+      "documentId": "doc-1782564705711-ht5y01",
+      "documentName": "中关村朝阳园北区市政交通方案.pdf",
+      "items": [
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-21-row-0",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第48页为市政管线规划图，解析却把图签文字组合成structured_table_row，并不存在对应表格行。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-48.png",
+          "sourceImageSha256": "81530A5644CA28A2E35E39CFB05BCFBCB2E34D0F237F7A84395F79F557524963",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-21-row-0",
+            "objectType": "structured_table_row",
+            "title": "中关村朝阳园北区29052905-0018地块综市政交通",
+            "content": "列2：中关村朝阳园北区29052905-0018地块综市政交通。列3：-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案。列4：专业负责人铁路环规划设计人。列5：环内侧。列6：审核120校对。列8：00",
+            "confidence": 0.77,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 48,
+              "pageEnd": 48,
+              "blockIds": [],
+              "tableId": "tbl-21",
+              "rowIndex": 0,
+              "ragTableId": "tbl-21",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "中关村朝阳园北区2905.0017地块其他类多功能用地、2905.0018地块综合性商业金融服务业用地善各庄路广市政交通规划综合方案善008路广Ф善规划善各庄110千伏变电站东051自康营次高压A调压箱外电源引自规划何各庄220千伏变电站。 Ф2气源引4 K路+05东路12 K1Ф来广营 TV 4 K DN50014 K 21 12 K DN600沈DN2 K TV DN500Ф 2□26 DN60500 TV 4 K DN600家1000 00×240 12 K0 12Ф150+2Ф150坟Ф16000 DN500 Ф150+2Ф150干望0 DN602400 Ф600 12 DN400渠水DN400 2□26000×0 Ф1000 12Ф150+2Ф150 WR DN400前Ф1400 Ф1200 DN400Ф700 Ф5 WR Ф400街2K0 WR DN400广电1N40子008D N200K 0 00000000K21K智ФD2容新TV240 6N6Ф4Ф4ND侧双4城WR Ф北路NY.1 × D路K Ф8400 K000000 600规划善各庄东12400 DN2000 12N3Ф8Ф50N20 K□2110千伏变电站00路0 DN 200 TV 12K DN3000 DN1 D D42 NY.2 01容新北路DN40 DN2 K 4K Ф4050 110kV ФФ1400 DN200 00 Ф400DDN2000 Ф400 ФФ142003# 12N300 Ф8004KK DN200 WR变电站WR DN300电源引自孙河220千伏DN3 142KK TV 0 2□2600×240050.D广2 K00 TV 2□2600×240N400善2501DN30 00 K2 006东DN 140 DN24 K150 006 1侧K 4 1×规路00×500 2Ф ND双008划□16Ф 50+ 1□Ф1电二12轨路北子城道00 008大交61× Ф0通000容×160街M15 2□道路0000 1:5000号规划六路□18Ф5线容新□2000×1600路规划三图例路图例图例说明Ф10路00规索家规划中低压调压箱划规划有线电视基站四规划通信机房路110kV规划110千伏变电站Ф规划分布式能源站1000规划区域能源中心006本次规划雨水管道1×其他规划雨水管道004现状雨水管道2□新增街坊二路拟建雨水管道（已取得规划批复）沈家Ф10坟00本次规划污水管道干渠0其他规划污水管道Ф80现状污水管道拟建污水管道（已取得规划批复）本次规划供水管道00索家其他规划供水管道×18南路现状供水管道容道400拟建供水管道（已取得规划批复） Ф路□2WR本次规划再生水管道1000WR其他规划再生水管道WR现状再生水管道□WR拟建再生水管道（已取得规划批复） 2600现状中压天然气管道×18其他规划中压天然气管道00规划供热管道其他规划供热管道规划污水最终排入酒仙桥再生水厂本次规划供电管道其他规划供电管道现状供电管道拟建供电管道（已取得规划批复）本次规划电信管道其他规划电信管道现状电信管道项目负责人审定规划污水拟建电信管道（已取得规划批复）北京市首都规划设计工程咨询开发有限公司ФDN80TV本次规划有线电视管道专业负责人铁路审核12000TV其他规划有线电视管道规划设计人环内TV现状有线电视管道中关村朝阳园北区2905.0017地块其他类多功能用地、侧路校对TV拟建有线管道（已取得规划批复） 2905.0018地块综合性商业金融服务业用地绘图密级市政交通规划综合方案比例1:5000图号日期2023.7",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "列8",
+                "列9"
+              ],
+              "targetRow": [
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案",
+                "专业负责人铁路环规划设计人",
+                "环内侧",
+                "审核120校对",
+                "",
+                "00",
+                ""
+              ],
+              "nextRow": [
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案",
+                "绘图",
+                "路",
+                "密级",
+                "",
+                "00",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "semantic_assignment_error"
+          ],
+          "correctSource": {
+            "pageStart": 48,
+            "pageEnd": 48,
+            "tableId": "tbl-21",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-21-row-1",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第48页为规划图，解析将“绘图、密级”等图签字段误判为表格行。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-48.png",
+          "sourceImageSha256": "81530A5644CA28A2E35E39CFB05BCFBCB2E34D0F237F7A84395F79F557524963",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-21-row-1",
+            "objectType": "structured_table_row",
+            "title": "中关村朝阳园北区29052905-0018地块综市政交通",
+            "content": "列2：中关村朝阳园北区29052905-0018地块综市政交通。列3：-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案。列4：绘图。列5：路。列6：密级。列8：00",
+            "confidence": 0.77,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 48,
+              "pageEnd": 48,
+              "blockIds": [],
+              "tableId": "tbl-21",
+              "rowIndex": 1,
+              "ragTableId": "tbl-21",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "中关村朝阳园北区2905.0017地块其他类多功能用地、2905.0018地块综合性商业金融服务业用地善各庄路广市政交通规划综合方案善008路广Ф善规划善各庄110千伏变电站东051自康营次高压A调压箱外电源引自规划何各庄220千伏变电站。 Ф2气源引4 K路+05东路12 K1Ф来广营 TV 4 K DN50014 K 21 12 K DN600沈DN2 K TV DN500Ф 2□26 DN60500 TV 4 K DN600家1000 00×240 12 K0 12Ф150+2Ф150坟Ф16000 DN500 Ф150+2Ф150干望0 DN602400 Ф600 12 DN400渠水DN400 2□26000×0 Ф1000 12Ф150+2Ф150 WR DN400前Ф1400 Ф1200 DN400Ф700 Ф5 WR Ф400街2K0 WR DN400广电1N40子008D N200K 0 00000000K21K智ФD2容新TV240 6N6Ф4Ф4ND侧双4城WR Ф北路NY.1 × D路K Ф8400 K000000 600规划善各庄东12400 DN2000 12N3Ф8Ф50N20 K□2110千伏变电站00路0 DN 200 TV 12K DN3000 DN1 D D42 NY.2 01容新北路DN40 DN2 K 4K Ф4050 110kV ФФ1400 DN200 00 Ф400DDN2000 Ф400 ФФ142003# 12N300 Ф8004KK DN200 WR变电站WR DN300电源引自孙河220千伏DN3 142KK TV 0 2□2600×240050.D广2 K00 TV 2□2600×240N400善2501DN30 00 K2 006东DN 140 DN24 K150 006 1侧K 4 1×规路00×500 2Ф ND双008划□16Ф 50+ 1□Ф1电二12轨路北子城道00 008大交61× Ф0通000容×160街M15 2□道路0000 1:5000号规划六路□18Ф5线容新□2000×1600路规划三图例路图例图例说明Ф10路00规索家规划中低压调压箱划规划有线电视基站四规划通信机房路110kV规划110千伏变电站Ф规划分布式能源站1000规划区域能源中心006本次规划雨水管道1×其他规划雨水管道004现状雨水管道2□新增街坊二路拟建雨水管道（已取得规划批复）沈家Ф10坟00本次规划污水管道干渠0其他规划污水管道Ф80现状污水管道拟建污水管道（已取得规划批复）本次规划供水管道00索家其他规划供水管道×18南路现状供水管道容道400拟建供水管道（已取得规划批复） Ф路□2WR本次规划再生水管道1000WR其他规划再生水管道WR现状再生水管道□WR拟建再生水管道（已取得规划批复） 2600现状中压天然气管道×18其他规划中压天然气管道00规划供热管道其他规划供热管道规划污水最终排入酒仙桥再生水厂本次规划供电管道其他规划供电管道现状供电管道拟建供电管道（已取得规划批复）本次规划电信管道其他规划电信管道现状电信管道项目负责人审定规划污水拟建电信管道（已取得规划批复）北京市首都规划设计工程咨询开发有限公司ФDN80TV本次规划有线电视管道专业负责人铁路审核12000TV其他规划有线电视管道规划设计人环内TV现状有线电视管道中关村朝阳园北区2905.0017地块其他类多功能用地、侧路校对TV拟建有线管道（已取得规划批复） 2905.0018地块综合性商业金融服务业用地绘图密级市政交通规划综合方案比例1:5000图号日期2023.7",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "列8",
+                "列9"
+              ],
+              "targetRow": [
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案",
+                "绘图",
+                "路",
+                "密级",
+                "",
+                "00",
+                ""
+              ],
+              "previousRow": [
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案",
+                "专业负责人铁路环规划设计人",
+                "环内侧",
+                "审核120校对",
+                "",
+                "00",
+                ""
+              ],
+              "nextRow": [
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案",
+                "比例1:5000图号",
+                "路",
+                "密级",
+                "日期2",
+                "00",
+                "023.7"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "semantic_assignment_error"
+          ],
+          "correctSource": {
+            "pageStart": 48,
+            "pageEnd": 48,
+            "tableId": "tbl-21",
+            "rowIndex": 1
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-21-row-2",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第48页为规划图，解析将比例、图号、日期图签误判为表格行。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-48.png",
+          "sourceImageSha256": "81530A5644CA28A2E35E39CFB05BCFBCB2E34D0F237F7A84395F79F557524963",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-21-row-2",
+            "objectType": "structured_table_row",
+            "title": "中关村朝阳园北区29052905-0018地块综市政交通",
+            "content": "列2：中关村朝阳园北区29052905-0018地块综市政交通。列3：-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案。列4：比例1:5000图号。列5：路。列6：密级。列7：日期2。列8：00。列9：023.7",
+            "confidence": 0.77,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 48,
+              "pageEnd": 48,
+              "blockIds": [],
+              "tableId": "tbl-21",
+              "rowIndex": 2,
+              "ragTableId": "tbl-21",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "中关村朝阳园北区2905.0017地块其他类多功能用地、2905.0018地块综合性商业金融服务业用地善各庄路广市政交通规划综合方案善008路广Ф善规划善各庄110千伏变电站东051自康营次高压A调压箱外电源引自规划何各庄220千伏变电站。 Ф2气源引4 K路+05东路12 K1Ф来广营 TV 4 K DN50014 K 21 12 K DN600沈DN2 K TV DN500Ф 2□26 DN60500 TV 4 K DN600家1000 00×240 12 K0 12Ф150+2Ф150坟Ф16000 DN500 Ф150+2Ф150干望0 DN602400 Ф600 12 DN400渠水DN400 2□26000×0 Ф1000 12Ф150+2Ф150 WR DN400前Ф1400 Ф1200 DN400Ф700 Ф5 WR Ф400街2K0 WR DN400广电1N40子008D N200K 0 00000000K21K智ФD2容新TV240 6N6Ф4Ф4ND侧双4城WR Ф北路NY.1 × D路K Ф8400 K000000 600规划善各庄东12400 DN2000 12N3Ф8Ф50N20 K□2110千伏变电站00路0 DN 200 TV 12K DN3000 DN1 D D42 NY.2 01容新北路DN40 DN2 K 4K Ф4050 110kV ФФ1400 DN200 00 Ф400DDN2000 Ф400 ФФ142003# 12N300 Ф8004KK DN200 WR变电站WR DN300电源引自孙河220千伏DN3 142KK TV 0 2□2600×240050.D广2 K00 TV 2□2600×240N400善2501DN30 00 K2 006东DN 140 DN24 K150 006 1侧K 4 1×规路00×500 2Ф ND双008划□16Ф 50+ 1□Ф1电二12轨路北子城道00 008大交61× Ф0通000容×160街M15 2□道路0000 1:5000号规划六路□18Ф5线容新□2000×1600路规划三图例路图例图例说明Ф10路00规索家规划中低压调压箱划规划有线电视基站四规划通信机房路110kV规划110千伏变电站Ф规划分布式能源站1000规划区域能源中心006本次规划雨水管道1×其他规划雨水管道004现状雨水管道2□新增街坊二路拟建雨水管道（已取得规划批复）沈家Ф10坟00本次规划污水管道干渠0其他规划污水管道Ф80现状污水管道拟建污水管道（已取得规划批复）本次规划供水管道00索家其他规划供水管道×18南路现状供水管道容道400拟建供水管道（已取得规划批复） Ф路□2WR本次规划再生水管道1000WR其他规划再生水管道WR现状再生水管道□WR拟建再生水管道（已取得规划批复） 2600现状中压天然气管道×18其他规划中压天然气管道00规划供热管道其他规划供热管道规划污水最终排入酒仙桥再生水厂本次规划供电管道其他规划供电管道现状供电管道拟建供电管道（已取得规划批复）本次规划电信管道其他规划电信管道现状电信管道项目负责人审定规划污水拟建电信管道（已取得规划批复）北京市首都规划设计工程咨询开发有限公司ФDN80TV本次规划有线电视管道专业负责人铁路审核12000TV其他规划有线电视管道规划设计人环内TV现状有线电视管道中关村朝阳园北区2905.0017地块其他类多功能用地、侧路校对TV拟建有线管道（已取得规划批复） 2905.0018地块综合性商业金融服务业用地绘图密级市政交通规划综合方案比例1:5000图号日期2023.7",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "列8",
+                "列9"
+              ],
+              "targetRow": [
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案",
+                "比例1:5000图号",
+                "路",
+                "密级",
+                "日期2",
+                "00",
+                "023.7"
+              ],
+              "previousRow": [
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "中关村朝阳园北区29052905-0018地块综市政交通",
+                "-0017地块其他类多功能用地、合性商业金融服务业用地通规划综合方案",
+                "绘图",
+                "路",
+                "密级",
+                "",
+                "00",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "semantic_assignment_error"
+          ],
+          "correctSource": {
+            "pageStart": 48,
+            "pageEnd": 48,
+            "tableId": "tbl-21",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-22-row-0",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第49页为雨水排除规划示意图，图上管径标注被误判为数据表行。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-49.png",
+          "sourceImageSha256": "9B07B9510E855CC42979EB8CFD8C1B88314F074A9227D327F6AB8689F8EE17C8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-22-row-0",
+            "objectType": "structured_table_row",
+            "title": "08 ×",
+            "content": "60：0。0 00 0：08 ×",
+            "confidence": 0.35,
+            "warnings": [
+              "low_confidence_table_classification",
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 49,
+              "pageEnd": 49,
+              "blockIds": [],
+              "tableId": "tbl-22",
+              "rowIndex": 0,
+              "ragTableId": "tbl-22",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "列8",
+                "列9",
+                "列10",
+                "列11",
+                "60",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17",
+                "列18",
+                "列19",
+                "列20",
+                "列21",
+                "列22",
+                "列23",
+                "列24",
+                "列25",
+                "列26",
+                "列27",
+                "列28",
+                "列29",
+                "0 00 0",
+                "列31",
+                "列32",
+                "列33",
+                "列34",
+                "列35"
+              ],
+              "targetRow": [
+                "0",
+                "08 ×",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "08 ×",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "0",
+                "0",
+                "φ 1",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "φ 1",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "semantic_assignment_error"
+          ],
+          "correctSource": {
+            "pageStart": 49,
+            "pageEnd": 49,
+            "tableId": "tbl-22",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-22-row-1",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第49页不存在对应结构化表格，解析行来自道路与管线图形标注。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-49.png",
+          "sourceImageSha256": "9B07B9510E855CC42979EB8CFD8C1B88314F074A9227D327F6AB8689F8EE17C8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-22-row-1",
+            "objectType": "structured_table_row",
+            "title": "φ 1",
+            "content": "60：0。列2：0。0 00 0：φ 1",
+            "confidence": 0.35,
+            "warnings": [
+              "low_confidence_table_classification",
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 49,
+              "pageEnd": 49,
+              "blockIds": [],
+              "tableId": "tbl-22",
+              "rowIndex": 1,
+              "ragTableId": "tbl-22",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "列8",
+                "列9",
+                "列10",
+                "列11",
+                "60",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17",
+                "列18",
+                "列19",
+                "列20",
+                "列21",
+                "列22",
+                "列23",
+                "列24",
+                "列25",
+                "列26",
+                "列27",
+                "列28",
+                "列29",
+                "0 00 0",
+                "列31",
+                "列32",
+                "列33",
+                "列34",
+                "列35"
+              ],
+              "targetRow": [
+                "0",
+                "0",
+                "φ 1",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "φ 1",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "0",
+                "08 ×",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "08 ×",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "0",
+                "0",
+                "8",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "8",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "semantic_assignment_error"
+          ],
+          "correctSource": {
+            "pageStart": 49,
+            "pageEnd": 49,
+            "tableId": "tbl-22",
+            "rowIndex": 1
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-22-row-2",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "第49页不存在对应表格行，解析内容是示意图空间文字的错误聚合。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-49.png",
+          "sourceImageSha256": "9B07B9510E855CC42979EB8CFD8C1B88314F074A9227D327F6AB8689F8EE17C8",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-22-row-2",
+            "objectType": "structured_table_row",
+            "title": "0",
+            "content": "60：0。列2：0。0 00 0：8",
+            "confidence": 0.35,
+            "warnings": [
+              "low_confidence_table_classification",
+              "low_fidelity_table",
+              "noisy_extraction_text"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 49,
+              "pageEnd": 49,
+              "blockIds": [],
+              "tableId": "tbl-22",
+              "rowIndex": 2,
+              "ragTableId": "tbl-22",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "列1",
+                "列2",
+                "列3",
+                "列4",
+                "列5",
+                "列6",
+                "列7",
+                "列8",
+                "列9",
+                "列10",
+                "列11",
+                "60",
+                "列13",
+                "列14",
+                "列15",
+                "列16",
+                "列17",
+                "列18",
+                "列19",
+                "列20",
+                "列21",
+                "列22",
+                "列23",
+                "列24",
+                "列25",
+                "列26",
+                "列27",
+                "列28",
+                "列29",
+                "0 00 0",
+                "列31",
+                "列32",
+                "列33",
+                "列34",
+                "列35"
+              ],
+              "targetRow": [
+                "0",
+                "0",
+                "8",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "8",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "previousRow": [
+                "0",
+                "0",
+                "φ 1",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "φ 1",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ],
+              "nextRow": [
+                "φ",
+                "6",
+                "6",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "0",
+                "",
+                "",
+                "",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "semantic_assignment_error"
+          ],
+          "correctSource": {
+            "pageStart": 49,
+            "pageEnd": 49,
+            "tableId": "tbl-22",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-0-row-0",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第6页，本项目用地指标表第0行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-6.png",
+          "sourceImageSha256": "170C7E3A55F882EFA80AC7BECAF0991820B6EDB11F258100584E9E8C97B8C4B9",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-0-row-0",
+            "objectType": "structured_table_row",
+            "title": "F3",
+            "content": "序号：1。用地编号：2905-0017。用地代码：F3。用地性质：其他类多功能用地。用地面积.（公顷）：3.28。建筑面积.（万平方米）：8.19",
+            "confidence": 0.95,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 6,
+              "pageEnd": 6,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 0,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "序号",
+                "用地编号",
+                "用地代码",
+                "用地性质",
+                "用地面积.（公顷）",
+                "建筑面积.（万平方米）"
+              ],
+              "targetRow": [
+                "1",
+                "2905-0017",
+                "F3",
+                "其他类多功能用地",
+                "3.28",
+                "8.19"
+              ],
+              "nextRow": [
+                "2",
+                "2905-0018",
+                "B4",
+                "综合性商业金融服务业用地",
+                "3.84",
+                "15.38"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 6,
+            "pageEnd": 6,
+            "tableId": "tbl-0",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-0-row-1",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第6页，本项目用地指标表第1行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-6.png",
+          "sourceImageSha256": "170C7E3A55F882EFA80AC7BECAF0991820B6EDB11F258100584E9E8C97B8C4B9",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-0-row-1",
+            "objectType": "structured_table_row",
+            "title": "B4",
+            "content": "序号：2。用地编号：2905-0018。用地代码：B4。用地性质：综合性商业金融服务业用地。用地面积.（公顷）：3.84。建筑面积.（万平方米）：15.38",
+            "confidence": 0.95,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 6,
+              "pageEnd": 6,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 1,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "序号",
+                "用地编号",
+                "用地代码",
+                "用地性质",
+                "用地面积.（公顷）",
+                "建筑面积.（万平方米）"
+              ],
+              "targetRow": [
+                "2",
+                "2905-0018",
+                "B4",
+                "综合性商业金融服务业用地",
+                "3.84",
+                "15.38"
+              ],
+              "previousRow": [
+                "1",
+                "2905-0017",
+                "F3",
+                "其他类多功能用地",
+                "3.28",
+                "8.19"
+              ],
+              "nextRow": [
+                "合计",
+                "2905-0018",
+                "B4",
+                "综合性商业金融服务业用地",
+                "7.12",
+                "23.57"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 6,
+            "pageEnd": 6,
+            "tableId": "tbl-0",
+            "rowIndex": 1
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-0-row-2",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第6页，本项目用地指标表第2行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-6.png",
+          "sourceImageSha256": "170C7E3A55F882EFA80AC7BECAF0991820B6EDB11F258100584E9E8C97B8C4B9",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-0-row-2",
+            "objectType": "structured_table_row",
+            "title": "B4",
+            "content": "序号：合计。用地编号：2905-0018。用地代码：B4。用地性质：综合性商业金融服务业用地。用地面积.（公顷）：7.12。建筑面积.（万平方米）：23.57",
+            "confidence": 0.95,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 6,
+              "pageEnd": 6,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 2,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "序号",
+                "用地编号",
+                "用地代码",
+                "用地性质",
+                "用地面积.（公顷）",
+                "建筑面积.（万平方米）"
+              ],
+              "targetRow": [
+                "合计",
+                "2905-0018",
+                "B4",
+                "综合性商业金融服务业用地",
+                "7.12",
+                "23.57"
+              ],
+              "previousRow": [
+                "2",
+                "2905-0018",
+                "B4",
+                "综合性商业金融服务业用地",
+                "3.84",
+                "15.38"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 6,
+            "pageEnd": 6,
+            "tableId": "tbl-0",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-1-row-0",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第11页，项目出行率生成率表第0行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-11.png",
+          "sourceImageSha256": "4E0D8D52D1758C544F276437D2EAA1ABD9208BCCFDF48C42A46D2E42263D9E60",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-1-row-0",
+            "objectType": "structured_table_row",
+            "title": "其他类多功能用地（F3）",
+            "content": "用地性质：其他类多功能用地（F3）。高峰小时产生率(人次/万平米)：35。高峰小时吸引率(人次/万平米)：215。高峰小时生成率(人次/万平米)：250",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 11,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 0,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "用地性质",
+                "高峰小时产生率(人次/万平米)",
+                "高峰小时吸引率(人次/万平米)",
+                "高峰小时生成率(人次/万平米)"
+              ],
+              "targetRow": [
+                "其他类多功能用地（F3）",
+                "35",
+                "215",
+                "250"
+              ],
+              "nextRow": [
+                "综合性商业金融服务业用地（B4）",
+                "35",
+                "70",
+                "105"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 11,
+            "pageEnd": 11,
+            "tableId": "tbl-1",
+            "rowIndex": 0
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-1-row-1",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第11页，项目出行率生成率表第1行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-11.png",
+          "sourceImageSha256": "4E0D8D52D1758C544F276437D2EAA1ABD9208BCCFDF48C42A46D2E42263D9E60",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-1-row-1",
+            "objectType": "structured_table_row",
+            "title": "综合性商业金融服务业用地（B4）",
+            "content": "用地性质：综合性商业金融服务业用地（B4）。高峰小时产生率(人次/万平米)：35。高峰小时吸引率(人次/万平米)：70。高峰小时生成率(人次/万平米)：105",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 11,
+              "blockIds": [],
+              "tableId": "tbl-1",
+              "rowIndex": 1,
+              "ragTableId": "tbl-1",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "用地性质",
+                "高峰小时产生率(人次/万平米)",
+                "高峰小时吸引率(人次/万平米)",
+                "高峰小时生成率(人次/万平米)"
+              ],
+              "targetRow": [
+                "综合性商业金融服务业用地（B4）",
+                "35",
+                "70",
+                "105"
+              ],
+              "previousRow": [
+                "其他类多功能用地（F3）",
+                "35",
+                "215",
+                "250"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 11,
+            "pageEnd": 11,
+            "tableId": "tbl-1",
+            "rowIndex": 1
+          }
+        },
+        {
+          "auditItemId": "doc-1782564705711-ht5y01-tbl-2-row-0",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第12页，项目出行率生成量表第0行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782564705711-ht5y01-page-12.png",
+          "sourceImageSha256": "AC4ABC6CDAD250048123261BFD8E63927FD82A6E6B1C0175F3E73BCC3A5C41F7",
+          "parsedItem": {
+            "auditItemId": "doc-1782564705711-ht5y01-tbl-2-row-0",
+            "objectType": "structured_table_row",
+            "title": "其他类多功能用地（F3）",
+            "content": "地块编号：其他类多功能用地（F3）。高峰小时产生量(人次)：287。高峰小时吸引量(人次)：1761。高峰小时生成量(人次)：2048",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 12,
+              "pageEnd": 12,
+              "blockIds": [],
+              "tableId": "tbl-2",
+              "rowIndex": 0,
+              "ragTableId": "tbl-2",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "地块编号",
+                "高峰小时产生量(人次)",
+                "高峰小时吸引量(人次)",
+                "高峰小时生成量(人次)"
+              ],
+              "targetRow": [
+                "其他类多功能用地（F3）",
+                "287",
+                "1761",
+                "2048"
+              ],
+              "nextRow": [
+                "综合性商业金融服务业用地（B4）",
+                "538",
+                "1077",
+                "1615"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 12,
+            "pageEnd": 12,
+            "tableId": "tbl-2",
+            "rowIndex": 0
+          }
+        }
+      ]
+    },
+    {
+      "documentId": "doc-1782580032729-x4hwnt",
+      "documentName": "北京市城乡规划用地分类标准.pdf",
+      "items": [
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-104",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "“供水用地”实际位于PDF第17页，解析来源统一错误标为第11页。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-17.png",
+          "sourceImageSha256": "A13F95BB2DABB12976EACF99293785ADDA9253BD709365C927CBB2BB64520C59",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-104",
+            "objectType": "structured_table_row",
+            "title": "U1",
+            "content": "类别代码.主类：U1。小类：U11。类别名称：供水用地。内容：城市取水设施（地表水源含取水设施、调节池，地下水源含水源井）、水厂、加压站及其附属的构筑物用地，包括泵房和高位水池等用地",
+            "confidence": 0.95,
+            "warnings": [
+              "low_header_similarity"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 20,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 104,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "类别代码.主类",
+                "小类",
+                "类别名称",
+                "内容"
+              ],
+              "targetRow": [
+                "U1",
+                "U11",
+                "供水用地",
+                "城市取水设施（地表水源含取水设施、调节池，地下水源含水源井）、水厂、加压站及其附属的构筑物用地，包括泵房和高位水池等用地"
+              ],
+              "previousRow": [
+                "U1",
+                "T39",
+                "供应设施用地",
+                "供水、供电、供燃气和供热等设施用地"
+              ],
+              "nextRow": [
+                "U12",
+                "U12",
+                "供电用地",
+                "变电站、配电所、热电设施等用地，包括热电厂、500千伏变电站/开闭站、220千伏变电站/开闭站、110千伏变电站、35千伏变电站、10千伏开闭站、10千伏配电室、电缆终端站、集控中心等用地"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "source_mapping_error"
+          ],
+          "correctSource": {
+            "pageStart": 17,
+            "pageEnd": 17,
+            "tableId": "tbl-0",
+            "rowIndex": 104
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-105",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "“供电用地”实际位于PDF第18页，解析来源统一错误标为第11页。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-18.png",
+          "sourceImageSha256": "C08D822EB2DE95105D09E6057CFFD012D7157806DE0EE57AB052BECEF4D1DB06",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-105",
+            "objectType": "structured_table_row",
+            "title": "供电用地",
+            "content": "小类：U12。类别名称：供电用地。内容：变电站、配电所、热电设施等用地，包括热电厂、500千伏变电站/开闭站、220千伏变电站/开闭站、110千伏变电站、35千伏变电站、10千伏开闭站、10千伏配电室、电缆终端站、集控中心等用地",
+            "confidence": 0.95,
+            "warnings": [
+              "low_header_similarity"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 20,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 105,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "类别代码.主类",
+                "小类",
+                "类别名称",
+                "内容"
+              ],
+              "targetRow": [
+                "U12",
+                "U12",
+                "供电用地",
+                "变电站、配电所、热电设施等用地，包括热电厂、500千伏变电站/开闭站、220千伏变电站/开闭站、110千伏变电站、35千伏变电站、10千伏开闭站、10千伏配电室、电缆终端站、集控中心等用地"
+              ],
+              "previousRow": [
+                "U1",
+                "U11",
+                "供水用地",
+                "城市取水设施（地表水源含取水设施、调节池，地下水源含水源井）、水厂、加压站及其附属的构筑物用地，包括泵房和高位水池等用地"
+              ],
+              "nextRow": [
+                "U13",
+                "U13",
+                "供燃气用地",
+                "分输站、门站、储气站、加气母站、液化石油气储配站、灌瓶站和地面输气管廊等设施用地"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "source_mapping_error"
+          ],
+          "correctSource": {
+            "pageStart": 18,
+            "pageEnd": 18,
+            "tableId": "tbl-0",
+            "rowIndex": 105
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-106",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "“供燃气用地”实际位于PDF第18页，解析来源统一错误标为第11页。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-18.png",
+          "sourceImageSha256": "C08D822EB2DE95105D09E6057CFFD012D7157806DE0EE57AB052BECEF4D1DB06",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-106",
+            "objectType": "structured_table_row",
+            "title": "供燃气用地",
+            "content": "小类：U13。类别名称：供燃气用地。内容：分输站、门站、储气站、加气母站、液化石油气储配站、灌瓶站和地面输气管廊等设施用地",
+            "confidence": 0.95,
+            "warnings": [
+              "low_header_similarity"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 20,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 106,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "类别代码.主类",
+                "小类",
+                "类别名称",
+                "内容"
+              ],
+              "targetRow": [
+                "U13",
+                "U13",
+                "供燃气用地",
+                "分输站、门站、储气站、加气母站、液化石油气储配站、灌瓶站和地面输气管廊等设施用地"
+              ],
+              "previousRow": [
+                "U12",
+                "U12",
+                "供电用地",
+                "变电站、配电所、热电设施等用地，包括热电厂、500千伏变电站/开闭站、220千伏变电站/开闭站、110千伏变电站、35千伏变电站、10千伏开闭站、10千伏配电室、电缆终端站、集控中心等用地"
+              ],
+              "nextRow": [
+                "U14",
+                "U14",
+                "供热用地",
+                "集中供热锅炉房、小型能源中心（分布式能源站）、热力站、换热站和地面输热管廊等设施用地，包括集中锅炉房、独立占地的分散锅炉房、热力站、中继泵站、补水站、蓄热站、热泵站、直燃机站房等用地"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "source_mapping_error"
+          ],
+          "correctSource": {
+            "pageStart": 18,
+            "pageEnd": 18,
+            "tableId": "tbl-0",
+            "rowIndex": 106
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-107",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "“供热用地”实际位于PDF第18页，解析来源统一错误标为第11页。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-18.png",
+          "sourceImageSha256": "C08D822EB2DE95105D09E6057CFFD012D7157806DE0EE57AB052BECEF4D1DB06",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-107",
+            "objectType": "structured_table_row",
+            "title": "供热用地",
+            "content": "小类：U14。类别名称：供热用地。内容：集中供热锅炉房、小型能源中心（分布式能源站）、热力站、换热站和地面输热管廊等设施用地，包括集中锅炉房、独立占地的分散锅炉房、热力站、中继泵站、补水站、蓄热站、热泵站、直燃机站房等用地",
+            "confidence": 0.95,
+            "warnings": [
+              "low_header_similarity"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 20,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 107,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "类别代码.主类",
+                "小类",
+                "类别名称",
+                "内容"
+              ],
+              "targetRow": [
+                "U14",
+                "U14",
+                "供热用地",
+                "集中供热锅炉房、小型能源中心（分布式能源站）、热力站、换热站和地面输热管廊等设施用地，包括集中锅炉房、独立占地的分散锅炉房、热力站、中继泵站、补水站、蓄热站、热泵站、直燃机站房等用地"
+              ],
+              "previousRow": [
+                "U13",
+                "U13",
+                "供燃气用地",
+                "分输站、门站、储气站、加气母站、液化石油气储配站、灌瓶站和地面输气管廊等设施用地"
+              ],
+              "nextRow": [
+                "U15",
+                "U15",
+                "电信用地",
+                "电信局、移动基站、微波站等设施用地"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "source_mapping_error"
+          ],
+          "correctSource": {
+            "pageStart": 18,
+            "pageEnd": 18,
+            "tableId": "tbl-0",
+            "rowIndex": 107
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-108",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "“电信用地”实际位于PDF第18页，解析来源统一错误标为第11页。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-18.png",
+          "sourceImageSha256": "C08D822EB2DE95105D09E6057CFFD012D7157806DE0EE57AB052BECEF4D1DB06",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-108",
+            "objectType": "structured_table_row",
+            "title": "电信用地",
+            "content": "小类：U15。类别名称：电信用地。内容：电信局、移动基站、微波站等设施用地",
+            "confidence": 0.95,
+            "warnings": [
+              "low_header_similarity"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 20,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 108,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "类别代码.主类",
+                "小类",
+                "类别名称",
+                "内容"
+              ],
+              "targetRow": [
+                "U15",
+                "U15",
+                "电信用地",
+                "电信局、移动基站、微波站等设施用地"
+              ],
+              "previousRow": [
+                "U14",
+                "U14",
+                "供热用地",
+                "集中供热锅炉房、小型能源中心（分布式能源站）、热力站、换热站和地面输热管廊等设施用地，包括集中锅炉房、独立占地的分散锅炉房、热力站、中继泵站、补水站、蓄热站、热泵站、直燃机站房等用地"
+              ],
+              "nextRow": [
+                "U16",
+                "U16",
+                "广播电视信号传输设施用地",
+                "广播电视的发射、传输和监测设施用地，包括无线电收信区、发信区以及广播电视发射台、转播台、差转台、监测站等设施用地"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "source_mapping_error"
+          ],
+          "correctSource": {
+            "pageStart": 18,
+            "pageEnd": 18,
+            "tableId": "tbl-0",
+            "rowIndex": 108
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-109",
+          "partition": "calibration",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "“广播电视信号传输设施用地”实际位于PDF第18页，解析来源统一错误标为第11页。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-18.png",
+          "sourceImageSha256": "C08D822EB2DE95105D09E6057CFFD012D7157806DE0EE57AB052BECEF4D1DB06",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-0-row-109",
+            "objectType": "structured_table_row",
+            "title": "广播电视信号传输设施用地",
+            "content": "小类：U16。类别名称：广播电视信号传输设施用地。内容：广播电视的发射、传输和监测设施用地，包括无线电收信区、发信区以及广播电视发射台、转播台、差转台、监测站等设施用地",
+            "confidence": 0.95,
+            "warnings": [
+              "low_header_similarity"
+            ],
+            "selectedForReview": true,
+            "selectionReason": "warning",
+            "source": {
+              "pageStart": 11,
+              "pageEnd": 20,
+              "blockIds": [],
+              "tableId": "tbl-0",
+              "rowIndex": 109,
+              "ragTableId": "tbl-0",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "类别代码.主类",
+                "小类",
+                "类别名称",
+                "内容"
+              ],
+              "targetRow": [
+                "U16",
+                "U16",
+                "广播电视信号传输设施用地",
+                "广播电视的发射、传输和监测设施用地，包括无线电收信区、发信区以及广播电视发射台、转播台、差转台、监测站等设施用地"
+              ],
+              "previousRow": [
+                "U15",
+                "U15",
+                "电信用地",
+                "电信局、移动基站、微波站等设施用地"
+              ],
+              "nextRow": [
+                "U17",
+                "U17",
+                "邮政设施用地",
+                "邮政处理场地、邮政局、邮政所等用地"
+              ]
+            }
+          },
+          "trueStatus": "issue",
+          "severity": "severe",
+          "issueTypes": [
+            "source_mapping_error"
+          ],
+          "correctSource": {
+            "pageStart": 18,
+            "pageEnd": 18,
+            "tableId": "tbl-0",
+            "rowIndex": 109
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-2",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第21页，表A.0.1 北京市城乡规划用地分类与国标用地分类对照表第2行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-21.png",
+          "sourceImageSha256": "50B0CE941D43DAFA861973ADE903C843C249F226A2B0E85E7544D3B650760AC9",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-2",
+            "objectType": "structured_table_row",
+            "title": "H",
+            "content": "《城市用地分类与规划建设用地标准》GB 50137.2011：H。列2：建设用地。本标准：A1～A9；B1～B4；B9；D1～D3；F1～F3；F8；G1～G3；H5；M1～M4；R1～R3；S1～S5；S9；T1～T6；U1～U4；U9；W1～W3；C1～C4；C9；H9；X。列6：G41",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 21,
+              "pageEnd": 22,
+              "blockIds": [],
+              "tableId": "tbl-3",
+              "rowIndex": 2,
+              "ragTableId": "tbl-3",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "《城市用地分类与规划建设用地标准》GB 50137.2011",
+                "列2",
+                "列3",
+                "列4",
+                "本标准",
+                "列6"
+              ],
+              "targetRow": [
+                "H",
+                "建设用地",
+                "A1～A9；B1～B4；B9；D1～D3；F1～F3；F8；G1～G3；H5；M1～M4；R1～R3；S1～S5；S9；T1～T6；U1～U4；U9；W1～W3；C1～C4；C9；H9；X",
+                "G41",
+                "A1～A9；B1～B4；B9；D1～D3；F1～F3；F8；G1～G3；H5；M1～M4；R1～R3；S1～S5；S9；T1～T6；U1～U4；U9；W1～W3；C1～C4；C9；H9；X",
+                "G41"
+              ],
+              "previousRow": [
+                "用地代码",
+                "用地名称",
+                "主类",
+                "小类",
+                "主类",
+                "小类"
+              ],
+              "nextRow": [
+                "H",
+                "其中",
+                "城乡居民点建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；C1；C2；C3；C4；C9；X",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；C1；C2；C3；C4；C9；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 21,
+            "pageEnd": 21,
+            "tableId": "tbl-3",
+            "rowIndex": 2
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-3",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第21页，表A.0.1 北京市城乡规划用地分类与国标用地分类对照表第3行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-21.png",
+          "sourceImageSha256": "50B0CE941D43DAFA861973ADE903C843C249F226A2B0E85E7544D3B650760AC9",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-3",
+            "objectType": "structured_table_row",
+            "title": "H",
+            "content": "《城市用地分类与规划建设用地标准》GB 50137.2011：H。列2：其中。列3：城乡居民点建设用地。本标准：A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；C1；C2；C3；C4；C9；X。列6：F81；T12中的铁路客货运车站；T22；T23；T31",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 21,
+              "pageEnd": 22,
+              "blockIds": [],
+              "tableId": "tbl-3",
+              "rowIndex": 3,
+              "ragTableId": "tbl-3",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "《城市用地分类与规划建设用地标准》GB 50137.2011",
+                "列2",
+                "列3",
+                "列4",
+                "本标准",
+                "列6"
+              ],
+              "targetRow": [
+                "H",
+                "其中",
+                "城乡居民点建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；C1；C2；C3；C4；C9；X",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；C1；C2；C3；C4；C9；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "previousRow": [
+                "H",
+                "建设用地",
+                "A1～A9；B1～B4；B9；D1～D3；F1～F3；F8；G1～G3；H5；M1～M4；R1～R3；S1～S5；S9；T1～T6；U1～U4；U9；W1～W3；C1～C4；C9；H9；X",
+                "G41",
+                "A1～A9；B1～B4；B9；D1～D3；F1～F3；F8；G1～G3；H5；M1～M4；R1～R3；S1～S5；S9；T1～T6；U1～U4；U9；W1～W3；C1～C4；C9；H9；X",
+                "G41"
+              ],
+              "nextRow": [
+                "H",
+                "其中",
+                "其中",
+                "城市建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 21,
+            "pageEnd": 21,
+            "tableId": "tbl-3",
+            "rowIndex": 3
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-4",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第21页，表A.0.1 北京市城乡规划用地分类与国标用地分类对照表第4行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-21.png",
+          "sourceImageSha256": "50B0CE941D43DAFA861973ADE903C843C249F226A2B0E85E7544D3B650760AC9",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-4",
+            "objectType": "structured_table_row",
+            "title": "H",
+            "content": "《城市用地分类与规划建设用地标准》GB 50137.2011：H。列2：其中。列3：其中。列4：城市建设用地。本标准：A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X。列6：F81；T12中的铁路客货运车站；T22；T23；T31",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 21,
+              "pageEnd": 22,
+              "blockIds": [],
+              "tableId": "tbl-3",
+              "rowIndex": 4,
+              "ragTableId": "tbl-3",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "《城市用地分类与规划建设用地标准》GB 50137.2011",
+                "列2",
+                "列3",
+                "列4",
+                "本标准",
+                "列6"
+              ],
+              "targetRow": [
+                "H",
+                "其中",
+                "其中",
+                "城市建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "previousRow": [
+                "H",
+                "其中",
+                "城乡居民点建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；C1；C2；C3；C4；C9；X",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；C1；C2；C3；C4；C9；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "nextRow": [
+                "H",
+                "其中",
+                "其中",
+                "镇建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 21,
+            "pageEnd": 21,
+            "tableId": "tbl-3",
+            "rowIndex": 4
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-5",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第21页，表A.0.1 北京市城乡规划用地分类与国标用地分类对照表第5行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-21.png",
+          "sourceImageSha256": "50B0CE941D43DAFA861973ADE903C843C249F226A2B0E85E7544D3B650760AC9",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-5",
+            "objectType": "structured_table_row",
+            "title": "H",
+            "content": "《城市用地分类与规划建设用地标准》GB 50137.2011：H。列2：其中。列3：其中。列4：镇建设用地。本标准：A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X。列6：F81；T12中的铁路客货运车站；T22；T23；T31",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 21,
+              "pageEnd": 22,
+              "blockIds": [],
+              "tableId": "tbl-3",
+              "rowIndex": 5,
+              "ragTableId": "tbl-3",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "《城市用地分类与规划建设用地标准》GB 50137.2011",
+                "列2",
+                "列3",
+                "列4",
+                "本标准",
+                "列6"
+              ],
+              "targetRow": [
+                "H",
+                "其中",
+                "其中",
+                "镇建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "previousRow": [
+                "H",
+                "其中",
+                "其中",
+                "城市建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "nextRow": [
+                "H",
+                "其中",
+                "其中",
+                "乡建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 21,
+            "pageEnd": 21,
+            "tableId": "tbl-3",
+            "rowIndex": 5
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-6",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第21页，表A.0.1 北京市城乡规划用地分类与国标用地分类对照表第6行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-21.png",
+          "sourceImageSha256": "50B0CE941D43DAFA861973ADE903C843C249F226A2B0E85E7544D3B650760AC9",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-6",
+            "objectType": "structured_table_row",
+            "title": "H",
+            "content": "《城市用地分类与规划建设用地标准》GB 50137.2011：H。列2：其中。列3：其中。列4：乡建设用地。本标准：A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X。列6：F81；T12中的铁路客货运车站；T22；T23；T31",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 21,
+              "pageEnd": 22,
+              "blockIds": [],
+              "tableId": "tbl-3",
+              "rowIndex": 6,
+              "ragTableId": "tbl-3",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "《城市用地分类与规划建设用地标准》GB 50137.2011",
+                "列2",
+                "列3",
+                "列4",
+                "本标准",
+                "列6"
+              ],
+              "targetRow": [
+                "H",
+                "其中",
+                "其中",
+                "乡建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "previousRow": [
+                "H",
+                "其中",
+                "其中",
+                "镇建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "nextRow": [
+                "H",
+                "其中",
+                "其中",
+                "村庄建设用地",
+                "C1；C2；C3；C4；C9",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 21,
+            "pageEnd": 21,
+            "tableId": "tbl-3",
+            "rowIndex": 6
+          }
+        },
+        {
+          "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-7",
+          "partition": "blind",
+          "reviewer": "codex-human-pilot",
+          "reviewedAt": "2026-07-16T02:30:00.000Z",
+          "evidence": "人工对照原页第21页，表A.0.1 北京市城乡规划用地分类与国标用地分类对照表第7行的标题、字段值和行归属与当前解析一致，未见跨行、错列或来源错误。",
+          "sourceImagePath": "doc-1782580032729-x4hwnt-page-21.png",
+          "sourceImageSha256": "50B0CE941D43DAFA861973ADE903C843C249F226A2B0E85E7544D3B650760AC9",
+          "parsedItem": {
+            "auditItemId": "doc-1782580032729-x4hwnt-tbl-3-row-7",
+            "objectType": "structured_table_row",
+            "title": "H",
+            "content": "《城市用地分类与规划建设用地标准》GB 50137.2011：H。列2：其中。列3：其中。列4：村庄建设用地。本标准：C1；C2；C3；C4；C9。列6：F81；T12中的铁路客货运车站；T22；T23；T31",
+            "confidence": 0.69,
+            "warnings": [],
+            "selectedForReview": true,
+            "selectionReason": "table_coverage",
+            "source": {
+              "pageStart": 21,
+              "pageEnd": 22,
+              "blockIds": [],
+              "tableId": "tbl-3",
+              "rowIndex": 7,
+              "ragTableId": "tbl-3",
+              "chunkIds": []
+            },
+            "tableContext": {
+              "headers": [
+                "《城市用地分类与规划建设用地标准》GB 50137.2011",
+                "列2",
+                "列3",
+                "列4",
+                "本标准",
+                "列6"
+              ],
+              "targetRow": [
+                "H",
+                "其中",
+                "其中",
+                "村庄建设用地",
+                "C1；C2；C3；C4；C9",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "previousRow": [
+                "H",
+                "其中",
+                "其中",
+                "乡建设用地",
+                "A1；A2；A3；A4；A5；A6；A7；A8；A9；B1；B2；B3；B4；B9；D2；F1；F2；F3；G1；G2；G3；M1；M2；M3；M4；P；R1；R2；R3；S1；S2；S3；S4；S5；S9；U1、U2、U3、U9中除为区域服务的设施以外的用地；W1；W2；W3；X",
+                "F81；T12中的铁路客货运车站；T22；T23；T31"
+              ],
+              "nextRow": [
+                "用地代码",
+                "用地名称",
+                "类别代码",
+                "类别代码",
+                "",
+                ""
+              ]
+            }
+          },
+          "trueStatus": "clean",
+          "severity": "none",
+          "issueTypes": [],
+          "correctSource": {
+            "pageStart": 21,
+            "pageEnd": 21,
+            "tableId": "tbl-3",
+            "rowIndex": 7
+          }
+        }
+      ]
+    }
+  ]
+}
