@@ -36,3 +36,5 @@ import "./auditAutoReviewEval.test.ts";
 import "./auditArtifactStore.test.ts";
 import "./auditReviewRounds.test.ts";
 import "./auditCreateArtifact.test.ts";
+import "./auditReviewApi.test.ts";
+import "./auditReviewViewModel.test.ts";

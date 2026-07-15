@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
+import { ReviewArtifactControl } from "@/components/ReviewArtifactControl";
 import { KNOWLEDGE_CATEGORIES } from "@/lib/knowledge/categories";
 import {
   canManageDocumentInManagement,
@@ -60,6 +61,7 @@ export function DocumentTable({
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
   const [openAccessDocId, setOpenAccessDocId] = useState<string | null>(null);
+  const [processNotices, setProcessNotices] = useState<Record<string, { ok: boolean; text: string }>>({});
 
   // 只认仍存在于列表中的选中项（删除/刷新后自动失效）
   const manageableDocuments = documents.filter((d) =>
@@ -95,7 +97,17 @@ export function DocumentTable({
   async function process(id: string) {
     setBusyId(id);
     try {
-      await fetch(withUser(`/api/documents/${id}/process`), { method: "POST" });
+      const response = await fetch(withUser(`/api/documents/${id}/process`), { method: "POST" });
+      const body = await response.json().catch(() => ({}));
+      let notice = body.error ?? "重新解析失败";
+      if (response.ok && body.auditArtifact?.status === "created") {
+        notice = `解析入库成功；审核快照已生成（${auditModeLabel(body.auditArtifact.autoReviewMode)}）。`;
+      } else if (response.ok && body.auditArtifact?.status === "failed") {
+        notice = "解析入库成功；审核快照生成失败，可继续检索并稍后重试审核。";
+      } else if (response.ok) {
+        notice = body.message ?? "解析入库成功。";
+      }
+      setProcessNotices((current) => ({ ...current, [id]: { ok: response.ok, text: notice } }));
       onChange();
     } finally {
       setBusyId(null);
@@ -322,7 +334,7 @@ export function DocumentTable({
           return (
             <article
               key={doc.id}
-              className={`grid gap-4 p-4 transition-colors xl:grid-cols-[minmax(260px,0.95fr)_minmax(560px,1.65fr)_160px] ${
+              className={`grid gap-4 p-4 transition-colors xl:grid-cols-[minmax(260px,0.9fr)_minmax(560px,1.55fr)_230px] ${
                 selected.has(doc.id) ? "bg-primary/5" : "bg-card"
               }`}
             >
@@ -452,6 +464,11 @@ export function DocumentTable({
               </div>
 
               <div className="flex flex-wrap items-center gap-2 xl:flex-col xl:items-stretch xl:justify-center">
+                <ReviewArtifactControl
+                  docId={doc.id}
+                  userId={currentUser.id}
+                  enabled={canManage && doc.status === "indexed"}
+                />
                 <button
                   onClick={() => toggleEnabled(doc)}
                   disabled={busy}
@@ -476,6 +493,11 @@ export function DocumentTable({
                   )}
                   重新解析
                 </Button>
+                {processNotices[doc.id] && (
+                  <p className={`rounded-md px-2 py-1.5 text-[11px] leading-4 ${processNotices[doc.id].ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-destructive"}`}>
+                    {processNotices[doc.id].text}
+                  </p>
+                )}
                 <Button
                   size="sm"
                   variant="ghost"
@@ -493,6 +515,13 @@ export function DocumentTable({
       </div>
     </div>
   );
+}
+
+function auditModeLabel(mode: string): string {
+  if (mode === "hybrid") return "混合 Agent";
+  if (mode === "rules_only") return "规则模式";
+  if (mode === "partial") return "部分完成";
+  return "不可用";
 }
 
 function Field({
