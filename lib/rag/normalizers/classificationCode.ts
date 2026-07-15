@@ -25,7 +25,7 @@ export function extractClassificationCodeObjects(
       const warnings = parentCode || codeLevel(code) <= 1 ? undefined : ["parent_code_not_in_same_table"];
 
       out.push({
-        id: stableObjectId(docId, "classification_code", [table.id, code, name]),
+        id: stableObjectId(docId, "classification_code", [table.id, row.rowIndex, code, name]),
         docId,
         objectType: "classification_code",
         title: `${code} ${name}`,

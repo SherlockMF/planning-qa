@@ -7,6 +7,7 @@ import "./p1Parse.test.ts";
 import "./coordTables.test.ts";
 import "./pdfTableReadingOrder.test.ts";
 import "./knowledgeObjects.test.ts";
+import "./classificationCodeObjects.test.ts";
 import "./knowledgePermissions.test.ts";
 import "./fileTypes.test.ts";
 import "./developerTools.test.ts";
