@@ -74,3 +74,23 @@ test("rejects a non-array review artifact payload", () => {
     /审核副本数据无效/
   );
 });
+
+test("rejects fractional review artifact counts", () => {
+  assert.throws(
+    () =>
+      parseReviewArtifactSummaries([
+        { ...validSummary, focusItemCount: 1.5 },
+      ]),
+    /审核副本数据无效/
+  );
+});
+
+test("rejects an invalid finalized time", () => {
+  assert.throws(
+    () =>
+      parseReviewArtifactSummaries([
+        { ...validSummary, finalizedAt: "not-a-date" },
+      ]),
+    /审核副本数据无效/
+  );
+});

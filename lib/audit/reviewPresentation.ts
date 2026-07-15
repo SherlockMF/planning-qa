@@ -39,8 +39,8 @@ function isNonEmptyString(value: unknown): value is string {
   return typeof value === "string" && value.trim().length > 0;
 }
 
-function isNonNegativeFiniteNumber(value: unknown): value is number {
-  return typeof value === "number" && Number.isFinite(value) && value >= 0;
+function isNonNegativeSafeInteger(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 }
 
 export function parseReviewArtifactSummaries(
@@ -59,11 +59,13 @@ export function parseReviewArtifactSummaries(
       !isNonEmptyString(record.generatedAt) ||
       Number.isNaN(Date.parse(record.generatedAt)) ||
       !isReviewStatus(record.status) ||
-      !isNonNegativeFiniteNumber(record.focusItemCount) ||
-      !isNonNegativeFiniteNumber(record.issueCount) ||
+      !isNonNegativeSafeInteger(record.focusItemCount) ||
+      !isNonNegativeSafeInteger(record.issueCount) ||
       ("reviewerUserId" in record &&
         typeof record.reviewerUserId !== "string") ||
-      ("finalizedAt" in record && typeof record.finalizedAt !== "string")
+      ("finalizedAt" in record &&
+        (typeof record.finalizedAt !== "string" ||
+          Number.isNaN(Date.parse(record.finalizedAt))))
     ) {
       throw new Error("审核副本数据无效");
     }

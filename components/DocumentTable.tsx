@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type {
   Document,
   DocumentStatus,
@@ -19,6 +19,10 @@ import {
   canManageDocumentInManagement,
   KNOWLEDGE_USERS,
 } from "@/lib/knowledge/permissions";
+import {
+  releaseReviewActionLock,
+  tryAcquireReviewActionLock,
+} from "@/lib/audit/reviewActionLock";
 import {
   RefreshCw,
   Trash2,
@@ -63,6 +67,7 @@ export function DocumentTable({
   const [openAccessDocId, setOpenAccessDocId] = useState<string | null>(null);
   const [reviewRefreshToken, setReviewRefreshToken] = useState(0);
   const [auditNotices, setAuditNotices] = useState<Record<string, string>>({});
+  const actionLockRef = useRef(false);
   const actionBusy = busyId !== null || batchBusy;
 
   useEffect(() => {
@@ -101,42 +106,51 @@ export function DocumentTable({
   }
 
   async function process(id: string) {
-    if (busyId !== null || batchBusy) return;
-    setAuditNotices((current) => ({ ...current, [id]: "" }));
-    setBusyId(id);
+    if (!tryAcquireReviewActionLock(actionLockRef)) return;
     try {
-      const response = await fetch(
-        withUser(`/api/documents/${encodeURIComponent(id)}/process`),
-        { method: "POST" }
-      );
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(data.error ?? `解析失败：${response.status}`);
+      setAuditNotices((current) => ({ ...current, [id]: "" }));
+      setBusyId(id);
+      try {
+        const response = await fetch(
+          withUser(`/api/documents/${encodeURIComponent(id)}/process`),
+          { method: "POST" }
+        );
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(data.error ?? `解析失败：${response.status}`);
+        }
+        setAuditNotices((current) => ({
+          ...current,
+          [id]:
+            data.auditArtifact?.status === "failed"
+              ? `索引成功，但审核副本生成失败：${data.auditArtifact.error}`
+              : "",
+        }));
+      } catch (error) {
+        setAuditNotices((current) => ({
+          ...current,
+          [id]: error instanceof Error ? error.message : "解析失败",
+        }));
       }
-      setAuditNotices((current) => ({
-        ...current,
-        [id]:
-          data.auditArtifact?.status === "failed"
-            ? `索引成功，但审核副本生成失败：${data.auditArtifact.error}`
-            : "",
-      }));
-    } catch (error) {
-      setAuditNotices((current) => ({
-        ...current,
-        [id]: error instanceof Error ? error.message : "解析失败",
-      }));
     } finally {
-      setReviewRefreshToken((value) => value + 1);
-      onChange();
-      setBusyId(null);
+      try {
+        setReviewRefreshToken((value) => value + 1);
+        onChange();
+      } finally {
+        try {
+          setBusyId(null);
+        } finally {
+          releaseReviewActionLock(actionLockRef);
+        }
+      }
     }
   }
 
   async function remove(id: string) {
-    if (busyId !== null || batchBusy) return;
     if (!confirm("确定删除该文档及其切片？此操作不可撤销。")) return;
-    setBusyId(id);
+    if (!tryAcquireReviewActionLock(actionLockRef)) return;
     try {
+      setBusyId(id);
       await fetch(withUser(`/api/documents/${id}`), { method: "DELETE" });
       setSelected((prev) => {
         const next = new Set(prev);
@@ -145,14 +159,18 @@ export function DocumentTable({
       });
       onChange();
     } finally {
-      setBusyId(null);
+      try {
+        setBusyId(null);
+      } finally {
+        releaseReviewActionLock(actionLockRef);
+      }
     }
   }
 
   async function toggleEnabled(doc: Document) {
-    if (busyId !== null || batchBusy) return;
-    setBusyId(doc.id);
+    if (!tryAcquireReviewActionLock(actionLockRef)) return;
     try {
+      setBusyId(doc.id);
       await fetch(withUser(`/api/documents/${doc.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -160,14 +178,18 @@ export function DocumentTable({
       });
       onChange();
     } finally {
-      setBusyId(null);
+      try {
+        setBusyId(null);
+      } finally {
+        releaseReviewActionLock(actionLockRef);
+      }
     }
   }
 
   async function saveMetadata(doc: Document, patch: Partial<Document>) {
-    if (busyId !== null || batchBusy) return;
-    setBusyId(doc.id);
+    if (!tryAcquireReviewActionLock(actionLockRef)) return;
     try {
+      setBusyId(doc.id);
       await fetch(withUser(`/api/documents/${doc.id}`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -175,7 +197,11 @@ export function DocumentTable({
       });
       onChange();
     } finally {
-      setBusyId(null);
+      try {
+        setBusyId(null);
+      } finally {
+        releaseReviewActionLock(actionLockRef);
+      }
     }
   }
 
@@ -202,9 +228,9 @@ export function DocumentTable({
   // ── 批量操作（逐个串行：解析含 embedding 调用，并行会触发接口限流） ──
 
   async function batchProcess() {
-    if (busyId !== null || batchBusy) return;
-    setBatchBusy(true);
+    if (!tryAcquireReviewActionLock(actionLockRef)) return;
     try {
+      setBatchBusy(true);
       for (let i = 0; i < selectedIds.length; i++) {
         const id = selectedIds[i];
         setBatchProgress(`解析中 ${i + 1}/${selectedIds.length}`);
@@ -233,17 +259,24 @@ export function DocumentTable({
         }
       }
     } finally {
-      setReviewRefreshToken((value) => value + 1);
-      onChange();
-      setBatchBusy(false);
-      setBatchProgress(null);
+      try {
+        setReviewRefreshToken((value) => value + 1);
+        onChange();
+      } finally {
+        try {
+          setBatchBusy(false);
+          setBatchProgress(null);
+        } finally {
+          releaseReviewActionLock(actionLockRef);
+        }
+      }
     }
   }
 
   async function batchSetEnabled(enabled: boolean) {
-    if (busyId !== null || batchBusy) return;
-    setBatchBusy(true);
+    if (!tryAcquireReviewActionLock(actionLockRef)) return;
     try {
+      setBatchBusy(true);
       for (let i = 0; i < selectedIds.length; i++) {
         setBatchProgress(`更新中 ${i + 1}/${selectedIds.length}`);
         await fetch(withUser(`/api/documents/${selectedIds[i]}`), {
@@ -254,21 +287,25 @@ export function DocumentTable({
       }
       onChange();
     } finally {
-      setBatchBusy(false);
-      setBatchProgress(null);
+      try {
+        setBatchBusy(false);
+        setBatchProgress(null);
+      } finally {
+        releaseReviewActionLock(actionLockRef);
+      }
     }
   }
 
   async function batchRemove() {
-    if (busyId !== null || batchBusy) return;
     if (
       !confirm(
         `确定删除所选 ${selectedIds.length} 个文档及其切片？此操作不可撤销。`
       )
     )
       return;
-    setBatchBusy(true);
+    if (!tryAcquireReviewActionLock(actionLockRef)) return;
     try {
+      setBatchBusy(true);
       for (let i = 0; i < selectedIds.length; i++) {
         setBatchProgress(`删除中 ${i + 1}/${selectedIds.length}`);
         await fetch(withUser(`/api/documents/${selectedIds[i]}`), {
@@ -278,8 +315,12 @@ export function DocumentTable({
       setSelected(new Set());
       onChange();
     } finally {
-      setBatchBusy(false);
-      setBatchProgress(null);
+      try {
+        setBatchBusy(false);
+        setBatchProgress(null);
+      } finally {
+        releaseReviewActionLock(actionLockRef);
+      }
     }
   }
 
@@ -302,7 +343,11 @@ export function DocumentTable({
             已选 {selectedIds.length} 个
           </span>
           {batchProgress ? (
-            <span className="flex items-center gap-1.5 text-sky-600">
+            <span
+              role="status"
+              aria-live="polite"
+              className="flex items-center gap-1.5 text-sky-600"
+            >
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               {batchProgress}
             </span>
@@ -530,7 +575,7 @@ export function DocumentTable({
                   <Badge variant="outline">无审核权限</Badge>
                 )}
                 {canManage && auditNotices[doc.id] && (
-                  <p className="text-xs text-destructive">
+                  <p role="alert" className="text-xs text-destructive">
                     {auditNotices[doc.id]}
                   </p>
                 )}

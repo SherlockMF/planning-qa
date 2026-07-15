@@ -35,3 +35,4 @@ import "./auditReviewRoutes.test.ts";
 import "./auditCreateReviewArtifact.test.ts";
 import "./auditProcessSnapshot.test.ts";
 import "./auditReviewPresentation.test.ts";
+import "./auditReviewActionLock.test.ts";
