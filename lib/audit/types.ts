@@ -121,6 +121,7 @@ export interface AuditManifest {
   sourceFileSha256: string;
   createdAt: string;
   files: Record<string, { sha256: string }>;
+  reviewItems?: AuditReviewItem[];
 }
 
 export interface ReviewArtifactSummary {
