@@ -1,0 +1,74 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "auto-review-labels.schema.json",
+  "title": "Automatic review evaluation corpus",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["datasetVersion", "documents"],
+  "properties": {
+    "datasetVersion": { "type": "string", "minLength": 1 },
+    "documents": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["documentId", "items"],
+        "properties": {
+          "documentId": { "type": "string", "minLength": 1 },
+          "items": {
+            "type": "array",
+            "minItems": 1,
+            "items": { "$ref": "#/$defs/item" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["pageStart"],
+      "properties": {
+        "pageStart": { "type": "integer", "minimum": 1 },
+        "pageEnd": { "type": "integer", "minimum": 1 },
+        "tableId": { "type": "string", "minLength": 1 },
+        "rowIndex": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "issueType": {
+      "enum": [
+        "reading_order_noise",
+        "row_boundary_contamination",
+        "column_misalignment",
+        "merged_cell_scope_error",
+        "missing_content",
+        "source_mapping_error",
+        "semantic_assignment_error",
+        "other"
+      ]
+    },
+    "item": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "auditItemId",
+        "sourceImagePath",
+        "parsedItem",
+        "trueStatus",
+        "severity",
+        "issueTypes",
+        "correctSource"
+      ],
+      "properties": {
+        "auditItemId": { "type": "string", "minLength": 1 },
+        "sourceImagePath": { "type": "string", "minLength": 1 },
+        "parsedItem": { "type": "object" },
+        "trueStatus": { "enum": ["issue", "clean"] },
+        "severity": { "enum": ["severe", "non_severe", "none"] },
+        "issueTypes": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/issueType" } },
+        "correctSource": { "$ref": "#/$defs/source" }
+      }
+    }
+  }
+}
