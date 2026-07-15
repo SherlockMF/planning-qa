@@ -16,6 +16,7 @@ import { saveChunks } from "./persist";
 import { writeAllTableDebug, tableDebugEnabled } from "@/lib/debug/tableDebug";
 import { writeRagPipelineDebug } from "@/lib/rag/debug";
 import { splitChunksByUserAccess } from "@/lib/knowledge/permissions";
+import type { WorkflowTraceRecorder } from "@/lib/workflow/trace";
 
 /** 仅返回参与检索（enabled 且 indexed）文档对应的 chunks。 */
 export async function listSearchableChunks(
@@ -55,7 +56,8 @@ export async function listChunksByDocument(
  */
 export async function processDocument(
   doc: Document,
-  input: { blocks?: Block[]; text?: string } = {}
+  input: { blocks?: Block[]; text?: string } = {},
+  recorder?: WorkflowTraceRecorder
 ): Promise<number> {
   await ensureSeeded();
   const store = getStore();
@@ -63,17 +65,43 @@ export async function processDocument(
   // 移除该文档旧 chunks（支持重新解析）
   store.chunks = store.chunks.filter((c) => c.documentId !== doc.id);
 
+  recorder?.start("knowledge_objects");
   const buildResult = buildChunksWithObjects(doc, input);
   const drafts: DraftChunk[] = buildResult.drafts;
+  const objectTypes = countBy(buildResult.knowledgeObjects, (item) => item.objectType);
+  recorder?.complete("knowledge_objects", {
+    metrics: { objectCount: buildResult.knowledgeObjects.length },
+    outputSummary: {
+      objectTypes,
+      docTypeCandidates: buildResult.profile?.docTypeCandidates,
+      fallbackUsed: buildResult.fallbackUsed,
+    },
+    warnings: buildResult.warnings,
+    decision: {
+      outcome: buildResult.fallbackUsed ? "fallback_used" : "objects_generated",
+    },
+  });
+  recorder?.start("chunking");
   if (drafts.length === 0) {
     // 不再落占位 chunk 假装成功：零内容意味着提取/切片失败，
     // 让 /process 路由捕获后把文档标为 failed，用户可见可重试。
-    throw new Error(
+    const error = new Error(
       "未能从文档中提取到任何内容（可能为扫描件、加密文件或不支持的格式）"
     );
+    recorder?.fail("chunking", error);
+    throw error;
   }
+  recorder?.complete("chunking", {
+    metrics: { chunkCount: drafts.length },
+    outputSummary: {
+      chunkTypes: countBy(drafts, (item) => item.chunkType),
+      chunkRoles: countBy(drafts, (item) => item.chunkRole ?? "unspecified"),
+    },
+    decision: { outcome: "chunks_created" },
+  });
 
   const embedder = getEmbeddingProvider();
+  recorder?.start("embedding");
   // 检索文本融合：章节路径 + 条款/表名 + 正文，提升召回
   const embeddings = await embedder.embedBatch(
     drafts.map(
@@ -81,6 +109,17 @@ export async function processDocument(
         p.embeddingText ?? `${p.sectionPath ?? ""} ${p.clauseNo ?? ""} ${p.tableTitle ?? ""} ${p.content}`
     )
   );
+  recorder?.complete("embedding", {
+    metrics: {
+      embeddedCount: embeddings.length,
+      dimension: embeddings[0]?.length ?? 0,
+    },
+    outputSummary: {
+      provider: embedder.name,
+      signature: embedder.signature,
+    },
+    decision: { outcome: "embedded" },
+  });
 
   const chunks: Chunk[] = drafts.map((p, i) => ({
     ...p,
@@ -107,6 +146,7 @@ export async function processDocument(
     ragTables = buildRagTablesFromChunks(chunks, () => docTitle);
   }
 
+  recorder?.start("persistence");
   store.chunks.push(...chunks);
   saveChunks(store.chunks);
   replaceRagTablesForDoc(doc.id, ragTables);
@@ -138,4 +178,16 @@ export async function processDocument(
     console.error("[processDocument] rag debug write failed:", e);
   }
   return chunks.length;
+}
+
+function countBy<T>(
+  items: T[],
+  selector: (item: T) => string
+): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const item of items) {
+    const key = selector(item);
+    counts[key] = (counts[key] ?? 0) + 1;
+  }
+  return counts;
 }

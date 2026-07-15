@@ -38,6 +38,12 @@ import {
   rankStructuredEvidenceForQuestion,
   recoverConclusionFromStructuredEvidence,
 } from "./structuredFieldSelector.ts";
+import type { WorkflowTraceRecorder } from "../workflow/trace.ts";
+import {
+  finalizeQueryTrace,
+  mapQueryTraceResult,
+  recordQueryPreflight,
+} from "../workflow/queryTrace.ts";
 
 // LLM 可见的上下文窗口（要覆盖到依据判断所用的 Top-N，避免“能搜到却答不出”）
 const LLM_CONTEXT = 5;
@@ -57,22 +63,38 @@ export async function generateAnswer(
   question: string,
   city?: string,
   userId?: string,
-  userRole?: KnowledgeRoleId
+  userRole?: KnowledgeRoleId,
+  recorder?: WorkflowTraceRecorder
 ): Promise<GenerateResult> {
   const q = question.trim();
   if (!q) {
+    const response = buildRefusal(
+      "问题为空，请输入要查询的法规问题。",
+      "输入为空"
+    );
+    if (recorder) {
+      recordQueryPreflight(recorder, {
+        question: q,
+        scope: { shouldRefuse: false },
+      });
+      mapQueryTraceResult(recorder, response, []);
+    }
     return {
-      response: buildRefusal(
-        "问题为空，请输入要查询的法规问题。",
-        "输入为空"
-      ),
+      response,
       retrieval: null,
     };
   }
 
   // 1. 检索前范围判断
   const scope = checkScope(q);
-  if (scope.shouldRefuse) {
+  if (recorder) {
+    const mayContinue = recordQueryPreflight(recorder, { question: q, scope });
+    if (!mayContinue) {
+      const response = buildRefusal(scope.reason!, scope.reasonCode!);
+      mapQueryTraceResult(recorder, response, []);
+      return { response, retrieval: null };
+    }
+  } else if (scope.shouldRefuse) {
     return {
       response: buildRefusal(scope.reason!, scope.reasonCode!),
       retrieval: null,
@@ -80,32 +102,67 @@ export async function generateAnswer(
   }
 
   // 2. 混合检索
-  const retrieval = await retrieve(q, city, userId, userRole);
+  const retrieval = await retrieve(q, city, userId, userRole, recorder);
   const top = retrieval.mergedTop;
 
   if (shouldReturnNoAccess(top, retrieval.deniedTop)) {
+    const response = buildNoAccessChatResponse(q);
+    if (recorder) {
+      recorder.start("evidence_gate");
+      mapQueryTraceResult(recorder, response, top);
+      recorder.block("evidence_gate", {
+        outcome: "blocked",
+        reasonCode: response.refusalReason,
+        explanation: "仅命中无权资料，未向回答生成阶段传递正文",
+      });
+    }
     return {
-      response: buildNoAccessChatResponse(q),
+      response,
       retrieval,
     };
   }
 
   // 3. 检索后依据判断
+  recorder?.start("evidence_gate");
   const evidence = checkEvidence(q, top);
   if (evidence.shouldRefuse) {
     if (retrieval.deniedTop.length > 0) {
+      const response = buildNoAccessChatResponse(q);
+      if (recorder) {
+        mapQueryTraceResult(recorder, response, top);
+        recorder.block("evidence_gate", {
+          outcome: "blocked",
+          reasonCode: response.refusalReason,
+          explanation: evidence.reason,
+        });
+      }
       return {
-        response: buildNoAccessChatResponse(q),
+        response,
         retrieval,
       };
     }
+    const response = buildRefusal(evidence.reason!, evidence.reasonCode!);
+    if (recorder) {
+      mapQueryTraceResult(recorder, response, top);
+      recorder.block("evidence_gate", {
+        outcome: "blocked",
+        reasonCode: evidence.reasonCode,
+        explanation: evidence.reason,
+      });
+    }
     return {
-      response: buildRefusal(evidence.reason!, evidence.reasonCode!),
+      response,
       retrieval,
     };
   }
+  recorder?.complete("evidence_gate", {
+    metrics: { candidateCount: top.length },
+    outputSummary: { sufficient: true },
+    decision: { outcome: "passed" },
+  });
 
   // 4. LLM 生成结论（仅基于传入 chunks）。上下文给到 Top-N，确保依据可见。
+  recorder?.start("conclusion_generation");
   const context = top.slice(0, LLM_CONTEXT);
   const llm = getLLMProvider();
   const rawConclusion = await llm.synthesizeConclusion({
@@ -125,8 +182,20 @@ export async function generateAnswer(
   const conclusion = sanitizeConclusionText(rawConclusion);
 
   if (!conclusion.trim()) {
+    const response = buildRefusal(
+      "未能从检索到的条文中提炼出明确结论。",
+      "结论提炼失败"
+    );
+    if (recorder) {
+      mapQueryTraceResult(recorder, response, top);
+      recorder.block("conclusion_generation", {
+        outcome: "blocked",
+        reasonCode: response.refusalReason,
+        explanation: "LLM 返回空结论",
+      });
+    }
     return {
-      response: buildRefusal("未能从检索到的条文中提炼出明确结论。", "结论提炼失败"),
+      response,
       retrieval,
     };
   }
@@ -134,16 +203,34 @@ export async function generateAnswer(
   // LLM 有时会在 conclusion 里自行拒答（"抱歉，知识库中没有..."）。
   // 检测这类自拒答并转为标准拒答格式，避免「结论说没有依据 + 却展示引用」的矛盾。
   if (isLLMSelfRefusal(conclusion)) {
+    const response = buildRefusal(
+      "知识库中检索到的片段未包含该问题的明确条文依据，LLM 判断不足以作答。",
+      "LLM自判无依据"
+    );
+    if (recorder) {
+      mapQueryTraceResult(recorder, response, top);
+      recorder.block("conclusion_generation", {
+        outcome: "blocked",
+        reasonCode: response.refusalReason,
+        explanation: "生成模型自行判断上下文不足",
+      });
+    }
     return {
-      response: buildRefusal(
-        "知识库中检索到的片段未包含该问题的明确条文依据，LLM 判断不足以作答。",
-        "LLM自判无依据"
-      ),
+      response,
       retrieval,
     };
   }
+  recorder?.complete("conclusion_generation", {
+    metrics: { contextCount: context.length, outputLength: conclusion.length },
+    outputSummary: {
+      provider: llm.name,
+      conclusion,
+    },
+    decision: { outcome: "generated" },
+  });
 
   // 5. 表格装配：仅当「最相关证据本身是表格」时才渲染，避免计数/文字题被检索分高
+  recorder?.start("citation_assembly");
   //    但与结论无关的表格蹭进来（如问「分为多少类」却挂出整张用地分类表）。
   const topIsTable = top
     .slice(0, 2)
@@ -180,6 +267,24 @@ export async function generateAnswer(
       c.excerptDisplayPolicy === "source_page_required" ||
       (c.extractionWarnings?.length ?? 0) > 0
   );
+  recorder?.complete("citation_assembly", {
+    metrics: {
+      citationCount: citations.length,
+      tableSliceCount: tableSlices.length,
+    },
+    outputSummary: {
+      citations: citations.map((citation) => ({
+        id: citation.id,
+        documentId: citation.documentId,
+        fileName: citation.fileName,
+        sectionPath: citation.sectionPath,
+        pageNumber: citation.pageNumber,
+        relevance: citation.relevance,
+        lowFidelity: citation.lowFidelity,
+      })),
+    },
+  });
+  recorder?.start("answer_reflection");
   const finalizedConclusion = finalizeConclusionText(conclusion, citations);
   const hasReflectionFallback = finalizedConclusion.reflection.needsFallback;
   const recoveredConclusion = recoverConclusionFromStructuredEvidence(citations, q);
@@ -195,6 +300,24 @@ export async function generateAnswer(
     sanitizedConclusion: conclusion,
     displayConclusion,
     fallbackReasons: finalizedConclusion.reflection.reasons,
+  });
+  recorder?.complete("answer_reflection", {
+    metrics: {
+      wasReplaced: answerDiagnostics?.wasReplaced ?? false,
+      fallbackCount: finalizedConclusion.reflection.reasons.length,
+      sourceReviewRequired: needsSourceReview,
+    },
+    outputSummary: {
+      fallbackReasons: finalizedConclusion.reflection.reasons,
+      recoveredFromStructuredEvidence: Boolean(recoveredConclusion),
+      displayConclusion,
+    },
+    decision: {
+      outcome:
+        answerDiagnostics?.wasReplaced || unresolvedReflectionFallback
+          ? "fallback_applied"
+          : "passed",
+    },
   });
 
   let answerBlocks: AnswerBlock[] | undefined;
@@ -219,32 +342,31 @@ export async function generateAnswer(
     ];
   }
 
-  return {
-    response: {
-      answer,
-      foundEvidence: true,
-      citations,
-      answerBlocks,
-      answerDiagnostics,
-      confidence: needsSourceReview || unresolvedReflectionFallback
-        ? "low"
-        : citations.length >= 2 || bestSupport >= 0.55
-          ? "high"
-          : "medium",
-      confidenceLabel:
-        needsSourceReview
-          ? "低置信度 · 表格解析疑似低保真，请核对原文页面"
-          : unresolvedReflectionFallback
-          ? "低置信度 · 输出前校验发现结论不完整，请核对原文"
-          : citations.length >= 2
-          ? "高置信度 · 多段依据交叉印证"
-          : bestSupport >= 0.55
-            ? "高置信度 · 依据与结论高度一致"
-            : "中置信度 · 建议结合引用原文确认",
-      feedbackTargetId: `answer-${Date.now()}`,
-    },
-    retrieval,
+  const response: ChatResponse = {
+    answer,
+    foundEvidence: true,
+    citations,
+    answerBlocks,
+    answerDiagnostics,
+    confidence: needsSourceReview || unresolvedReflectionFallback
+      ? "low"
+      : citations.length >= 2 || bestSupport >= 0.55
+        ? "high"
+        : "medium",
+    confidenceLabel:
+      needsSourceReview
+        ? "低置信度 · 表格解析疑似低保真，请核对原文页面"
+        : unresolvedReflectionFallback
+        ? "低置信度 · 输出前校验发现结论不完整，请核对原文"
+        : citations.length >= 2
+        ? "高置信度 · 多段依据交叉印证"
+        : bestSupport >= 0.55
+          ? "高置信度 · 依据与结论高度一致"
+          : "中置信度 · 建议结合引用原文确认",
+    feedbackTargetId: `answer-${Date.now()}`,
   };
+  if (recorder) finalizeQueryTrace(recorder, response, top);
+  return { response, retrieval };
 }
 
 /** 表格类 chunk 类型（用于判断「最相关证据是否为表格」）。 */

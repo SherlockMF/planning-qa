@@ -1,4 +1,4 @@
-import { RetrievalDebugPanel } from "@/components/RetrievalDebugPanel";
+import { WorkflowAuditPanel } from "@/components/WorkflowAuditPanel";
 import { DeveloperOnly } from "@/components/DeveloperOnly";
 
 export default function DebugPage() {
@@ -6,14 +6,14 @@ export default function DebugPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-slate-800 md:text-2xl">
-          可信 AI 解释台
+          AI 工作流审计台
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          展示当前账号的可检索范围、无权资料隔离、三路检索得分和最终候选，用于解释回答、拒答与权限判断。
+          从文档上传、解析、切块到问题安全检测、权限过滤、三路召回、答案反思与最终输出，实时查看并回放完整链路。
         </p>
       </div>
       <DeveloperOnly>
-        <RetrievalDebugPanel />
+        <WorkflowAuditPanel />
       </DeveloperOnly>
     </div>
   );

@@ -7,6 +7,9 @@ import { createDocument } from "@/lib/db/documents";
 import { getStore } from "@/lib/db/store";
 import { saveRawBuffer } from "@/lib/db/persist";
 import { getUploadFiles } from "@/lib/documents/uploadForm";
+import { createWorkflowTrace, WorkflowTraceRecorder } from "@/lib/workflow/trace";
+import { recordUploadRegistration } from "@/lib/workflow/ingestionTrace";
+import { persistWorkflowTraceSafely } from "@/lib/db/workflowTraces";
 
 const VALID_TYPES: FileType[] = ALL_FILE_TYPES;
 
@@ -72,6 +75,7 @@ export async function POST(req: NextRequest) {
       : undefined;
 
   const documents: Document[] = [];
+  const traceIds: { documentId: string; traceId: string }[] = [];
   const failed: string[] = [];
 
   for (const file of files) {
@@ -101,6 +105,23 @@ export async function POST(req: NextRequest) {
     getStore().rawBuffers[doc.id] = buf;
     saveRawBuffer(doc.id, buf);
     documents.push(doc);
+
+    const trace = createWorkflowTrace({
+      id: `ingestion-${doc.id}-${Date.now()}`,
+      kind: "ingestion",
+      actorUserId: currentUser.id,
+      documentId: doc.id,
+    });
+    const recorder = new WorkflowTraceRecorder(trace, () => {
+      persistWorkflowTraceSafely(trace);
+    });
+    recordUploadRegistration(recorder, {
+      document: doc,
+      fileSize: buf.length,
+      uploadUserId: currentUser.id,
+    });
+    persistWorkflowTraceSafely(trace);
+    traceIds.push({ documentId: doc.id, traceId: trace.id });
   }
 
   if (documents.length === 0) {
@@ -113,6 +134,8 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({
     document: documents[0],
     documents,
+    traceId: traceIds[0]?.traceId,
+    traceIds,
     ...(failed.length > 0 ? { failed } : {}),
   });
 }
