@@ -254,6 +254,7 @@ test("shared guard rejects employees and missing documents across review routes"
         { params }
       );
       assert.equal(response.status, 403);
+      assert.equal(response.headers.get("cache-control"), "private, no-store");
       assert.equal((await response.json()).error, "当前账号无权审核该文档");
     }
 
@@ -269,6 +270,7 @@ test("shared guard rejects employees and missing documents across review routes"
         { params }
       );
       assert.equal(response.status, 404);
+      assert.equal(response.headers.get("cache-control"), "private, no-store");
       assert.equal((await response.json()).error, "文档不存在");
     }
   });
@@ -291,6 +293,33 @@ test("artifact responses enforce integrity before every format and harden HTML",
       "default-src 'none'; style-src 'unsafe-inline'; script-src 'unsafe-inline'; connect-src 'self'; img-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
     );
 
+    const manifest = await modules.artifactGET(
+      await request(`${fixture.artifactPath}?format=manifest`, "user-admin"),
+      { params }
+    );
+    assert.equal(manifest.status, 200);
+    assert.equal(manifest.headers.get("cache-control"), "private, no-store");
+
+    const invalidFormat = await modules.artifactGET(
+      await request(`${fixture.artifactPath}?format=xml`, "user-admin"),
+      { params }
+    );
+    assert.equal(invalidFormat.status, 400);
+    assert.equal(
+      invalidFormat.headers.get("cache-control"),
+      "private, no-store"
+    );
+
+    const missingArtifact = await modules.artifactGET(
+      await request(`${fixture.listPath}/artifact-missing`, "user-admin"),
+      { params: { id: fixture.documentId, artifactId: "artifact-missing" } }
+    );
+    assert.equal(missingArtifact.status, 404);
+    assert.equal(
+      missingArtifact.headers.get("cache-control"),
+      "private, no-store"
+    );
+
     fs.appendFileSync(
       path.join(
         modules.artifactStore.DEFAULT_ARTIFACT_ROOT,
@@ -307,6 +336,7 @@ test("artifact responses enforce integrity before every format and harden HTML",
         { params }
       );
       assert.equal(response.status, 409);
+      assert.equal(response.headers.get("cache-control"), "private, no-store");
       assert.equal((await response.json()).error, "审核副本完整性校验失败");
     }
   });

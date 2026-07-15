@@ -5,7 +5,7 @@ import {
   loadArtifact,
   verifyArtifactIntegrity,
 } from "@/lib/audit/artifactStore";
-import { requireReviewArtifactAccess } from "../access";
+import { privateJson, requireReviewArtifactAccess } from "../access";
 
 const PRIVATE_NO_STORE = "private, no-store";
 const REVIEW_CSP =
@@ -28,7 +28,7 @@ export async function GET(
       params.artifactId
     );
   } catch {
-    return NextResponse.json(
+    return privateJson(
       { error: "审核副本不存在" },
       { status: 404 }
     );
@@ -36,7 +36,7 @@ export async function GET(
 
   const integrity = verifyArtifactIntegrity(artifact);
   if (!integrity.ok) {
-    return NextResponse.json(
+    return privateJson(
       { error: "审核副本完整性校验失败", details: integrity.errors },
       { status: 409 }
     );
@@ -44,9 +44,7 @@ export async function GET(
 
   const format = req.nextUrl.searchParams.get("format") ?? "html";
   if (format === "manifest") {
-    return NextResponse.json(artifact.manifest, {
-      headers: { "Cache-Control": PRIVATE_NO_STORE },
-    });
+    return privateJson(artifact.manifest);
   }
   if (format === "markdown") {
     return new NextResponse(artifact.reviewMd, {
@@ -59,7 +57,7 @@ export async function GET(
     });
   }
   if (format !== "html") {
-    return NextResponse.json(
+    return privateJson(
       { error: "审核副本格式无效" },
       { status: 400 }
     );
