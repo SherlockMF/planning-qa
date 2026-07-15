@@ -30,3 +30,4 @@ import "./importParser.test.ts";
 import "./exportResults.test.ts";
 import "./auditReviewItems.test.ts";
 import "./auditArtifactStore.test.ts";
+import "./auditReviewSubmission.test.ts";
