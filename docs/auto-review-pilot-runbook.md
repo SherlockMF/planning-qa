@@ -116,6 +116,92 @@ npm.cmd run eval:auto-review -- tests/fixtures/auto-review/gold-v1.json --mode h
 
 单项脱敏诊断：HTTP 200，但模型返回带 Markdown `json` 围栏的内容；clean 结果同时给出空 `summary` 和空 `sourceEvidence`。严格解析报 `invalid_auto_review_json`。未修改 Task 1-8 Provider 合约；该兼容问题应另行修复和重新校准。
 
+### 6.1 Provider 兼容性复验（Task 10）
+
+复验分支：`codex/auto-review-provider-compat`。保留上面的 63/63 unavailable 记录作为修复前历史证据。
+
+focused TDD 只运行 `tests/auditAutoReviewProvider.test.ts`：
+
+- RED：8 项中 2 项按预期失败；Markdown fenced JSON 报 `invalid_auto_review_json`，clean 空摘要报 `missing_auto_review_summary`。
+- GREEN：8/8 通过，exit code 0。
+- 兼容范围只接受纯 JSON 对象或整段由单一 Markdown JSON 围栏包裹的对象；不接受围栏外说明或多个对象。
+- 只对 `clean` 的空白字符串规范化：摘要为“未发现需要标记的切分风险”，来源说明为“模型未提供具体来源说明”。后者不声称页码、表格或行定位。
+- `suspected_issue` 的摘要/来源字段仍必须非空；非 JSON、缺字段和未知 `issueType` 仍拒绝。
+
+使用主 checkout `.env.local` 中已确认存在的 `ZHIPU_API_KEY`，显式设置 `AUTO_REVIEW_ENABLED=1`，未配置独立 endpoint/key/model 覆盖，再次运行同一命令：
+
+```powershell
+npm.cmd run eval:auto-review -- tests/fixtures/auto-review/gold-v1.json --mode hybrid
+```
+
+- Provider：`zhipu_auto_review`
+- Model：`glm-4v-flash`
+- Rule version：`v1`
+- 请求项：63
+- 最终 mode：`partial`
+- Exit code：2
+- Gate：FAIL
+- 混淆矩阵：TP=3、FP=0、TN=22、FN=22、unavailable=16。
+- 严重召回：1/30 = 3.33%；严重漏报：29/30 = 96.67%。
+- 误报率：0/30 = 0%。
+- 来源定位：3/3 = 100%。
+- 不可用率：16/63 = 25.40%。
+
+问题类型明细：
+
+| 类型 | TP | FP | FN | Precision | Recall |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| reading_order_noise | 1 | 0 | 3 | 100% | 25% |
+| row_boundary_contamination | 0 | 0 | 3 | 0% | 0% |
+| column_misalignment | 0 | 0 | 0 | 0% | 0% |
+| merged_cell_scope_error | 0 | 0 | 6 | 0% | 0% |
+| missing_content | 0 | 0 | 1 | 0% | 0% |
+| source_mapping_error | 0 | 0 | 5 | 0% | 0% |
+| semantic_assignment_error | 1 | 2 | 5 | 33.33% | 16.67% |
+| other | 0 | 0 | 0 | 0% | 0% |
+
+单项脱敏诊断选择一个 unavailable 项复现：HTTP 200，响应为单一 JSON 围栏，围栏内是包含全部五个字段的合法对象；该 `suspected_issue` 返回了契约外 issue type，严格解析按预期报 `invalid_auto_review_issue_type`。未记录模型原文、文档内容或密钥，也未用默认值掩盖 issue 字段或把未知类型映射为 `other`。
+
+复验结论：已知 fenced JSON / clean 空字段兼容问题不再造成 63/63 unavailable，47 项已有有效预测；但 severe recall 与 unavailable rate 仍远未达到 gate。决策保持 shadow/adjust，不启用自动风险排序，不声称 hybrid gate 通过。
+
+### 6.2 Provider prompt 枚举最终复验（Task 10）
+
+47/63 有效结果的脱敏诊断显示，`suspected_issue` 会返回契约外 issue type；原 prompt 只限制“最多 4 个”，却没有告诉模型允许值。这是请求 prompt 与严格 parser 的可控不一致。
+
+focused TDD 再次只运行 `tests/auditAutoReviewProvider.test.ts`：RED 7/8、GREEN 8/8。测试从实际请求体读取 prompt，逐一确认八个允许值（含 `other`）均出现，并确认 prompt 要求 `issueTypes` 只能从该枚举选择。实现只改 Provider prompt；没有增加 `response_format`，没有映射或吞掉未知类型，严格 parser 保持不变。
+
+随后用同一 `gold-v1` 完成最终 63 项复验：
+
+- Provider：`zhipu_auto_review`
+- Model：`glm-4v-flash`
+- Rule version：`v1`
+- 请求项：63
+- 最终 mode：`partial`
+- Exit code：2
+- Gate：FAIL
+- 混淆矩阵：TP=2、FP=0、TN=17、FN=16、unavailable=28。
+- 严重召回：0/30 = 0%；严重漏报：30/30 = 100%。
+- 误报率：0/30 = 0%。
+- 来源定位：2/2 = 100%。
+- 不可用率：28/63 = 44.44%。
+
+问题类型明细：
+
+| 类型 | TP | FP | FN | Precision | Recall |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| reading_order_noise | 0 | 0 | 3 | 0% | 0% |
+| row_boundary_contamination | 0 | 0 | 1 | 0% | 0% |
+| column_misalignment | 0 | 0 | 0 | 0% | 0% |
+| merged_cell_scope_error | 0 | 0 | 6 | 0% | 0% |
+| missing_content | 0 | 0 | 1 | 0% | 0% |
+| source_mapping_error | 0 | 0 | 1 | 0% | 0% |
+| semantic_assignment_error | 1 | 1 | 5 | 50% | 16.67% |
+| other | 0 | 0 | 0 | 0% | 0% |
+
+最终脱敏抽样确认请求 prompt 已完整枚举并限制 issueTypes，抽样响应的 issueTypes 也都在枚举内；但同一输入重试不稳定，其中一个已知 issue 样本仍把 `clean.sourceEvidence` 返回为 `null`，严格解析按预期报 `missing_auto_review_source_evidence`。因此未知类型的请求侧不一致已修复，但模型仍存在其他外部契约不服从，不能放宽 parser 掩盖。
+
+最终兼容性结论：自动审核 Provider 从历史的 0/63 提升为 35/63 有效，但本轮不可用率仍为 44.44%，且严重召回未达 gate。保持 shadow/adjust，不启用自动放行或自动风险排序。
+
 ## 7. 真实 UI 审核与复审
 
 运行应用：最终分支 Next.js dev server，独立端口 3300。真实 runtime artifact：
@@ -148,9 +234,10 @@ Playwright headed 流程：
 ## 8. 试点结论
 
 - rules_only 严重召回仅 20%，且误报率、定位准确率均未达 gate。
-- 真实 Provider 63/63 unavailable；无法证明混合 Agent 可用于自动排序。
+- 真实 Provider 最终 35/63 有效，不可用率 44.44%；已修复 prompt 与 issueTypes 枚举不一致，但模型仍会违反其他严格字段契约。
+- hybrid 严重召回 0%、误报率 0%、定位准确率 100%（仅 2 个定位预测），仍无法证明混合 Agent 可用于自动放行或自动排序。
 - 人工不可变轮次、复审链和无 `/process` 路径成立；正确配置下审核动作不改变检索主数据。
-- 在 Provider 输出契约修复并用同一 `gold-v1` 重跑前，保持人工审核，不启用自动风险排序。
+- 当前保持自动审核 shadow + 人工抽查；继续收集误报/漏报样本并校准模型或规则，在同一 `gold-v1` 通过 gate 前不启用自动风险排序。
 - 表格切分本身仍未修复，需单独项目；本轮不得描述为切分质量已修复或 hybrid Agent 已验收。
 
-最终决策：停止自动排序
+最终决策：自动审核仅用于 shadow/人工抽查，不启用自动排序

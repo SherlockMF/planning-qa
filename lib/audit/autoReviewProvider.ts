@@ -5,7 +5,7 @@ import type {
   ModelAutoReviewAssessment,
 } from "./types.ts";
 
-const ISSUE_TYPES = new Set<AutoIssueType>([
+const ISSUE_TYPE_VALUES: readonly AutoIssueType[] = [
   "reading_order_noise",
   "row_boundary_contamination",
   "column_misalignment",
@@ -14,9 +14,12 @@ const ISSUE_TYPES = new Set<AutoIssueType>([
   "source_mapping_error",
   "semantic_assignment_error",
   "other",
-]);
+];
+const ISSUE_TYPES = new Set<AutoIssueType>(ISSUE_TYPE_VALUES);
 const DEFAULT_ZHIPU_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
 const DEFAULT_ZHIPU_MODEL = "glm-4v-flash";
+const CLEAN_SUMMARY = "未发现需要标记的切分风险";
+const CLEAN_SOURCE_EVIDENCE = "模型未提供具体来源说明";
 
 export interface ReviewPageImage {
   mimeType: string;
@@ -40,12 +43,7 @@ export interface CreateAutoReviewProviderOptions {
 }
 
 export async function parseModelAssessment(raw: string): Promise<ModelAutoReviewAssessment> {
-  let value: unknown;
-  try {
-    value = JSON.parse(raw);
-  } catch {
-    throw new Error("invalid_auto_review_json");
-  }
+  const value = parseJsonResponse(raw);
   if (!isRecord(value)) throw new Error("invalid_auto_review_response");
   if (value.status !== "clean" && value.status !== "suspected_issue") {
     throw new Error("invalid_auto_review_status");
@@ -61,16 +59,22 @@ export async function parseModelAssessment(raw: string): Promise<ModelAutoReview
   )) {
     throw new Error("invalid_auto_review_issue_type");
   }
-  if (!isBoundedText(value.summary, 1, 600)) throw new Error("missing_auto_review_summary");
-  if (!isBoundedText(value.sourceEvidence, 1, 1000)) {
+  const summary = normalizeCleanText(value.status, value.summary, CLEAN_SUMMARY);
+  const sourceEvidence = normalizeCleanText(
+    value.status,
+    value.sourceEvidence,
+    CLEAN_SOURCE_EVIDENCE,
+  );
+  if (!isBoundedText(summary, 1, 600)) throw new Error("missing_auto_review_summary");
+  if (!isBoundedText(sourceEvidence, 1, 1000)) {
     throw new Error("missing_auto_review_source_evidence");
   }
   return {
     status: value.status,
     riskScore: value.riskScore,
     issueTypes: value.issueTypes,
-    summary: value.summary.trim(),
-    sourceEvidence: value.sourceEvidence.trim(),
+    summary: summary.trim(),
+    sourceEvidence: sourceEvidence.trim(),
   };
 }
 
@@ -134,7 +138,8 @@ function buildPrompt(input: AutoReviewProviderInput): string {
   return [
     "你是独立的文档切分风险审核器。只对照原页和给定结构判断，不修改解析结果。",
     "只返回一个 JSON 对象，字段必须为 status、riskScore、issueTypes、summary、sourceEvidence。",
-    'status 只能是 "clean" 或 "suspected_issue"；riskScore 为 0..100；issueTypes 最多 4 个。',
+    'status 只能是 "clean" 或 "suspected_issue"；riskScore 为 0..100。',
+    `issueTypes 允许枚举：${ISSUE_TYPE_VALUES.join(", ")}。issueTypes 只能从上述枚举中选择，最多 4 个。`,
     `审核项：${JSON.stringify({
       auditItemId: input.item.auditItemId,
       objectType: input.item.objectType,
@@ -156,6 +161,27 @@ function extractResponseContent(payload: unknown): string {
     throw new Error("invalid_auto_review_provider_response");
   }
   return first.message.content;
+}
+
+function parseJsonResponse(raw: string): unknown {
+  const trimmed = raw.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const fenced = trimmed.match(/^```(?:json)?[ \t]*\r?\n([\s\S]*?)\r?\n```$/i);
+    if (!fenced) throw new Error("invalid_auto_review_json");
+    try {
+      return JSON.parse(fenced[1]);
+    } catch {
+      throw new Error("invalid_auto_review_json");
+    }
+  }
+}
+
+function normalizeCleanText(status: unknown, value: unknown, fallback: string): unknown {
+  return status === "clean" && typeof value === "string" && value.trim().length === 0
+    ? fallback
+    : value;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

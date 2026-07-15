@@ -25,6 +25,83 @@ test("parseModelAssessment accepts the exact automatic-review contract", async (
   });
 });
 
+test("parseModelAssessment accepts one Markdown JSON fence", async () => {
+  const assessment = await parseModelAssessment(`\`\`\`json
+{
+  "status": "suspected_issue",
+  "riskScore": 72,
+  "issueTypes": ["reading_order_noise"],
+  "summary": "数字与单位顺序异常",
+  "sourceEvidence": "第 3 页目标行"
+}
+\`\`\``);
+
+  assert.deepEqual(assessment, {
+    status: "suspected_issue",
+    riskScore: 72,
+    issueTypes: ["reading_order_noise"],
+    summary: "数字与单位顺序异常",
+    sourceEvidence: "第 3 页目标行",
+  });
+});
+
+test("parseModelAssessment normalizes blank clean text without inventing localization", async () => {
+  const assessment = await parseModelAssessment(JSON.stringify({
+    status: "clean",
+    riskScore: 8,
+    issueTypes: [],
+    summary: "  ",
+    sourceEvidence: "",
+  }));
+
+  assert.deepEqual(assessment, {
+    status: "clean",
+    riskScore: 8,
+    issueTypes: [],
+    summary: "未发现需要标记的切分风险",
+    sourceEvidence: "模型未提供具体来源说明",
+  });
+});
+
+test("parseModelAssessment keeps issue text fields strict", async () => {
+  await assert.rejects(
+    () => parseModelAssessment(JSON.stringify({
+      status: "suspected_issue",
+      riskScore: 72,
+      issueTypes: ["reading_order_noise"],
+      summary: "",
+      sourceEvidence: "第 3 页目标行",
+    })),
+    /missing_auto_review_summary/,
+  );
+  await assert.rejects(
+    () => parseModelAssessment(JSON.stringify({
+      status: "suspected_issue",
+      riskScore: 72,
+      issueTypes: ["reading_order_noise"],
+      summary: "数字与单位顺序异常",
+    })),
+    /missing_auto_review_source_evidence/,
+  );
+});
+
+test("parseModelAssessment still rejects non-JSON and unknown issue types", async () => {
+  await assert.rejects(
+    () => parseModelAssessment("not JSON"),
+    /invalid_auto_review_json/,
+  );
+  await assert.rejects(
+    () => parseModelAssessment(JSON.stringify({
+      status: "suspected_issue",
+      riskScore: 72,
+      issueTypes: ["hallucinated_issue"],
+      summary: "发现未知问题",
+      sourceEvidence: "第 3 页目标行",
+    })),
+    /invalid_auto_review_issue_type/,
+  );
+});
+
 test("parseModelAssessment rejects invalid status, score, evidence, and issue count", async () => {
   await assert.rejects(
     () => parseModelAssessment(JSON.stringify({
@@ -111,6 +188,20 @@ test("dedicated provider is enabled independently with temperature zero", async 
   assert.equal(body.temperature, 0);
   assert.equal(body.model, "vision-reviewer");
   assert.match(JSON.stringify(body.messages), /sourceEvidence/);
+  const prompt = body.messages[0].content[0].text;
+  for (const issueType of [
+    "reading_order_noise",
+    "row_boundary_contamination",
+    "column_misalignment",
+    "merged_cell_scope_error",
+    "missing_content",
+    "source_mapping_error",
+    "semantic_assignment_error",
+    "other",
+  ]) {
+    assert.match(prompt, new RegExp(`\\b${issueType}\\b`));
+  }
+  assert.match(prompt, /只能从上述枚举中选择/);
 });
 
 test("provider selection requires explicit enablement and never imports the answer LLM", async () => {
