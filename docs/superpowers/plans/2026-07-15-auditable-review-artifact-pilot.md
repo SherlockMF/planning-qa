@@ -1,5 +1,7 @@
 # Auditable Review Artifact Pilot Implementation Plan
 
+> **Superseded:** Do not execute this plan. Use `2026-07-16-auto-review-agent-human-sampling.md`, which incorporates the automatic-review Agent, risk Eval, human sampling workbench, and immutable re-review rounds.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** Add an immutable per-processing-run review package and a read-only review workflow for five pilot documents without changing the retrieval source of truth.
