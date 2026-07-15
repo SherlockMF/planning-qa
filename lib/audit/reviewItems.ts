@@ -62,7 +62,7 @@ export function buildAuditReviewItems(
       objectType: object.objectType,
       title,
       sourcePageStart: object.sourcePageStart,
-      sourcePageEnd: object.sourcePageEnd,
+      sourcePageEnd: object.sourcePageEnd ?? object.sourcePageStart,
       sourceBlockIds,
       sourceTableId: object.sourceTableId,
       sourceRowIndex: object.sourceRowIndex,

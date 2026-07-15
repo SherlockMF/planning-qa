@@ -60,7 +60,6 @@ test("projects source ids without persisting embeddings", () => {
     sectionPath: [],
     sectionPathText: "",
     sourcePageStart: 2,
-    sourcePageEnd: 2,
     sourceBlockIds: ["block-0"],
     sourceTableId: "tbl-1",
     sourceRowIndex: 0,
@@ -119,6 +118,7 @@ test("projects source ids without persisting embeddings", () => {
 
   assert.deepEqual(row?.chunkIds, ["chunk-1"]);
   assert.equal(row?.ragTableId, "tbl-1");
+  assert.equal(row?.sourcePageEnd, 2);
   assert.equal(row?.tableMarkdown, undefined);
   assert.equal(table?.tableMarkdown, ragTable.markdownFull);
   assert.equal(row?.sourceExcerpt, "高度 24m");

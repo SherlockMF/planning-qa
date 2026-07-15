@@ -58,7 +58,7 @@ export interface AuditManifest {
     sourceFileSha256: string;
   };
   pipeline: {
-    dataSchemaVersion: string;
+    dataSchemaVersion: number;
     embeddingSignature: string;
   };
   summary: {
