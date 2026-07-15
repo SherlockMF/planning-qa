@@ -6,7 +6,15 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import type { ReviewArtifactSummary } from "@/lib/audit/types";
-import { reviewStatusMeta } from "@/lib/audit/reviewPresentation";
+import {
+  parseReviewArtifactSummaries,
+  reviewStatusMeta,
+} from "@/lib/audit/reviewPresentation";
+
+function responseProperty(value: unknown, key: "error" | "artifacts"): unknown {
+  if (typeof value !== "object" || value === null) return undefined;
+  return Reflect.get(value, key);
+}
 
 export function ReviewArtifactControl({
   documentId,
@@ -31,15 +39,21 @@ export function ReviewArtifactControl({
       { cache: "no-store" }
     )
       .then(async (response) => {
-        const data = await response.json().catch(() => ({}));
+        const data: unknown = await response.json().catch(() => ({}));
         if (!response.ok) {
-          throw new Error(data.error ?? "审核副本读取失败");
+          const responseError = responseProperty(data, "error");
+          throw new Error(
+            typeof responseError === "string"
+              ? responseError
+              : "审核副本读取失败"
+          );
         }
-        return data;
+        return parseReviewArtifactSummaries(
+          responseProperty(data, "artifacts")
+        );
       })
-      .then((data) => {
+      .then((next) => {
         if (!active) return;
-        const next = (data.artifacts ?? []) as ReviewArtifactSummary[];
         setArtifacts(next);
         setSelectedId((current) =>
           next.some((item) => item.artifactId === current)
@@ -64,10 +78,22 @@ export function ReviewArtifactControl({
 
   if (loading) {
     return (
-      <span className="text-xs text-muted-foreground">读取审核状态…</span>
+      <span
+        role="status"
+        aria-live="polite"
+        className="text-xs text-muted-foreground"
+      >
+        读取审核状态…
+      </span>
     );
   }
-  if (error) return <Badge variant="destructive">{error}</Badge>;
+  if (error) {
+    return (
+      <Badge role="alert" variant="destructive">
+        {error}
+      </Badge>
+    );
+  }
   if (!artifacts.length) {
     return <Badge variant="secondary">无审核副本</Badge>;
   }
@@ -89,6 +115,7 @@ export function ReviewArtifactControl({
         <Select
           className="h-8 text-xs"
           value={selected.artifactId}
+          aria-label="选择审核快照"
           onChange={(event) => setSelectedId(event.target.value)}
         >
           {artifacts.map((item) => (
@@ -99,7 +126,12 @@ export function ReviewArtifactControl({
         </Select>
       )}
       <Button asChild size="sm" variant="outline">
-        <a href={href} target="_blank" rel="noreferrer">
+        <a
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={`打开文档 ${documentId} 的审核快照 ${selected.artifactId}`}
+        >
           <ExternalLink className="h-3.5 w-3.5" />
           打开审核
         </a>

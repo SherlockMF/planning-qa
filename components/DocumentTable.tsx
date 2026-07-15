@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type {
   Document,
   DocumentStatus,
@@ -63,6 +63,11 @@ export function DocumentTable({
   const [openAccessDocId, setOpenAccessDocId] = useState<string | null>(null);
   const [reviewRefreshToken, setReviewRefreshToken] = useState(0);
   const [auditNotices, setAuditNotices] = useState<Record<string, string>>({});
+  const actionBusy = busyId !== null || batchBusy;
+
+  useEffect(() => {
+    setAuditNotices({});
+  }, [currentUser.id]);
 
   // 只认仍存在于列表中的选中项（删除/刷新后自动失效）
   const manageableDocuments = documents.filter((d) =>
@@ -96,6 +101,8 @@ export function DocumentTable({
   }
 
   async function process(id: string) {
+    if (busyId !== null || batchBusy) return;
+    setAuditNotices((current) => ({ ...current, [id]: "" }));
     setBusyId(id);
     try {
       const response = await fetch(
@@ -113,19 +120,20 @@ export function DocumentTable({
             ? `索引成功，但审核副本生成失败：${data.auditArtifact.error}`
             : "",
       }));
-      setReviewRefreshToken((value) => value + 1);
-      onChange();
     } catch (error) {
       setAuditNotices((current) => ({
         ...current,
         [id]: error instanceof Error ? error.message : "解析失败",
       }));
     } finally {
+      setReviewRefreshToken((value) => value + 1);
+      onChange();
       setBusyId(null);
     }
   }
 
   async function remove(id: string) {
+    if (busyId !== null || batchBusy) return;
     if (!confirm("确定删除该文档及其切片？此操作不可撤销。")) return;
     setBusyId(id);
     try {
@@ -142,6 +150,7 @@ export function DocumentTable({
   }
 
   async function toggleEnabled(doc: Document) {
+    if (busyId !== null || batchBusy) return;
     setBusyId(doc.id);
     try {
       await fetch(withUser(`/api/documents/${doc.id}`), {
@@ -156,6 +165,7 @@ export function DocumentTable({
   }
 
   async function saveMetadata(doc: Document, patch: Partial<Document>) {
+    if (busyId !== null || batchBusy) return;
     setBusyId(doc.id);
     try {
       await fetch(withUser(`/api/documents/${doc.id}`), {
@@ -192,6 +202,7 @@ export function DocumentTable({
   // ── 批量操作（逐个串行：解析含 embedding 调用，并行会触发接口限流） ──
 
   async function batchProcess() {
+    if (busyId !== null || batchBusy) return;
     setBatchBusy(true);
     try {
       for (let i = 0; i < selectedIds.length; i++) {
@@ -230,6 +241,7 @@ export function DocumentTable({
   }
 
   async function batchSetEnabled(enabled: boolean) {
+    if (busyId !== null || batchBusy) return;
     setBatchBusy(true);
     try {
       for (let i = 0; i < selectedIds.length; i++) {
@@ -248,6 +260,7 @@ export function DocumentTable({
   }
 
   async function batchRemove() {
+    if (busyId !== null || batchBusy) return;
     if (
       !confirm(
         `确定删除所选 ${selectedIds.length} 个文档及其切片？此操作不可撤销。`
@@ -299,7 +312,7 @@ export function DocumentTable({
                 size="sm"
                 variant="outline"
                 onClick={batchProcess}
-                disabled={batchBusy}
+                disabled={actionBusy}
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 重新解析
@@ -308,7 +321,7 @@ export function DocumentTable({
                 size="sm"
                 variant="outline"
                 onClick={() => batchSetEnabled(true)}
-                disabled={batchBusy}
+                disabled={actionBusy}
               >
                 <Search className="h-3.5 w-3.5" />
                 参与检索
@@ -317,7 +330,7 @@ export function DocumentTable({
                 size="sm"
                 variant="outline"
                 onClick={() => batchSetEnabled(false)}
-                disabled={batchBusy}
+                disabled={actionBusy}
               >
                 <SearchX className="h-3.5 w-3.5" />
                 取消检索
@@ -326,7 +339,7 @@ export function DocumentTable({
                 size="sm"
                 variant="ghost"
                 onClick={batchRemove}
-                disabled={batchBusy}
+                disabled={actionBusy}
                 className="text-destructive hover:text-destructive"
               >
                 <Trash2 className="h-3.5 w-3.5" />
@@ -353,7 +366,7 @@ export function DocumentTable({
               if (el) el.indeterminate = selectedIds.length > 0 && !allSelected;
             }}
             onChange={toggleSelectAll}
-            disabled={batchBusy}
+            disabled={actionBusy}
           />
           全选当前列表
         </label>
@@ -363,7 +376,7 @@ export function DocumentTable({
         {documents.map((doc) => {
           const status = STATUS_META[doc.status];
           const canManage = canManageDocumentInManagement(currentUser, doc);
-          const busy = busyId === doc.id || batchBusy || !canManage;
+          const busy = actionBusy || !canManage;
           return (
             <article
               key={doc.id}
@@ -377,7 +390,7 @@ export function DocumentTable({
                   className="mt-1 h-3.5 w-3.5 shrink-0 cursor-pointer accent-primary"
                   checked={canManage && selected.has(doc.id)}
                   onChange={() => toggleSelect(doc.id)}
-                  disabled={batchBusy || !canManage}
+                  disabled={actionBusy || !canManage}
                   aria-label="选择文档"
                 />
                 <div className="min-w-0 space-y-2">
