@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
+import { ReviewArtifactControl } from "@/components/ReviewArtifactControl";
 import { KNOWLEDGE_CATEGORIES } from "@/lib/knowledge/categories";
 import {
   canManageDocumentInManagement,
@@ -60,6 +61,8 @@ export function DocumentTable({
   const [batchBusy, setBatchBusy] = useState(false);
   const [batchProgress, setBatchProgress] = useState<string | null>(null);
   const [openAccessDocId, setOpenAccessDocId] = useState<string | null>(null);
+  const [reviewRefreshToken, setReviewRefreshToken] = useState(0);
+  const [auditNotices, setAuditNotices] = useState<Record<string, string>>({});
 
   // 只认仍存在于列表中的选中项（删除/刷新后自动失效）
   const manageableDocuments = documents.filter((d) =>
@@ -95,8 +98,28 @@ export function DocumentTable({
   async function process(id: string) {
     setBusyId(id);
     try {
-      await fetch(withUser(`/api/documents/${id}/process`), { method: "POST" });
+      const response = await fetch(
+        withUser(`/api/documents/${encodeURIComponent(id)}/process`),
+        { method: "POST" }
+      );
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error ?? `解析失败：${response.status}`);
+      }
+      setAuditNotices((current) => ({
+        ...current,
+        [id]:
+          data.auditArtifact?.status === "failed"
+            ? `索引成功，但审核副本生成失败：${data.auditArtifact.error}`
+            : "",
+      }));
+      setReviewRefreshToken((value) => value + 1);
       onChange();
+    } catch (error) {
+      setAuditNotices((current) => ({
+        ...current,
+        [id]: error instanceof Error ? error.message : "解析失败",
+      }));
     } finally {
       setBusyId(null);
     }
@@ -172,13 +195,35 @@ export function DocumentTable({
     setBatchBusy(true);
     try {
       for (let i = 0; i < selectedIds.length; i++) {
+        const id = selectedIds[i];
         setBatchProgress(`解析中 ${i + 1}/${selectedIds.length}`);
-        await fetch(withUser(`/api/documents/${selectedIds[i]}/process`), {
-          method: "POST",
-        });
+        try {
+          const response = await fetch(
+            withUser(`/api/documents/${encodeURIComponent(id)}/process`),
+            { method: "POST" }
+          );
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) {
+            throw new Error(data.error ?? `解析失败：${response.status}`);
+          }
+          setAuditNotices((current) => ({
+            ...current,
+            [id]:
+              data.auditArtifact?.status === "failed"
+                ? `索引成功，但审核副本生成失败：${data.auditArtifact.error}`
+                : "",
+          }));
+        } catch (error) {
+          setAuditNotices((current) => ({
+            ...current,
+            [id]: error instanceof Error ? error.message : "解析失败",
+          }));
+          break;
+        }
       }
-      onChange();
     } finally {
+      setReviewRefreshToken((value) => value + 1);
+      onChange();
       setBatchBusy(false);
       setBatchProgress(null);
     }
@@ -462,6 +507,20 @@ export function DocumentTable({
                     {doc.enabled ? "参与检索" : "不参与检索"}
                   </Badge>
                 </button>
+                {canManage ? (
+                  <ReviewArtifactControl
+                    documentId={doc.id}
+                    currentUserId={currentUser.id}
+                    refreshToken={reviewRefreshToken}
+                  />
+                ) : (
+                  <Badge variant="outline">无审核权限</Badge>
+                )}
+                {canManage && auditNotices[doc.id] && (
+                  <p className="text-xs text-destructive">
+                    {auditNotices[doc.id]}
+                  </p>
+                )}
                 <Button
                   size="sm"
                   variant="outline"
