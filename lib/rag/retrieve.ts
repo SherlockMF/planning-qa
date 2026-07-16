@@ -11,6 +11,7 @@ import { expandHit } from "./expand";
 import { exactSearchChunks } from "./retrieval/exactIndex.ts";
 import { analyzeQuery, topKForQuerySignals } from "./retrieval/searchSignals.ts";
 import { expandServiceScaleSiblingRows } from "./retrieval/serviceScaleSiblings.ts";
+import type { WorkflowTraceRecorder } from "../workflow/trace.ts";
 
 const MAX_CONTEXT_CHARS = 12000;
 
@@ -135,29 +136,88 @@ export async function retrieve(
   question: string,
   city?: string,
   userId?: string,
-  userRole?: KnowledgeRoleId
+  userRole?: KnowledgeRoleId,
+  recorder?: WorkflowTraceRecorder
 ): Promise<RetrieveResult> {
+  recorder?.start("permission_filter");
   const { accessible: chunks, denied } = await listSearchableChunksByAccess(
     city,
     userId,
     userRole
   );
+  recorder?.complete("permission_filter", {
+    metrics: {
+      candidateCount: chunks.length + denied.length,
+      accessibleCount: chunks.length,
+      deniedCount: denied.length,
+    },
+    outputSummary: {
+      userId,
+      userRole,
+      city,
+      deniedDocumentCount: new Set(denied.map((chunk) => chunk.documentId)).size,
+    },
+    decision: {
+      outcome: denied.length > 0 ? "filtered" : "passed",
+      explanation:
+        denied.length > 0
+          ? `已在检索前隔离 ${denied.length} 个无权 chunk`
+          : "当前检索范围内没有无权 chunk",
+    },
+  });
+
+  recorder?.start("query_signals");
   const extractedKeywords = extractQueryKeywords(question);
   const topK = topKForQuerySignals(analyzeQuery(question));
+  recorder?.complete("query_signals", {
+    metrics: { keywordCount: extractedKeywords.length, topK },
+    outputSummary: { extractedKeywords, topK },
+  });
+
+  recorder?.start("multi_recall");
   const accessibleResults = await searchChunkSet(
     chunks,
     question,
     extractedKeywords
   );
+  const deniedResults = denied.length
+    ? await searchChunkSet(denied, question, extractedKeywords)
+    : { exactResults: [], keywordResults: [], vectorResults: [], merged: [] };
+  recorder?.complete("multi_recall", {
+    metrics: {
+      exactCount: accessibleResults.exactResults.length,
+      keywordCount: accessibleResults.keywordResults.length,
+      vectorCount: accessibleResults.vectorResults.length,
+      mergedCount: accessibleResults.merged.length,
+      deniedCandidateCount: deniedResults.merged.length,
+    },
+    outputSummary: {
+      exact: summarizeRetrieved(accessibleResults.exactResults),
+      keyword: summarizeRetrieved(accessibleResults.keywordResults),
+      vector: summarizeRetrieved(accessibleResults.vectorResults),
+      denied: summarizeDenied(deniedResults.merged),
+    },
+  });
 
+  recorder?.start("rerank");
   const reranked = rerank(accessibleResults.merged, {
     question,
     keywords: extractedKeywords,
     city,
   });
+  const deniedTop = rerank(deniedResults.merged, {
+    question,
+    keywords: extractedKeywords,
+    city,
+  }).slice(0, topK);
+  recorder?.complete("rerank", {
+    metrics: { inputCount: accessibleResults.merged.length, outputCount: reranked.length },
+    outputSummary: { candidates: summarizeRetrieved(reranked) },
+  });
 
   // 命中扩展：table_row/code 补表头+表名；clause 补父标题/章节路径。
   // 在 chunk 全集上查父块（table_full / 同序列），浅拷贝注入 content。
+  recorder?.start("context_expansion");
   const byId = new Map(chunks.map((c) => [c.id, c]));
   const topSeed = expandServiceScaleSiblingRows(
     reranked.slice(0, topK),
@@ -168,15 +228,14 @@ export async function retrieve(
     topSeed.map((r) => expandHit(r, byId)),
     MAX_CONTEXT_CHARS
   );
-
-  const deniedResults = denied.length
-    ? await searchChunkSet(denied, question, extractedKeywords)
-    : { exactResults: [], keywordResults: [], vectorResults: [], merged: [] };
-  const deniedTop = rerank(deniedResults.merged, {
-    question,
-    keywords: extractedKeywords,
-    city,
-  }).slice(0, topK);
+  recorder?.complete("context_expansion", {
+    metrics: {
+      seedCount: Math.min(reranked.length, topK),
+      expandedCount: topExpanded.length,
+      contextChars: topExpanded.reduce((sum, result) => sum + result.chunk.content.length, 0),
+    },
+    outputSummary: { selected: summarizeRetrieved(topExpanded) },
+  });
 
   return {
     extractedKeywords,
@@ -186,6 +245,35 @@ export async function retrieve(
     mergedTop: topExpanded,
     deniedTop,
   };
+}
+
+function summarizeRetrieved(results: RetrievedChunk[]): Record<string, unknown>[] {
+  return results.slice(0, 12).map((result, index) => ({
+    rank: index + 1,
+    chunkId: result.chunk.id,
+    documentId: result.chunk.documentId,
+    fileName: result.chunk.fileName,
+    sectionPath: result.chunk.sectionPath,
+    pageNumber: result.chunk.pageNumber,
+    chunkType: result.chunk.chunkType,
+    source: result.source,
+    keywordScore: Number(result.keywordScore.toFixed(4)),
+    vectorScore: Number(result.vectorScore.toFixed(4)),
+    rerankScore: Number(result.rerankScore.toFixed(4)),
+    matchedKeywords: result.matchedKeywords,
+  }));
+}
+
+function summarizeDenied(results: RetrievedChunk[]): Record<string, unknown>[] {
+  return results.slice(0, 12).map((result, index) => ({
+    rank: index + 1,
+    chunkId: result.chunk.id,
+    documentId: result.chunk.documentId,
+    fileName: result.chunk.fileName,
+    permissionFiltered: true,
+    source: result.source,
+    rerankScore: Number(result.rerankScore.toFixed(4)),
+  }));
 }
 
 async function searchChunkSet(

@@ -23,6 +23,8 @@ interface FileItem {
   status: "pending" | "uploading" | "processing" | "done" | "error";
   /** 上传成功后记录文档 id：解析失败重试时只重跑解析，不重复建档 */
   docId?: string;
+  /** 关联上传、解析与入库的工作流审计记录。 */
+  traceId?: string;
   error?: string;
 }
 
@@ -103,6 +105,7 @@ export function DocumentUploader({
     for (const item of queue) {
       try {
         let docId = item.docId;
+        let traceId = item.traceId;
 
         // 已建档（上次解析失败）→ 跳过上传，只重跑解析，避免重复建档
         if (!docId) {
@@ -129,8 +132,11 @@ export function DocumentUploader({
           }
           const data = await res.json();
           docId = (data.document as Document).id;
+          traceId = data.traceId as string | undefined;
           setItems((prev) =>
-            prev.map((i) => (i.key === item.key ? { ...i, docId } : i))
+            prev.map((i) =>
+              i.key === item.key ? { ...i, docId, traceId } : i
+            )
           );
         }
 
@@ -142,13 +148,17 @@ export function DocumentUploader({
               : i
           )
         );
+        const processParams = new URLSearchParams({ userId: currentUser.id });
+        if (traceId) processParams.set("traceId", traceId);
         const processRes = await fetch(
-          `/api/documents/${docId}/process?userId=${encodeURIComponent(
-            currentUser.id
-          )}`,
+          `/api/documents/${docId}/process?${processParams.toString()}`,
           { method: "POST" }
         );
         const pd = await processRes.json().catch(() => ({}));
+        traceId = pd.traceId ?? traceId;
+        setItems((prev) =>
+          prev.map((i) => (i.key === item.key ? { ...i, traceId } : i))
+        );
         if (!processRes.ok) {
           throw new Error(pd.error ?? `解析失败：${processRes.status}`);
         }

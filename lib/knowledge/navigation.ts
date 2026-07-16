@@ -10,7 +10,7 @@ export const KNOWLEDGE_NAV_ITEMS: KnowledgeNavItem[] = [
   { href: "/", label: "问答", kind: "primary" },
   { href: "/documents", label: "文档管理", kind: "primary" },
   { href: "/chunks", label: "切分查看", kind: "developer" },
-  { href: "/debug", label: "解释台", kind: "developer" },
+  { href: "/debug", label: "工作流审计", kind: "developer" },
   { href: "/evaluation", label: "质量控制", kind: "developer" },
 ];
 
