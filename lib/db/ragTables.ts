@@ -7,7 +7,7 @@
 
 import type { RagTable } from "@/lib/types";
 import { ensureSeeded, getStore } from "./store";
-import { saveRagTables, saveChunks } from "./persist";
+import { saveRagTables, saveRagTablesStrict, saveChunks } from "./persist";
 import { buildRagTablesFromChunks } from "@/lib/rag/ragTable";
 
 /** 全部 RagTable。 */
@@ -39,6 +39,17 @@ export function replaceRagTablesForDoc(docId: string, tables: RagTable[]): void 
   store.ragTables = store.ragTables.filter((t) => t.docId !== docId);
   store.ragTables.push(...tables);
   saveRagTables(store.ragTables);
+}
+
+export function replaceRagTablesForDocStrict(
+  docId: string,
+  tables: RagTable[]
+): void {
+  const store = getStore();
+  const nextTables = store.ragTables.filter((table) => table.docId !== docId);
+  nextTables.push(...tables);
+  saveRagTablesStrict(nextTables);
+  store.ragTables = nextTables;
 }
 
 /**

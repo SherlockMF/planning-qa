@@ -24,6 +24,7 @@ import "./renderAnswerContext.test.ts";
 import "./answerFormatting.test.ts";
 import "./answerDiagnostics.test.ts";
 import "./structuredFieldSelector.test.ts";
+import "./classificationCodeObjects.test.ts";
 import "./rerankIntent.test.ts";
 import "./retrieveServiceScaleExpansion.test.ts";
 import "./importParser.test.ts";

@@ -91,11 +91,14 @@ export class MockEmbeddingProvider implements EmbeddingProvider {
 export class RemoteEmbeddingProvider implements EmbeddingProvider {
   readonly name = "remote-embedding";
   readonly signature: string;
-  constructor(
-    private url: string,
-    private apiKey: string,
-    private model: string
-  ) {
+  private url: string;
+  private apiKey: string;
+  private model: string;
+
+  constructor(url: string, apiKey: string, model: string) {
+    this.url = url;
+    this.apiKey = apiKey;
+    this.model = model;
     this.signature = `remote-embedding:${model}`;
   }
 
@@ -130,14 +133,15 @@ export class RemoteEmbeddingProvider implements EmbeddingProvider {
 export class ZhipuEmbeddingProvider implements EmbeddingProvider {
   readonly name = "zhipu-embedding";
   readonly signature: string;
+  private apiKey: string;
+  private model: string;
   private url =
     process.env.ZHIPU_EMBEDDING_API_URL ??
     "https://open.bigmodel.cn/api/paas/v4/embeddings";
 
-  constructor(
-    private apiKey: string,
-    private model: string
-  ) {
+  constructor(apiKey: string, model: string) {
+    this.apiKey = apiKey;
+    this.model = model;
     this.signature = `zhipu-embedding:${model}`;
   }
 
