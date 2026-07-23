@@ -106,13 +106,20 @@ test("keeps page 17 community health center service-scale column aligned", async
       block.rowCells?.[2] === "社区卫生服务中心"
   );
 
-  assert.equal(rows.length, 4);
+  assert.equal(rows.length, 3);
   assert.equal(rows[0].rowCells?.[3], "A类");
   assert.equal(rows[0].rowCells?.[8], "75");
   assert.equal(rows[0].rowCells?.[9], "每个街道1处,大于7万人街道适用");
   assert.equal(rows[1].rowCells?.[9], "每个街道1处,5-7万人(含)街道适用");
   assert.equal(rows[2].rowCells?.[9], "每个街道1处,小于5万人(含)街道适用");
   assert.notEqual(rows[0].rowCells?.[9], "75");
+  const subtotal = blocks.find(
+    (block) =>
+      block.type === "table_row"
+      && block.pageStart === 17
+      && block.rowCells?.[0] === "小计"
+  );
+  assert.equal(subtotal?.rowCells?.[2], "");
 });
 
 test("does not merge page 17 wider continuation rows into page 16 narrower headers", async () => {
@@ -136,5 +143,5 @@ test("does not merge page 17 wider continuation rows into page 16 narrower heade
 
   assert.ok(row, "expected A类 community health center row");
   assert.equal(row.fields["服务规模"], "每个街道1处,大于7万人街道适用");
-  assert.equal(row.fields["列9"], "75");
+  assert.equal(row.fields["用地面积(平方米)"], "75");
 });

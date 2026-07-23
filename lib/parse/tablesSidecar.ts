@@ -21,6 +21,7 @@ import { extractPdfRawPageText } from "./extractText.ts";
 import { headerFingerprint, fingerprintSimilar } from "./headerFingerprint.ts";
 import { extractTablesFromCoords } from "./coordTables.ts";
 import { summarizeTableComparison } from "../debug/coordTableCompare.ts";
+import { canonicalTablesToBlocks, isRawTableV2 } from "./canonicalBlocks.ts";
 
 export interface RawTable {
   page: number;
@@ -236,8 +237,10 @@ function groupTables(raw: RawTable[]): LogicalTable[] {
 
 /** 逻辑表 → Block[]（table + 每行 table_row）。 */
 export function tablesToBlocks(raw: RawTable[]): Block[] {
-  const groups = groupTables(raw);
-  const blocks: Block[] = [];
+  const v2Tables = raw.filter(isRawTableV2);
+  const legacyTables = raw.filter((table) => !isRawTableV2(table));
+  const groups = groupTables(legacyTables);
+  const blocks: Block[] = canonicalTablesToBlocks(v2Tables);
   for (const g of groups) {
     const model: TableModel = {
       tableId: g.model.tableId,
@@ -276,7 +279,10 @@ export function tablesToBlocks(raw: RawTable[]): Block[] {
       });
     }
   }
-  return blocks;
+  return blocks.sort((left, right) =>
+    left.pageStart - right.pageStart
+    || (left.type === "table" ? -1 : right.type === "table" ? 1 : 0)
+  );
 }
 
 /** 复用 tableModel 的 GFM 生成（避免导出耦合，这里内联同款实现）。 */

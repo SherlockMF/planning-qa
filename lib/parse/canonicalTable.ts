@@ -75,9 +75,14 @@ export function canonicalizeRawTable(raw: RawTableV2): CanonicalizationResult {
       if (owner && owner !== previousOwner && value) headerPath.push(value);
       previousOwner = owner;
     }
+    const leafOwner = slots[headerRowCount - 1]?.[colIndex];
+    const previousLeafOwner = colIndex > 0
+      ? slots[headerRowCount - 1]?.[colIndex - 1]
+      : undefined;
+    const repeatedMergedHeader = !!leafOwner && leafOwner === previousLeafOwner;
     return {
       index: colIndex,
-      name: headerPath.at(-1) ?? `列${colIndex + 1}`,
+      name: repeatedMergedHeader ? "" : headerPath.at(-1) ?? `列${colIndex + 1}`,
       headerPath: headerPath.length ? headerPath : [`列${colIndex + 1}`],
     };
   });
