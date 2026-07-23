@@ -220,8 +220,10 @@ def group_chars_by_visual_row(chars):
 def char_in_bbox(ch, bbox, pad=0.8):
     x0, top, x1, bottom = bbox
     cx = (float(ch.get("x0", 0)) + float(ch.get("x1", 0))) / 2
-    cy = (float(ch.get("top", 0)) + float(ch.get("bottom", 0))) / 2
-    return x0 - pad <= cx <= x1 + pad and top - pad <= cy <= bottom + pad
+    # Tall glyph boxes often cross a horizontal rule. Assign by the visual-line
+    # top so text above the rule cannot leak into the cell below it.
+    line_anchor = float(ch.get("top", 0))
+    return x0 - pad <= cx <= x1 + pad and top - pad <= line_anchor < bottom - pad
 
 
 def clean_cell_text(text):

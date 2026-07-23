@@ -1,0 +1,16 @@
+{
+  "datasetVersion": "table-parsing-gold-v1-2026-07-23",
+  "cases": [
+    {
+      "id": "public-service-page-31-prose",
+      "documentId": "doc-1782564480335-lkrbih",
+      "page": 31,
+      "expectation": "paragraph",
+      "requiredText": [
+        "指标变化情况",
+        "蔬菜零售网点",
+        "便民商业服务"
+      ]
+    }
+  ]
+}

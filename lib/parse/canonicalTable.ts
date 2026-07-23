@@ -6,6 +6,7 @@ import type {
   TableBBox,
 } from "./tableStructure.ts";
 
+import { normalizeTextGrid } from "./textGrid.ts";
 export interface CanonicalColumn {
   index: number;
   name: string;
@@ -53,6 +54,7 @@ export type CanonicalizationResult =
     };
 
 export function canonicalizeRawTable(raw: RawTableV2): CanonicalizationResult {
+  raw = normalizeTextGrid(raw);
   const rowCount = raw.gridEvidence.horizontalBoundaries.length - 1;
   const colCount = raw.gridEvidence.verticalBoundaries.length - 1;
   if (!hasTableStructure(raw, rowCount, colCount)) {
