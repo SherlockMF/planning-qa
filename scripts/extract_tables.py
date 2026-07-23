@@ -268,6 +268,102 @@ def extract_ordered_table_rows(page, table):
     return drop_empty_rows(rows)
 
 
+def merge_boundaries(values, tolerance=1.0):
+    """Merge near-identical cell edges into stable physical grid boundaries."""
+    merged = []
+    for value in sorted(float(v) for v in values):
+        if not merged or value - merged[-1] > tolerance:
+            merged.append(value)
+        else:
+            merged[-1] = (merged[-1] + value) / 2
+    return merged
+
+
+def boundary_index(boundaries, value):
+    """Return the nearest physical boundary index."""
+    return min(range(len(boundaries)), key=lambda idx: abs(boundaries[idx] - float(value)))
+
+
+def source_char_indices(page, bbox):
+    return [
+        index
+        for index, char in enumerate(page.chars)
+        if char_in_bbox(char, bbox)
+    ]
+
+
+def char_bbox(char):
+    return [
+        round(float(char.get("x0", 0)), 1),
+        round(float(char.get("top", 0)), 1),
+        round(float(char.get("x1", 0)), 1),
+        round(float(char.get("bottom", 0)), 1),
+    ]
+
+
+def extract_structured_table(page, table, strategy):
+    """Preserve cell geometry and explicit physical spans before matrix flattening."""
+    unique = []
+    seen = set()
+    for bbox in getattr(table, "cells", []) or []:
+        key = tuple(round(float(value), 3) for value in bbox)
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(tuple(float(value) for value in bbox))
+    if not unique:
+        return {
+            "cells": [],
+            "gridEvidence": {
+                "horizontalBoundaries": [],
+                "verticalBoundaries": [],
+                "lineCoverage": 0.0,
+            },
+            "ignoredFragments": [],
+        }
+
+    x_boundaries = merge_boundaries(
+        [value for bbox in unique for value in (bbox[0], bbox[2])]
+    )
+    y_boundaries = merge_boundaries(
+        [value for bbox in unique for value in (bbox[1], bbox[3])]
+    )
+    cells = []
+    covered_chars = set()
+    for bbox in unique:
+        order = source_char_indices(page, bbox)
+        covered_chars.update(order)
+        cells.append({
+            "text": extract_ordered_cell_text(page, bbox),
+            "bbox": [round(value, 1) for value in bbox],
+            "rowStart": boundary_index(y_boundaries, bbox[1]),
+            "rowEnd": boundary_index(y_boundaries, bbox[3]),
+            "colStart": boundary_index(x_boundaries, bbox[0]),
+            "colEnd": boundary_index(x_boundaries, bbox[2]),
+            "sourceOrder": order,
+        })
+    cells.sort(key=lambda cell: (cell["rowStart"], cell["colStart"]))
+    ignored = []
+    for index, char in enumerate(page.chars):
+        if index in covered_chars or not char_in_bbox(char, table.bbox, pad=0):
+            continue
+        ignored.append({
+            "text": char.get("text") or "",
+            "bbox": char_bbox(char),
+            "reason": "outside_detected_cell",
+        })
+    line_coverage = 1.0 if strategy == "lines" else 0.5
+    return {
+        "cells": cells,
+        "gridEvidence": {
+            "horizontalBoundaries": [round(value, 1) for value in y_boundaries],
+            "verticalBoundaries": [round(value, 1) for value in x_boundaries],
+            "lineCoverage": line_coverage,
+        },
+        "ignoredFragments": ignored,
+    }
+
+
 def looks_like_toc(rows):
     """目录/散文误检：含点引导符的单元格占比 ≥20% → 判为目录，拒绝。"""
     leader = 0
@@ -390,12 +486,14 @@ def extract_page_pdfplumber(page):
             if not valid_shape(rows) or looks_like_toc(rows):
                 continue
             score, fill = score_rows(rows)
+            structured = extract_structured_table(page, t, name)
             candidates.append({
                 "bbox": [round(float(x), 1) for x in t.bbox],
                 "rows": rows,
                 "score": score,
                 "fill": round(fill, 3),
                 "strategy": name,
+                **structured,
             })
     # 按区域去重：高分优先，与已选区域重叠 >0.5 的丢弃
     candidates.sort(key=lambda c: -c["score"])
@@ -500,11 +598,21 @@ def main():
                 for c in selected:
                     title = find_title(page, float(c["bbox"][1]))
                     out.append({
+                        "schemaVersion": 2 if c.get("cells") else 1,
                         "page": idx + 1,
                         "bbox": c["bbox"],
                         "title": title,
                         "rows": c["rows"],
                         "strategy": c["strategy"],
+                        "extractionMethod": (
+                            "lines" if c["strategy"] == "lines"
+                            else "text" if c["strategy"] == "lines_text"
+                            else "fitz"
+                        ),
+                        "cells": c.get("cells", []),
+                        "gridEvidence": c.get("gridEvidence"),
+                        "ignoredFragments": c.get("ignoredFragments", []),
+                        "warnings": [],
                         "fill": c["fill"],
                         "scanned": False,
                     })
