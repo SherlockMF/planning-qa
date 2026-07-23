@@ -9,9 +9,7 @@ test("text tables collapse transient glyph edges into stable logical columns", (
     schemaVersion: 2,
     page: 14,
     bbox: [0, 0, 100, 30],
-    title: null,
     extractionMethod: "text",
-    rows: [],
     gridEvidence: {
       horizontalBoundaries: [0, 10, 20, 30],
       verticalBoundaries: [0, 8, 38, 40, 44, 72, 92, 100],

@@ -238,6 +238,22 @@ Playwright headed 流程：
 - hybrid 严重召回 0%、误报率 0%、定位准确率 100%（仅 2 个定位预测），仍无法证明混合 Agent 可用于自动放行或自动排序。
 - 人工不可变轮次、复审链和无 `/process` 路径成立；正确配置下审核动作不改变检索主数据。
 - 当前保持自动审核 shadow + 人工抽查；继续收集误报/漏报样本并校准模型或规则，在同一 `gold-v1` 通过 gate 前不启用自动风险排序。
-- 表格切分本身仍未修复，需单独项目；本轮不得描述为切分质量已修复或 hybrid Agent 已验收。
+- 后续独立项目已完成代表性表格切分修复：伪表格、行边界、合并单元格和跨页续表由真实 PDF 金样覆盖；这不代表所有 PDF 表格均已解决，也不改变 hybrid Agent 尚未验收的结论。
 
 最终决策：自动审核仅用于 shadow/人工抽查，不启用自动排序
+
+## 9. 结构化表格修复与显式重处理
+
+本轮引入 `RawTableV2 → CanonicalTable`，保留单元格 bbox、rowSpan、colSpan、来源页和物理边界。已验证的代表性缺陷包括：
+
+- 说明段落不再被弱网格证据发布成伪表格；
+- 跨横线字形不再污染下一物理行；
+- 碎片化“幽灵列”只在边界高度不稳定时归并，合法多列表保留；
+- 续表必须同时满足相邻页、列数、边界和表头/续表标题条件，行来源页不被改写。
+
+修复不会因审核或普通 `/process` 自动覆盖活动索引。管理员需要显式执行：
+
+1. `POST /api/documents/{id}/reprocess/prepare`：隔离生成 staging、结构门禁、哈希和 diff；
+2. `GET /api/documents/{id}/reprocess/{stagingId}`：查看 `ready | blocked | failed | published`；
+3. `POST /api/documents/{id}/reprocess/{stagingId}/publish`：校验源文件及基线哈希后事务发布。
+发布日志采用 `prepared → applying → committed`；写入失败恢复旧 Chunk/RagTable 切片并标记 `rolled_back`，遗留 `applying` 在下次操作前恢复。准确表述为“代表性表格切分问题已修复”，不得扩展为“所有 PDF 表格已解决”。

@@ -189,3 +189,30 @@ interface EmbeddingProvider {
 | TD-4 | 无 CI 门禁 | 回归靠手动三件套 | GitHub Actions: lint+test+build |
 | TD-5 | Python 边车硬依赖 | 缺失则表格降级 | 部署文档明确依赖 / 容器内置 |
 | TD-6 | 向量维度耦合提供方 | 换 embedding 需重建向量 | 入库记录 signature，换源时提示重解析 |
+
+---
+
+## 10. 表格结构修复与显式重处理
+
+### 10.1 解析模型
+
+Python sidecar 输出 `RawTableV2`，其中包含单元格 bbox、显式行列 span、字符来源顺序、物理网格证据和未归属碎片。Node 侧规范化为 `CanonicalTable`：
+
+- 仅由物理跨度传播合并单元格值；
+- 对明显碎片化且跨行不稳定的纵向边界折叠“幽灵列”；
+- 结构证据不足时守恒回退为段落；
+- 跨页合并要求列数、归一化边界与表头/续表标题同时兼容；
+- 每个 CanonicalRow 保留原始 `sourcePage`。
+
+真实 PDF 金样覆盖伪表格、行边界、合并单元格和跨页续表四类代表性问题，同时保留合法多列表和不兼容相邻表负例。
+
+### 10.2 prepare / diff / publish
+
+显式重处理 staging 位于 `.data/reprocess/{docId}/{stagingId}/`，包含：
+
+- `chunks.json`、`ragtables.json`；
+- `manifest.json`（源文件、基线、目标 SHA-256）；
+- `diff.json`（Chunk/RagTable 数量及逐表变化）；
+- `preparation.json` 与 `transaction.json`。
+
+`prepare` 不写活动索引；`publish` 检查源文件和活动基线未漂移后，按文档切片替换 Chunk/RagTable。跨文件事务通过旧/目标切片日志实现：部分写入失败立即回滚；启动恢复遇到 `applying` 时，若目标双哈希均匹配则提交，否则恢复旧切片。API 沿用文档管理权限，禁止普通用户发布。

@@ -1,4 +1,4 @@
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import os from "node:os";
@@ -184,7 +184,7 @@ test("publish rolls back a partial write and recovery resolves applying journals
   assert.equal(repository.read().ragTables[0]?.tableId, "old");
 });
 
-function temporaryRoot(t: test.TestContext): string {
+function temporaryRoot(t: TestContext): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "table-reprocess-"));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   return root;
