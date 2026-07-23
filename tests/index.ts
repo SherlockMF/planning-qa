@@ -58,4 +58,6 @@ import "./tableParsingGold.test.ts";
 import "./tableParsingRowBoundaryGold.test.ts";
 import "./tableParsingMergedCellsGold.test.ts";
 import "./tableParsingCrossPageGold.test.ts";
+import "./tableReprocess.test.ts";
+import "./tableReprocessApi.test.ts";
 import "./workflowPresentation.test.ts";
