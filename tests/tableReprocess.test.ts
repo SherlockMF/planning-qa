@@ -116,6 +116,19 @@ test("publish is recoverable, idempotent, and detects stale baselines", async (t
     "published"
   );
 
+  repository.writeChunks([chunk("external-restore")]);
+  repository.writeRagTables([table("external-restore", [["恢复值"]])]);
+  assert.deepEqual(
+    await publishTableReprocess({
+      docId: "doc-1",
+      stagingId: "ready",
+      dataRoot,
+      repository,
+      sourceBuffer: Buffer.from("source-v1"),
+    }),
+    { status: "conflict", reason: "published_state_drift" }
+  );
+
   await prepareTableReprocess({
     docId: "doc-1",
     stagingId: "stale",

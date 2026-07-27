@@ -148,11 +148,20 @@ export async function publishTableReprocess(input: {
   sourceBuffer: Buffer;
 }): Promise<
   | ReprocessPreparation
-  | { status: "conflict"; reason: "blocked" | "source_drift" | "baseline_drift" }
+  | { status: "conflict"; reason: "blocked" | "source_drift" | "baseline_drift" | "published_state_drift" }
 > {
   const dataRoot = input.dataRoot ?? DEFAULT_DATA_ROOT;
   const prepared = getTableReprocess(input.docId, input.stagingId, { dataRoot });
-  if (prepared.status === "published") return prepared;
+  if (prepared.status === "published") {
+    const active = input.repository.read();
+    const activeChunks = documentChunks(active.chunks, input.docId);
+    const activeTables = documentTables(active.ragTables, input.docId);
+    if (
+      hashJson(activeChunks) === prepared.manifest.targetChunksHash &&
+      hashJson(activeTables) === prepared.manifest.targetRagTablesHash
+    ) return prepared;
+    return { status: "conflict", reason: "published_state_drift" };
+  }
   if (prepared.status !== "ready") return { status: "conflict", reason: "blocked" };
   if (hashBuffer(input.sourceBuffer) !== prepared.manifest.sourceHash) {
     return { status: "conflict", reason: "source_drift" };
