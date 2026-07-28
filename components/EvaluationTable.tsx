@@ -191,7 +191,14 @@ export function QualityMetricsPanel({
             用题库把检索、引用、拒答、权限隔离和表格数值风险转成可复盘指标。
           </p>
         </div>
-        <Badge variant="outline">面试演示视角</Badge>
+        <div className="flex items-center gap-2">
+          {summary.errorCount > 0 && (
+            <Badge variant="destructive">
+              系统异常 {summary.errorCount} 题（已排除出分母）
+            </Badge>
+          )}
+          <Badge variant="outline">面试演示视角</Badge>
+        </div>
       </div>
 
       <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">

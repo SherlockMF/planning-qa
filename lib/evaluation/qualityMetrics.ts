@@ -1,4 +1,5 @@
 import type { EvaluationItem } from "../types.ts";
+import { isEvaluationRunError } from "./runStatus.ts";
 
 export interface QualityMetricCard {
   id:
@@ -17,11 +18,17 @@ export interface QualityMetricCard {
 export interface QualityMetricsSummary {
   cards: QualityMetricCard[];
   topErrors: { reason: string; count: number }[];
+  /** 跑测系统异常题数；这些题不参与任何质量分母。 */
+  errorCount: number;
 }
 
 export function computeQualityMetrics(
-  items: EvaluationItem[]
+  allItems: EvaluationItem[]
 ): QualityMetricsSummary {
+  // 系统异常代表链路没跑通，不是模型答错，计入分母会凭空拉低通过率。
+  const errored = allItems.filter(isEvaluationRunError);
+  const items = allItems.filter((item) => !isEvaluationRunError(item));
+
   const cards: QualityMetricCard[] = [
     ratioCard(
       "retrieval_hit",
@@ -69,7 +76,8 @@ export function computeQualityMetrics(
 
   return {
     cards,
-    topErrors: summarizeErrors(items),
+    topErrors: summarizeErrors(allItems),
+    errorCount: errored.length,
   };
 }
 
