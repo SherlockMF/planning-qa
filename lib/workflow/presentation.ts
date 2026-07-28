@@ -406,6 +406,15 @@ export function workflowTraceLabel(trace: WorkflowTrace): string {
   return trace.question ? `问答 · ${trace.question}` : `问答 · ${trace.id}`;
 }
 
+/** 解析 /lab/audit?traceId= 深链参数；重复传参只取第一个。 */
+export function parseAuditTraceIdParam(
+  value: string | string[] | undefined
+): string | undefined {
+  const raw = Array.isArray(value) ? value[0] : value;
+  const trimmed = raw?.trim();
+  return trimmed ? trimmed : undefined;
+}
+
 function numberMetric(value: unknown): string {
   const numeric = typeof value === "number" ? value : Number(value ?? 0);
   return Number.isFinite(numeric) ? formatNumber(numeric) : "0";

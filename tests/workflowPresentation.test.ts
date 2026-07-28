@@ -12,7 +12,18 @@ import {
   workflowStepResultSummary,
   workflowStatusLabel,
   workflowTraceLabel,
+  parseAuditTraceIdParam,
 } from "../lib/workflow/presentation.ts";
+
+test("audit deep link only accepts a single non-empty traceId", () => {
+  assert.equal(parseAuditTraceIdParam("eval-1-trace"), "eval-1-trace");
+  assert.equal(parseAuditTraceIdParam("  eval-1-trace  "), "eval-1-trace");
+  assert.equal(parseAuditTraceIdParam(["first", "second"]), "first");
+  assert.equal(parseAuditTraceIdParam(""), undefined);
+  assert.equal(parseAuditTraceIdParam("   "), undefined);
+  assert.equal(parseAuditTraceIdParam(undefined), undefined);
+  assert.equal(parseAuditTraceIdParam([]), undefined);
+});
 
 test("workflow timeline places ingestion before query and retains trace ownership", () => {
   const ingestion = createWorkflowTrace({

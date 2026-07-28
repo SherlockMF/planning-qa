@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AlertTriangle,
   Ban,
@@ -97,7 +97,12 @@ const PHASE_STYLES: Record<
   },
 };
 
-export function WorkflowAuditPanel() {
+export function WorkflowAuditPanel({
+  initialTraceId,
+}: {
+  /** 来自 /lab/audit?traceId= 深链，例如从评测结果跳转过来。 */
+  initialTraceId?: string;
+} = {}) {
   const { currentUser } = useKnowledgeUser();
   const [question, setQuestion] = useState(
     "社区卫生服务中心的服务规模是多少？"
@@ -115,12 +120,21 @@ export function WorkflowAuditPanel() {
   const [error, setError] = useState<string>();
   const [finalResponse, setFinalResponse] = useState<unknown>();
   const requestGate = useMemo(() => createWorkflowRequestGate(), []);
+  const deepLinkOpened = useRef(false);
 
   useEffect(() => {
     requestGate.invalidate();
     setSimulatedUserId(currentUser.id);
     void refreshHistory(currentUser.id, setHistory, setError);
   }, [currentUser.id, requestGate]);
+
+  useEffect(() => {
+    if (!initialTraceId || deepLinkOpened.current) return;
+    deepLinkOpened.current = true;
+    void selectHistory(initialTraceId);
+    // 深链只在首次进入时打开一次，之后交给用户在历史下拉里切换
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialTraceId]);
 
   const queryTrace = selectedTrace?.kind === "query" ? selectedTrace : undefined;
   const displayedIngestion = useMemo(
@@ -364,6 +378,15 @@ export function WorkflowAuditPanel() {
           className="flex-1"
         >
           <option value="">选择最近的问答或文档处理记录</option>
+          {/* 深链打开的记录可能已不在最近 50 条里，补一个选项避免下拉显示为空 */}
+          {selectedTrace &&
+            !history.some((trace) => trace.id === selectedTrace.id) && (
+              <option value={selectedTrace.id}>
+                {new Date(selectedTrace.startedAt).toLocaleString("zh-CN")} ·{" "}
+                {workflowTraceLabel(selectedTrace)} ·{" "}
+                {workflowStatusLabel(selectedTrace.status)}
+              </option>
+            )}
           {history.map((trace) => (
             <option key={trace.id} value={trace.id}>
               {new Date(trace.startedAt).toLocaleString("zh-CN")} ·{" "}
