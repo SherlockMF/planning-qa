@@ -12,6 +12,7 @@ import "./fileTypes.test.ts";
 import "./developerTools.test.ts";
 import "./feedback.test.ts";
 import "./evaluationEnterpriseSamples.test.ts";
+import "./evaluationRunStatus.test.ts";
 import "./evaluationQualityMetrics.test.ts";
 import "./retrieveDebugSummary.test.ts";
 import "./tableDisplay.test.ts";

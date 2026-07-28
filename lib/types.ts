@@ -549,7 +549,34 @@ export interface EvaluationItem {
   answerDurationMs?: number;
   /** 消耗 token 总数（prompt + completion + embedding） */
   tokensUsed?: number;
+
+  // ---- 运行治理（P0：可追责） ----
+  /** 本题问答链路对应的工作流审计记录 id，用于从评测跳到审计。 */
+  workflowTraceId?: string;
+  /** 本次跑测开始 / 结束时间（ISO） */
+  runStartedAt?: string;
+  runFinishedAt?: string;
+  /** 跑测过程发生系统异常（超时、接口报错等），非模型答错。 */
+  runErrored?: boolean;
+  /** 自动判定依据不足（别名命中、内容重叠等弱信号），需要人工复核。 */
+  autoJudgeUncertain?: boolean;
+  /** 自动判分结果，人工改分时不得被覆盖。 */
+  autoAnswerScore?: 0 | 1 | 2;
+  /** 自动状态四分法 */
+  autoStatus?: EvaluationRunStatus;
+  /** 人工终判分数 / 状态；为空表示采信自动结果。 */
+  finalAnswerScore?: 0 | 1 | 2;
+  finalStatus?: EvaluationRunStatus;
+  /** 展示用状态：有人工终判取 finalStatus，否则取 autoStatus。 */
+  status?: EvaluationRunStatus;
+  /** 人工复核元数据 */
+  reviewedBy?: string;
+  reviewedAt?: string;
+  reviewReason?: string;
 }
+
+/** 单题跑测状态四分法：通过 / 失败 / 待人工复核 / 系统异常 */
+export type EvaluationRunStatus = "PASS" | "FAIL" | "REVIEW" | "ERROR";
 
 /** 评测统计汇总 */
 export interface EvaluationStats {
