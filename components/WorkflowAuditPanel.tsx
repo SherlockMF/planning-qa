@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
   Ban,
@@ -120,21 +120,16 @@ export function WorkflowAuditPanel({
   const [error, setError] = useState<string>();
   const [finalResponse, setFinalResponse] = useState<unknown>();
   const requestGate = useMemo(() => createWorkflowRequestGate(), []);
-  const deepLinkOpened = useRef(false);
 
+  // 深链加载必须和 invalidate 在同一个 effect 里：分成两个 effect 时，
+  // StrictMode 第二轮的 invalidate 会把第一轮发出的深链请求判为过期而丢弃。
   useEffect(() => {
     requestGate.invalidate();
     setSimulatedUserId(currentUser.id);
     void refreshHistory(currentUser.id, setHistory, setError);
-  }, [currentUser.id, requestGate]);
-
-  useEffect(() => {
-    if (!initialTraceId || deepLinkOpened.current) return;
-    deepLinkOpened.current = true;
-    void selectHistory(initialTraceId);
-    // 深链只在首次进入时打开一次，之后交给用户在历史下拉里切换
+    if (initialTraceId) void selectHistory(initialTraceId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialTraceId]);
+  }, [currentUser.id, requestGate, initialTraceId]);
 
   const queryTrace = selectedTrace?.kind === "query" ? selectedTrace : undefined;
   const displayedIngestion = useMemo(
