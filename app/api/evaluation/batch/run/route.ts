@@ -1,16 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ensureSeeded, getStore } from "@/lib/db/store";
-import { createEvaluationBatch } from "@/lib/evaluation/batch";
+import {
+  createEvaluationBatch,
+  executeEvaluationBatch,
+  getBatch,
+  toEvaluationBatchCaseResult,
+} from "@/lib/evaluation/batch";
 import {
   captureModelConfigSnapshot,
   captureRagConfigSnapshot,
 } from "@/lib/evaluation/batchConfig";
+import {
+  listEvaluation,
+  saveEvaluation,
+  scoreEvaluationItem,
+} from "@/lib/db/evaluation";
 
-export const maxDuration = 60;
+export const maxDuration = 300;
 
 /**
  * POST /api/evaluation/batch/run
- * 创建 queued 批次并立即返回；实际执行由调用方或后续 execute 触发。
+ * 创建 queued 批次并异步开始执行；立即返回 batch 供轮询。
  * Body: { versionLabel, changeNote, caseIds?, clientRequestId?, items? }
  */
 export async function POST(req: NextRequest) {
@@ -26,8 +36,6 @@ export async function POST(req: NextRequest) {
     await ensureSeeded();
     const store = getStore();
 
-    // 若带上当前编辑中的题库，先不落盘到 evaluation.json——批次只吃本次传入快照；
-    // 未传 items 则用服务端题库。
     const items = Array.isArray(body.items) ? body.items : store.evaluation;
     const caseIds = Array.isArray(body.caseIds)
       ? (body.caseIds as string[])
@@ -51,7 +59,48 @@ export async function POST(req: NextRequest) {
       ragConfigSnapshot: captureRagConfigSnapshot(),
     });
 
-    return NextResponse.json({ batch });
+    void executeEvaluationBatch(batch.id, {
+      scoreCase: async (item) =>
+        toEvaluationBatchCaseResult(await scoreEvaluationItem(item)),
+      mirrorToEvaluation: async (results) => {
+        await ensureSeeded();
+        const current = await listEvaluation();
+        const byId = new Map(results.map((r) => [r.caseId, r]));
+        const merged = current.map((item) => {
+          const result = byId.get(item.id);
+          if (!result) return item;
+          return {
+            ...item,
+            systemAnswer: result.systemAnswer,
+            answerScore: result.autoAnswerScore,
+            autoAnswerScore: result.autoAnswerScore,
+            autoStatus: result.status,
+            status: result.status,
+            autoJudgeUncertain: result.autoJudgeUncertain,
+            inTop5: result.inTop5,
+            citationCorrect: result.citationCorrect,
+            refusedCorrectly: result.refusedCorrectly,
+            errorReason: result.errorReason,
+            answerDurationMs: result.answerDurationMs,
+            tokensUsed: result.tokensUsed,
+            workflowTraceId: result.workflowTraceId,
+            runStartedAt: result.runStartedAt,
+            runFinishedAt: result.runFinishedAt,
+            runErrored: result.status === "ERROR",
+            finalAnswerScore: undefined,
+            finalStatus: undefined,
+            reviewedBy: undefined,
+            reviewedAt: undefined,
+            reviewReason: undefined,
+          };
+        });
+        await saveEvaluation(merged);
+      },
+    }).catch((error) => {
+      console.error("[evaluation-batch] execute failed:", error);
+    });
+
+    return NextResponse.json({ batch: getBatch(batch.id) ?? batch });
   } catch (error) {
     return NextResponse.json(
       {

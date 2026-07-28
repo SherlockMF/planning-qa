@@ -86,7 +86,7 @@ export async function runEvaluation(
   async function worker() {
     while (cursor < targets.length) {
       const { item, idx } = targets[cursor++];
-      updated[idx] = await scoreItem(item);
+      updated[idx] = await scoreEvaluationItem(item);
     }
   }
   await Promise.all(
@@ -100,7 +100,9 @@ export async function runEvaluation(
   return updated;
 }
 
-async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
+export async function scoreEvaluationItem(
+  item: EvaluationItem
+): Promise<EvaluationItem> {
   const simulatedUserId =
     resolveEvaluationUserId(item) ?? DEFAULT_KNOWLEDGE_USER_ID;
   // 每题绑定一条 query 审计记录，跑完可从评测直接跳到链路回放

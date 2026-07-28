@@ -18,6 +18,7 @@ import "./evaluationHumanReview.test.ts";
 import "./evaluationBatchNormalize.test.ts";
 import "./evaluationIndexFingerprint.test.ts";
 import "./evaluationBatch.test.ts";
+import "./evaluationBatchExecute.test.ts";
 import "./evaluationQualityMetrics.test.ts";
 import "./retrieveDebugSummary.test.ts";
 import "./tableDisplay.test.ts";
