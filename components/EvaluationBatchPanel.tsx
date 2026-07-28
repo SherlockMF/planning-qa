@@ -39,9 +39,19 @@ export function EvaluationBatchPanel({
   const [error, setError] = useState<string>();
   const [comparing, setComparing] = useState(false);
 
-  const active = useMemo(
-    () => batches.find((batch) => batch.id === activeId),
-    [batches, activeId]
+  const active = useMemo(() => {
+    const running = batches.find(
+      (batch) => batch.status === "running" || batch.status === "queued"
+    );
+    return running ?? batches.find((batch) => batch.id === activeId);
+  }, [batches, activeId]);
+  // 只轮询进行中的批次；点选历史不应打断进度，也不应对已结束批次反复 refresh
+  const trackingId = useMemo(
+    () =>
+      batches.find(
+        (batch) => batch.status === "running" || batch.status === "queued"
+      )?.id,
+    [batches]
   );
   const doneBatches = useMemo(
     () => batches.filter((batch) => batch.status === "done"),
@@ -63,7 +73,7 @@ export function EvaluationBatchPanel({
   }, [refreshBatches]);
 
   useEffect(() => {
-    if (!activeId) return;
+    if (!trackingId) return;
 
     let stopped = false;
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -71,7 +81,7 @@ export function EvaluationBatchPanel({
     const tick = async () => {
       try {
         const res = await fetch(
-          `/api/evaluation/batch/${encodeURIComponent(activeId)}`,
+          `/api/evaluation/batch/${encodeURIComponent(trackingId)}`,
           { cache: "no-store" }
         );
         const data = await res.json();
@@ -109,7 +119,7 @@ export function EvaluationBatchPanel({
       stopped = true;
       if (timer) clearInterval(timer);
     };
-  }, [activeId, onItemsRefresh, onRunningChange]);
+  }, [trackingId, onItemsRefresh, onRunningChange]);
 
   async function startBatch(caseIds?: string[]) {
     setError(undefined);

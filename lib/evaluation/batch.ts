@@ -155,8 +155,8 @@ export async function executeEvaluationBatch(
   batchId: string,
   options: ExecuteEvaluationBatchOptions = {}
 ): Promise<EvaluationBatch | undefined> {
-  if (activeRuns.has(batchId)) return options.store?.get(batchId);
   const store = options.store ?? getDefaultEvaluationBatchStore();
+  if (activeRuns.has(batchId)) return store.get(batchId);
   const now = options.now ?? (() => new Date().toISOString());
   const concurrency = Math.max(1, options.concurrency ?? DEFAULT_CONCURRENCY);
 
