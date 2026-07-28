@@ -41,9 +41,9 @@ import {
   EvaluationStatsPanel,
   QualityMetricsPanel,
 } from "@/components/EvaluationTable";
+import { EvaluationBatchPanel } from "@/components/EvaluationBatchPanel";
 import { computeQualityMetrics } from "@/lib/evaluation/qualityMetrics";
 import {
-  Play,
   Loader2,
   Plus,
   Save,
@@ -293,23 +293,6 @@ export function EvaluationManager() {
     }
   }
 
-  async function run(runIds?: string[]) {
-    setRunning(true);
-    try {
-      // 把当前（含新增/编辑）的题库一并提交；runIds 非空时仅运行所选题
-      const res = await fetch("/api/evaluation", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "run", items, runIds }),
-      });
-      const data = await res.json();
-      setItems(data.items ?? []);
-      setDirty(false);
-    } finally {
-      setRunning(false);
-    }
-  }
-
   async function exportResults(targets?: EvaluationItem[]) {
     const list = targets ?? items;
     if (!list.length) {
@@ -339,6 +322,14 @@ export function EvaluationManager() {
     <div className="space-y-5">
       <QualityMetricsPanel summary={qualitySummary} />
       <EvaluationStatsPanel stats={stats} />
+
+      <EvaluationBatchPanel
+        items={items}
+        selectedIds={[...selected]}
+        running={running}
+        onRunningChange={setRunning}
+        onItemsRefresh={load}
+      />
 
       <div className="flex flex-wrap items-center gap-2">
         <Button variant="outline" onClick={openAdd}>
@@ -381,20 +372,12 @@ export function EvaluationManager() {
           )}
           保存{dirty ? "（有改动）" : ""}
         </Button>
-        <Button onClick={() => run()} disabled={running}>
-          {running ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <Play className="h-4 w-4" />
-          )}
-          运行全部（自动判分）
-        </Button>
         <Button variant="ghost" onClick={reset} disabled={saving || running}>
           <RotateCcw className="h-4 w-4" />
           重置示例题库
         </Button>
         <span className="text-xs text-muted-foreground">
-          运行后会自动回填系统回答与建议分数；可在表格中手动调整得分/判定后再「保存」。
+          跑测请用上方「评测批次」；结果回写题库后可人工复核改分。
         </span>
       </div>
 
@@ -402,19 +385,9 @@ export function EvaluationManager() {
       {selected.size > 0 && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 px-3 py-2 text-sm">
           <span className="text-muted-foreground">已选 {selected.size} 道</span>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => run([...selected])}
-            disabled={running}
-          >
-            {running ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Play className="h-3.5 w-3.5" />
-            )}
-            运行所选
-          </Button>
+          <span className="text-xs text-muted-foreground">
+            在上方批次面板点击「运行所选」
+          </span>
           <Button
             size="sm"
             variant="outline"

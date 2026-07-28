@@ -10,26 +10,27 @@ function batch(
     caseResults?: EvaluationBatchCaseResult[];
   }
 ): EvaluationBatch {
+  const { id, ...rest } = patch;
   return {
-    id: patch.id,
-    versionLabel: patch.versionLabel ?? patch.id,
-    changeNote: patch.changeNote ?? "",
-    status: patch.status ?? "done",
-    caseIds: patch.caseIds ?? ["a", "b"],
-    caseSnapshot: patch.caseSnapshot ?? [],
-    caseSetHash: patch.caseSetHash ?? "cases-1",
-    evaluatorVersion: patch.evaluatorVersion ?? "eval-scorer-v1",
-    knowledgeIndexFingerprint: patch.knowledgeIndexFingerprint ?? "idx-1",
-    modelConfigSnapshot: patch.modelConfigSnapshot ?? { llm: "mock" },
-    ragConfigSnapshot: patch.ragConfigSnapshot ?? { city: "北京" },
-    caseResults: patch.caseResults ?? [],
-    passed: patch.passed ?? 0,
-    failed: patch.failed ?? 0,
-    review: patch.review ?? 0,
-    error: patch.error ?? 0,
-    productPassRate: patch.productPassRate ?? null,
-    createdAt: patch.createdAt ?? "2026-07-28T00:00:00.000Z",
-    ...patch,
+    id,
+    versionLabel: rest.versionLabel ?? id,
+    changeNote: rest.changeNote ?? "",
+    status: rest.status ?? "done",
+    caseIds: rest.caseIds ?? ["a", "b"],
+    caseSnapshot: rest.caseSnapshot ?? [],
+    caseSetHash: rest.caseSetHash ?? "cases-1",
+    evaluatorVersion: rest.evaluatorVersion ?? "eval-scorer-v1",
+    knowledgeIndexFingerprint: rest.knowledgeIndexFingerprint ?? "idx-1",
+    modelConfigSnapshot: rest.modelConfigSnapshot ?? { llm: "mock" },
+    ragConfigSnapshot: rest.ragConfigSnapshot ?? { city: "北京" },
+    caseResults: rest.caseResults ?? [],
+    passed: rest.passed ?? 0,
+    failed: rest.failed ?? 0,
+    review: rest.review ?? 0,
+    error: rest.error ?? 0,
+    productPassRate: rest.productPassRate ?? null,
+    createdAt: rest.createdAt ?? "2026-07-28T00:00:00.000Z",
+    ...rest,
   };
 }
 

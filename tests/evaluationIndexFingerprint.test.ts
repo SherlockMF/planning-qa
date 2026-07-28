@@ -26,11 +26,26 @@ function doc(patch: Partial<Document>): Document {
     id: patch.id ?? "doc-1",
     fileName: patch.fileName ?? "a.pdf",
     city: patch.city ?? "北京",
-    fileType: patch.fileType ?? "pdf",
+    fileType: patch.fileType ?? "技术标准",
     enabled: patch.enabled ?? true,
     status: patch.status ?? "indexed",
     createdAt: patch.createdAt ?? "2026-01-01T00:00:00.000Z",
     ...patch,
+  };
+}
+
+function chunk(patch: Partial<Chunk> & { id: string; documentId: string }): Chunk {
+  const { id, documentId, ...rest } = patch;
+  return {
+    id,
+    documentId,
+    fileName: rest.fileName ?? "a.pdf",
+    city: rest.city ?? "北京",
+    chunkType: rest.chunkType ?? "section",
+    content: rest.content ?? "x",
+    keywords: rest.keywords ?? [],
+    createdAt: rest.createdAt ?? "2026-01-01T00:00:00.000Z",
+    ...rest,
   };
 }
 
@@ -58,14 +73,7 @@ test("hashCaseSet ignores run result fields", () => {
 test("knowledgeIndexFingerprint changes when indexed corpus changes", () => {
   const docs = [doc({ id: "d1" }), doc({ id: "d2", enabled: false })];
   const chunks: Chunk[] = [
-    {
-      id: "c1",
-      documentId: "d1",
-      fileName: "a.pdf",
-      city: "北京",
-      chunkType: "paragraph",
-      content: "hello",
-    } as Chunk,
+    chunk({ id: "c1", documentId: "d1", content: "hello" }),
   ];
   const tables: RagTable[] = [];
 
@@ -78,14 +86,7 @@ test("knowledgeIndexFingerprint changes when indexed corpus changes", () => {
     documents: docs,
     chunks: [
       ...chunks,
-      {
-        id: "c2",
-        documentId: "d1",
-        fileName: "a.pdf",
-        city: "北京",
-        chunkType: "paragraph",
-        content: "world",
-      } as Chunk,
+      chunk({ id: "c2", documentId: "d1", content: "world" }),
     ],
     ragTables: tables,
   });
@@ -108,22 +109,8 @@ test("knowledgeIndexFingerprint changes when indexed corpus changes", () => {
 
 test("disabled or non-indexed documents are excluded from fingerprint", () => {
   const chunks: Chunk[] = [
-    {
-      id: "c1",
-      documentId: "d1",
-      fileName: "a.pdf",
-      city: "北京",
-      chunkType: "paragraph",
-      content: "x",
-    } as Chunk,
-    {
-      id: "c2",
-      documentId: "d2",
-      fileName: "b.pdf",
-      city: "北京",
-      chunkType: "paragraph",
-      content: "y",
-    } as Chunk,
+    chunk({ id: "c1", documentId: "d1", content: "x" }),
+    chunk({ id: "c2", documentId: "d2", fileName: "b.pdf", content: "y" }),
   ];
   const withDisabled = knowledgeIndexFingerprint({
     documents: [doc({ id: "d1" }), doc({ id: "d2", enabled: false })],
