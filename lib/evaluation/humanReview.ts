@@ -19,6 +19,11 @@ const RUN_OWNED_KEYS = [
   "autoAnswerScore",
   "autoStatus",
   "systemAnswer",
+  // 表格里只读展示；漏传时若被抹掉，质量指标与审计回放都会失真
+  "inTop5",
+  "citationCorrect",
+  "answerDurationMs",
+  "tokensUsed",
 ] as const satisfies readonly (keyof EvaluationItem)[];
 
 export interface MergeEvaluationSaveOptions {

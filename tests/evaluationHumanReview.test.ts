@@ -34,7 +34,15 @@ const ranItem = () =>
 
 test("客户端只回传题面时，自动分与审计链接不被抹掉", () => {
   const merged = mergeEvaluationSave(
-    [ranItem()],
+    [
+      {
+        ...ranItem(),
+        inTop5: true,
+        citationCorrect: false,
+        answerDurationMs: 1200,
+        tokensUsed: 800,
+      },
+    ],
     [item({ id: "eval-1", question: "改过的题面" })]
   );
 
@@ -45,6 +53,10 @@ test("客户端只回传题面时，自动分与审计链接不被抹掉", () =>
   assert.equal(saved.workflowTraceId, "eval-1-trace");
   assert.equal(saved.runStartedAt, "2026-07-28T01:00:00.000Z");
   assert.equal(saved.status, "REVIEW");
+  assert.equal(saved.inTop5, true);
+  assert.equal(saved.citationCorrect, false);
+  assert.equal(saved.answerDurationMs, 1200);
+  assert.equal(saved.tokensUsed, 800);
 });
 
 test("人工改分写入终判并记录复核信息，自动分保留", () => {
