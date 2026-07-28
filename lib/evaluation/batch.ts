@@ -72,7 +72,11 @@ export function createEvaluationBatch(
     input.caseIds && input.caseIds.length > 0
       ? new Set(input.caseIds)
       : null;
-  const selected = input.items.filter((item) => !idSet || idSet.has(item.id));
+  // 未显式指定 caseIds 时，跳过待补齐草稿，避免未审核坏例进入正式回归
+  const selected = input.items.filter((item) => {
+    if (idSet) return idSet.has(item.id);
+    return !item.draft;
+  });
   if (selected.length === 0) {
     throw new Error("没有可运行的评测题目");
   }

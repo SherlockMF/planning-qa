@@ -19,6 +19,10 @@ const INPUT_KEYS = [
   "shouldRefuse",
   "expectedAnswerValues",
   "forbiddenAnswerValues",
+  "draft",
+  "sourceBatchId",
+  "sourceCaseId",
+  "sourceTraceId",
 ] as const satisfies readonly (keyof EvaluationItem)[];
 
 /** 从题库条目生成批次输入快照（去掉自动分、人工终判、审计链接等结果字段）。 */

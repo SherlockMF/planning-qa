@@ -573,6 +573,13 @@ export interface EvaluationItem {
   reviewedBy?: string;
   reviewedAt?: string;
   reviewReason?: string;
+
+  // ---- 坏例入库草稿（P2） ----
+  /** 待人工补齐标准依据；为 true 时默认不进入「运行全部」回归集 */
+  draft?: boolean;
+  sourceBatchId?: string;
+  sourceCaseId?: string;
+  sourceTraceId?: string;
 }
 
 /** 单题跑测状态四分法：通过 / 失败 / 待人工复核 / 系统异常 */
