@@ -476,6 +476,9 @@ export function EvaluationManager() {
                       {it.scenario && (
                         <Badge variant="secondary">{it.scenario}</Badge>
                       )}
+                      {it.draft && (
+                        <Badge variant="warning">草稿·待补齐</Badge>
+                      )}
                       {it.userId && (
                         <Badge variant="outline">{formatEvaluationUser(it.userId)}</Badge>
                       )}

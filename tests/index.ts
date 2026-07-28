@@ -23,6 +23,7 @@ import "./evaluationBatchCompare.test.ts";
 import "./evaluationFailureClusters.test.ts";
 import "./evaluationReleaseGate.test.ts";
 import "./evaluationCaseFromFailure.test.ts";
+import "./evaluationLabOverview.test.ts";
 import "./evaluationQualityMetrics.test.ts";
 import "./retrieveDebugSummary.test.ts";
 import "./tableDisplay.test.ts";

@@ -6,10 +6,13 @@ import type {
   EvaluationBatchCompareResult,
   EvaluationItem,
 } from "@/lib/types";
+import type { FailureCluster } from "@/lib/evaluation/failureClusters";
+import type { ReleaseGateResult } from "@/lib/evaluation/releaseGate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
+import Link from "next/link";
 import { Loader2, GitCompareArrows, Ban } from "lucide-react";
 
 const POLL_MS = 1200;
@@ -38,6 +41,9 @@ export function EvaluationBatchPanel({
   );
   const [error, setError] = useState<string>();
   const [comparing, setComparing] = useState(false);
+  const [gate, setGate] = useState<ReleaseGateResult | null>(null);
+  const [clusters, setClusters] = useState<FailureCluster[]>([]);
+  const [draftingCaseId, setDraftingCaseId] = useState<string>();
 
   const active = useMemo(() => {
     const running = batches.find(
@@ -121,6 +127,65 @@ export function EvaluationBatchPanel({
     };
   }, [trackingId, onItemsRefresh, onRunningChange]);
 
+  useEffect(() => {
+    if (!active || active.status !== "done") {
+      setGate(null);
+      setClusters([]);
+      return;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const [gateRes, clusterRes] = await Promise.all([
+          fetch("/api/evaluation/gate", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ batchId: active.id }),
+          }),
+          fetch(
+            `/api/evaluation/batch/${encodeURIComponent(active.id)}/clusters`,
+            { cache: "no-store" }
+          ),
+        ]);
+        const gateData = await gateRes.json();
+        const clusterData = await clusterRes.json();
+        if (cancelled) return;
+        if (gateRes.ok) setGate(gateData.gate as ReleaseGateResult);
+        if (clusterRes.ok) {
+          setClusters((clusterData.clusters as FailureCluster[]) ?? []);
+        }
+      } catch (cause) {
+        if (!cancelled) {
+          setError(cause instanceof Error ? cause.message : String(cause));
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
+  async function draftFromFailure(caseId: string) {
+    if (!active) return;
+    setDraftingCaseId(caseId);
+    setError(undefined);
+    try {
+      const res = await fetch("/api/evaluation/cases/from-failure", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ batchId: active.id, caseId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "生成草稿失败");
+      await onItemsRefresh();
+      alert(data.message ?? "已写入草稿题");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : String(cause));
+    } finally {
+      setDraftingCaseId(undefined);
+    }
+  }
+
   async function startBatch(caseIds?: string[]) {
     setError(undefined);
     setCompare(null);
@@ -134,10 +199,13 @@ export function EvaluationBatchPanel({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           versionLabel: label,
-          changeNote: changeNote.trim() || (caseIds?.length ? "运行所选" : "运行全部"),
+          changeNote:
+            changeNote.trim() || (caseIds?.length ? "运行所选" : "运行全部"),
           caseIds,
           items,
-          clientRequestId: `ui-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+          clientRequestId: `ui-${Date.now()}-${Math.random()
+            .toString(36)
+            .slice(2, 6)}`,
         }),
       });
       const data = await res.json();
@@ -152,15 +220,13 @@ export function EvaluationBatchPanel({
   }
 
   async function cancelActive() {
-    if (!activeId) return;
-    const res = await fetch(
-      `/api/evaluation/batch/${encodeURIComponent(activeId)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "cancel" }),
-      }
-    );
+    const id = trackingId ?? activeId;
+    if (!id) return;
+    const res = await fetch(`/api/evaluation/batch/${encodeURIComponent(id)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "cancel" }),
+    });
     const data = await res.json();
     if (!res.ok) {
       setError(data.error ?? "取消失败");
@@ -246,7 +312,7 @@ export function EvaluationBatchPanel({
         <Button
           variant="ghost"
           onClick={() => void cancelActive()}
-          disabled={!activeId || !running}
+          disabled={!trackingId}
         >
           <Ban className="h-4 w-4" />
           取消
@@ -321,6 +387,83 @@ export function EvaluationBatchPanel({
           </table>
         </div>
       </div>
+
+      {active && active.status === "done" && (
+        <div className="space-y-3 rounded border bg-muted/20 p-3 text-xs">
+          {gate && (
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-slate-700">发布门槛</span>
+                <Badge
+                  variant={
+                    gate.status === "passed"
+                      ? "success"
+                      : gate.status === "blocked_infra"
+                        ? "warning"
+                        : "destructive"
+                  }
+                >
+                  {gate.status}
+                </Badge>
+                <span className="text-muted-foreground">{gate.summary}</span>
+              </div>
+              <ul className="space-y-0.5 text-muted-foreground">
+                {gate.rules.map((rule) => (
+                  <li key={rule.id}>
+                    {rule.passed ? "✓" : "✗"} {rule.label} — {rule.evidence}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {clusters.length > 0 && (
+            <div className="space-y-2">
+              <div className="font-medium text-slate-700">失败簇</div>
+              {clusters.map((cluster) => (
+                <div
+                  key={cluster.id}
+                  className="rounded border bg-background px-2 py-1.5"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge variant="warning">
+                      {cluster.label} × {cluster.count}
+                    </Badge>
+                    {cluster.sampleWorkflowTraceId && (
+                      <Link
+                        href={`/lab/audit?traceId=${encodeURIComponent(cluster.sampleWorkflowTraceId)}`}
+                        className="text-primary underline"
+                      >
+                        样本审计
+                      </Link>
+                    )}
+                    <span className="text-muted-foreground">
+                      {cluster.representativeErrorReason}
+                    </span>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-1">
+                    {cluster.caseIds.map((caseId) => (
+                      <Button
+                        key={caseId}
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-[11px]"
+                        disabled={draftingCaseId === caseId}
+                        onClick={() => void draftFromFailure(caseId)}
+                      >
+                        {draftingCaseId === caseId ? (
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                        ) : null}
+                        入库草稿 {caseId}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-wrap items-end gap-2 border-t pt-3">
         <div className="space-y-1">

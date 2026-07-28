@@ -14,15 +14,16 @@ function result(
 }
 
 function snap(patch: Partial<EvaluationItem> & { id: string }): EvaluationItem {
+  const { id, ...rest } = patch;
   return {
-    id: patch.id,
-    question: patch.question ?? "q",
-    standardAnswer: patch.standardAnswer ?? "",
-    correctFile: patch.correctFile ?? "",
+    id,
+    question: rest.question ?? "q",
+    standardAnswer: rest.standardAnswer ?? "",
+    correctFile: rest.correctFile ?? "",
     correctArticle: "",
     correctPage: "",
-    shouldRefuse: patch.shouldRefuse ?? false,
-    ...patch,
+    shouldRefuse: rest.shouldRefuse ?? false,
+    ...rest,
   };
 }
 

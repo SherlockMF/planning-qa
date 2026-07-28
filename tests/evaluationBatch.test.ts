@@ -156,3 +156,41 @@ test("duplicate clientRequestId after 15s creates a new batch", (t) => {
   assert.notEqual(first.id, second.id);
   assert.equal(store.list().length, 2);
 });
+
+test("createEvaluationBatch skips draft items unless explicitly selected", (t) => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), "eval-batches-"));
+  t.after(() => fs.rmSync(dir, { recursive: true, force: true }));
+  const store = new FileEvaluationBatchStore(
+    path.join(dir, "evaluation-batches.json")
+  );
+  const batch = createEvaluationBatch({
+    versionLabel: "v-draft",
+    changeNote: "skip drafts",
+    items: [
+      item({ id: "live" }),
+      item({ id: "draft-1", draft: true, question: "草稿" }),
+    ],
+    knowledge: { documents: [], chunks: [], ragTables: [] },
+    modelConfigSnapshot: {},
+    ragConfigSnapshot: {},
+    store,
+    newId: () => "batch-draft-skip",
+  });
+  assert.deepEqual(batch.caseIds, ["live"]);
+
+  const forced = createEvaluationBatch({
+    versionLabel: "v-draft-forced",
+    changeNote: "explicit",
+    caseIds: ["draft-1"],
+    items: [
+      item({ id: "live" }),
+      item({ id: "draft-1", draft: true, question: "草稿" }),
+    ],
+    knowledge: { documents: [], chunks: [], ragTables: [] },
+    modelConfigSnapshot: {},
+    ragConfigSnapshot: {},
+    store,
+    newId: () => "batch-draft-forced",
+  });
+  assert.deepEqual(forced.caseIds, ["draft-1"]);
+});

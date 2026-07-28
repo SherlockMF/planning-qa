@@ -40,15 +40,16 @@ function batch(
 function item(
   patch: Partial<EvaluationItem> & { id: string }
 ): EvaluationItem {
+  const { id, ...rest } = patch;
   return {
-    id: patch.id,
+    id,
     question: "q",
     standardAnswer: "a",
     correctFile: "f.pdf",
     correctArticle: "",
     correctPage: "",
     shouldRefuse: false,
-    ...patch,
+    ...rest,
   };
 }
 
