@@ -16,6 +16,7 @@ import "./evaluationRunStatus.test.ts";
 import "./evaluationTraceLink.test.ts";
 import "./evaluationHumanReview.test.ts";
 import "./evaluationBatchNormalize.test.ts";
+import "./evaluationIndexFingerprint.test.ts";
 import "./evaluationQualityMetrics.test.ts";
 import "./retrieveDebugSummary.test.ts";
 import "./tableDisplay.test.ts";
