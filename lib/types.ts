@@ -578,6 +578,83 @@ export interface EvaluationItem {
 /** 单题跑测状态四分法：通过 / 失败 / 待人工复核 / 系统异常 */
 export type EvaluationRunStatus = "PASS" | "FAIL" | "REVIEW" | "ERROR";
 
+/** 评测批次生命周期 */
+export type EvaluationBatchStatus =
+  | "queued"
+  | "running"
+  | "done"
+  | "error"
+  | "cancelled";
+
+/** 批次内单题结果（相对题库 latest 的不可变记录） */
+export interface EvaluationBatchCaseResult {
+  caseId: string;
+  status: EvaluationRunStatus;
+  workflowTraceId?: string;
+  systemAnswer?: string;
+  autoAnswerScore?: 0 | 1 | 2;
+  autoJudgeUncertain?: boolean;
+  inTop5?: boolean;
+  citationCorrect?: boolean;
+  refusedCorrectly?: boolean;
+  errorReason?: string;
+  answerDurationMs?: number;
+  tokensUsed?: number;
+  runStartedAt?: string;
+  runFinishedAt?: string;
+}
+
+/**
+ * 一次不可变评测批次。
+ * 题库可继续编辑；历史以本对象的 caseSnapshot + caseResults 为准。
+ */
+export interface EvaluationBatch {
+  id: string;
+  versionLabel: string;
+  changeNote: string;
+  status: EvaluationBatchStatus;
+  caseIds: string[];
+  /** 输入侧快照：不含本次运行结果字段 */
+  caseSnapshot: EvaluationItem[];
+  caseSetHash: string;
+  evaluatorVersion: string;
+  knowledgeIndexFingerprint: string;
+  modelConfigSnapshot: Record<string, string | number | boolean | null>;
+  ragConfigSnapshot: Record<string, string | number | boolean | null>;
+  caseResults: EvaluationBatchCaseResult[];
+  passed: number;
+  failed: number;
+  review: number;
+  error: number;
+  /** 产品通过率 = PASS / (PASS+FAIL+REVIEW)；ERROR 不进分母 */
+  productPassRate: number | null;
+  createdAt: string;
+  startedAt?: string;
+  finishedAt?: string;
+  clientRequestId?: string;
+  /** 批次级错误信息（整批失败时） */
+  errorMessage?: string;
+}
+
+/** 两批次对比结果；不可比时只给 reasons */
+export interface EvaluationBatchCompareResult {
+  comparable: boolean;
+  reasons: string[];
+  fixed: string[];
+  regressed: string[];
+  unchanged: string[];
+  statusCounts?: {
+    baseline: Record<EvaluationRunStatus, number>;
+    candidate: Record<EvaluationRunStatus, number>;
+  };
+  metricDeltas?: {
+    productPassRate: number | null;
+    top5HitRate: number | null;
+    citationAccuracy: number | null;
+    refusalAccuracy: number | null;
+  };
+}
+
 /** 评测统计汇总 */
 export interface EvaluationStats {
   total: number;
