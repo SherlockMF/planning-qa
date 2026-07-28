@@ -12,6 +12,9 @@ import { withUsageTracking } from "@/lib/ai/usage";
 import { ensureSeeded, getStore } from "./store";
 import { generateAnswer } from "@/lib/rag/generateAnswer";
 import { checkAnswerValueAssertions } from "@/lib/rag/eval/answerValueAssertions";
+import { DEFAULT_KNOWLEDGE_USER_ID } from "@/lib/knowledge/permissions";
+import { deriveEvaluationRunStatus } from "@/lib/evaluation/runStatus";
+import { runEvaluationWithTrace } from "@/lib/evaluation/runTrace";
 import {
   ENTERPRISE_EVALUATION,
   MOCK_EVALUATION,
@@ -94,29 +97,63 @@ export async function runEvaluation(
 }
 
 async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
-  // 与问答页同城市运行，保证评测结果反映线上真实行为
-  const tracked = await withUsageTracking(() =>
-    generateAnswer(item.question, DEFAULT_CITY, resolveEvaluationUserId(item))
-  );
-  const { usage, durationMs: answerDurationMs } = tracked;
-  const tokensUsed = usage.totalTokens;
+  const simulatedUserId =
+    resolveEvaluationUserId(item) ?? DEFAULT_KNOWLEDGE_USER_ID;
+  // 每题绑定一条 query 审计记录，跑完可从评测直接跳到链路回放
+  const run = await runEvaluationWithTrace({
+    item,
+    simulatedUserId,
+    // 与问答页同城市运行，保证评测结果反映线上真实行为
+    run: (recorder) =>
+      withUsageTracking(() =>
+        generateAnswer(
+          item.question,
+          DEFAULT_CITY,
+          resolveEvaluationUserId(item),
+          undefined,
+          recorder
+        )
+      ),
+    errorOf: (tracked) => tracked.error,
+  });
 
-  if (tracked.error) {
-    const err = tracked.error;
-    return {
-      ...item,
+  const tracked = run.value;
+  const answerDurationMs = tracked?.durationMs;
+  const tokensUsed = tracked?.usage.totalTokens;
+  // 重跑会覆盖结果，上一轮的人工终判针对的是旧回答，不再随新结果保留
+  const rerunBase: EvaluationItem = {
+    ...item,
+    workflowTraceId: run.traceId,
+    runStartedAt: run.runStartedAt,
+    runFinishedAt: run.runFinishedAt,
+    finalAnswerScore: undefined,
+    finalStatus: undefined,
+    reviewedBy: undefined,
+    reviewedAt: undefined,
+    reviewReason: undefined,
+  };
+
+  if (run.error) {
+    const err = run.error;
+    const errored: EvaluationItem = {
+      ...rerunBase,
       systemAnswer: undefined,
       inTop5: undefined,
       citationCorrect: undefined,
       refusedCorrectly: undefined,
       answerScore: undefined,
+      autoAnswerScore: undefined,
+      autoJudgeUncertain: undefined,
+      runErrored: true,
       answerDurationMs,
       tokensUsed,
       errorReason: "运行异常：" + String(err instanceof Error ? err.message : err),
     };
+    const autoStatus = deriveEvaluationRunStatus(errored);
+    return { ...errored, autoStatus, status: autoStatus };
   }
 
-  const result = tracked.value!;
+  const result = tracked!.value!;
   const { response, retrieval } = result;
 
   const answered = response.foundEvidence;
@@ -160,18 +197,21 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     }
     return false;
   };
-  const fileMatches = (chunkFileName: string): boolean => {
+  // weak：只靠泛称别名或内容重叠命中，判定依据不够硬 → 自动状态降级为 REVIEW
+  const MISS: MatchOutcome = { matched: false, weak: false };
+  const fileMatches = (chunkFileName: string): MatchOutcome => {
     const a = normFile(chunkFileName);
-    if (!a) return false;
+    if (!a) return MISS;
     if (
       targetFile &&
       (a === targetFile || a.includes(targetFile) || targetFile.includes(a))
     )
-      return true;
+      return { matched: true, weak: false };
     // 用《标题》做子串匹配，容忍真实文件名的版本/文号后缀
     if (targetTitle && targetTitle.length >= 4 && a.includes(targetTitle))
-      return true;
-    return aliasMatches(chunkFileName);
+      return { matched: true, weak: false };
+    if (aliasMatches(chunkFileName)) return { matched: true, weak: true };
+    return MISS;
   };
   const hasArticle = !!item.correctArticle && item.correctArticle !== "—";
   const hasPage = !!item.correctPage && item.correctPage !== "—";
@@ -192,36 +232,45 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     articleNo?: string;
     pageNumber?: number;
     text: string;
-  }) => {
-    if (!fileMatches(c.fileName)) return false;
-    if (hasArticle && norm(c.articleNo) === norm(item.correctArticle)) return true;
+  }): MatchOutcome => {
+    const file = fileMatches(c.fileName);
+    if (!file.matched) return MISS;
+    if (hasArticle && norm(c.articleNo) === norm(item.correctArticle))
+      return { matched: true, weak: file.weak };
     if (
       hasPage &&
       Number.isFinite(Number(c.pageNumber)) &&
       Number.isFinite(Number(item.correctPage)) &&
       Math.abs(Number(c.pageNumber) - Number(item.correctPage)) <= 1
     )
-      return true;
-    if (overlapsStdAnswer(c.text)) return true;
-    if (!hasArticle && !hasPage) return true; // 仅给了文件
-    return false;
+      return { matched: true, weak: file.weak };
+    if (overlapsStdAnswer(c.text)) return { matched: true, weak: true };
+    if (!hasArticle && !hasPage) return { matched: true, weak: file.weak }; // 仅给了文件
+    return MISS;
   };
 
   // 正确条文是否进入 Top5
   const inTop5 =
     hasTarget && retrieval
-      ? retrieval.mergedTop.some((r) =>
-          matchesTarget({ ...r.chunk, text: r.chunk.content })
+      ? retrieval.mergedTop.some(
+          (r) => matchesTarget({ ...r.chunk, text: r.chunk.content }).matched
         )
       : undefined;
 
   // 引用是否正确：
   //  · 应拒答题 / 未作答 / 未标注正确文件 → 无从判定，留 undefined
   //  · 应作答题 + 有答案 + 有标注 → 检查引用是否命中目标
-  const citationCorrect: boolean | undefined =
+  const citationOutcomes =
     item.shouldRefuse || !answered || !hasTarget
       ? undefined
-      : response.citations.some((c) => matchesTarget({ ...c, text: c.excerpt }));
+      : response.citations.map((c) => matchesTarget({ ...c, text: c.excerpt }));
+  const citationHit = citationOutcomes
+    ? citationOutcomes.find((o) => o.matched && !o.weak) ??
+      citationOutcomes.find((o) => o.matched)
+    : undefined;
+  const citationCorrect: boolean | undefined = citationOutcomes
+    ? citationHit !== undefined
+    : undefined;
 
   // 是否正确拒答（仅对应拒答题有意义）
   const refusedCorrectly = item.shouldRefuse ? !answered : undefined;
@@ -233,6 +282,8 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
   // 答案得分与错误原因
   let answerScore: 0 | 1 | 2;
   let errorReason = "";
+  // 满分是否只靠弱信号（别名文件、内容重叠）得来
+  let scoredOnWeakSignal = false;
 
   if (item.shouldRefuse) {
     if (!answered) {
@@ -259,6 +310,7 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     } else if (hasTarget) {
       if (citationCorrect) {
         answerScore = 2;
+        scoredOnWeakSignal = citationHit?.weak === true;
       } else {
         answerScore = 1;
         errorReason = "引用未命中标准条文";
@@ -267,6 +319,7 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
       // 未标注正确文件 → 按回答与标准答案的内容重叠判分，不再一律封顶 1 分
       if (overlapsStdAnswer(response.answer)) {
         answerScore = 2;
+        scoredOnWeakSignal = true;
       } else {
         answerScore = 1;
         errorReason = "回答与标准答案重叠不足";
@@ -277,17 +330,28 @@ async function scoreItem(item: EvaluationItem): Promise<EvaluationItem> {
     }
   }
 
-  return {
-    ...item,
+  const scored: EvaluationItem = {
+    ...rerunBase,
     systemAnswer: response.answer,
     inTop5,
     citationCorrect,
     refusedCorrectly,
     answerScore,
+    autoAnswerScore: answerScore,
+    autoJudgeUncertain: scoredOnWeakSignal,
+    runErrored: false,
     errorReason,
     answerDurationMs,
     tokensUsed,
   };
+  const autoStatus = deriveEvaluationRunStatus(scored);
+  return { ...scored, autoStatus, status: autoStatus };
+}
+
+/** 命中结果与命中强度：weak 表示只靠别名/内容重叠等弱信号命中。 */
+interface MatchOutcome {
+  matched: boolean;
+  weak: boolean;
 }
 
 /** 把标准答案拆成可比对的 token（数值 + 中文 2-gram），用于内容重叠判断。 */
