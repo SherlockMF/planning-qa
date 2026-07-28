@@ -14,6 +14,7 @@ import { generateAnswer } from "@/lib/rag/generateAnswer";
 import { checkAnswerValueAssertions } from "@/lib/rag/eval/answerValueAssertions";
 import { DEFAULT_KNOWLEDGE_USER_ID } from "@/lib/knowledge/permissions";
 import { deriveEvaluationRunStatus } from "@/lib/evaluation/runStatus";
+import { mergeEvaluationSave } from "@/lib/evaluation/humanReview";
 import { runEvaluationWithTrace } from "@/lib/evaluation/runTrace";
 import {
   ENTERPRISE_EVALUATION,
@@ -51,9 +52,12 @@ export async function saveEvaluation(
   items: EvaluationItem[]
 ): Promise<EvaluationItem[]> {
   await ensureSeeded();
-  getStore().evaluation = items;
-  saveEvaluationFile(items);
-  return items;
+  const store = getStore();
+  // 客户端提交的是整份题库；跑测产出的自动分与审计链接以服务端为准，不被覆盖
+  const merged = mergeEvaluationSave(store.evaluation, items);
+  store.evaluation = merged;
+  saveEvaluationFile(merged);
+  return merged;
 }
 
 /**

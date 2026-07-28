@@ -1,8 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { EvaluationItem, EvaluationStats } from "@/lib/types";
+import Link from "next/link";
+import type {
+  EvaluationItem,
+  EvaluationRunStatus,
+  EvaluationStats,
+} from "@/lib/types";
 import { KNOWLEDGE_USERS, userLabel } from "@/lib/knowledge/permissions";
+import { useKnowledgeUser } from "@/components/KnowledgeUserProvider";
+import { resolveEvaluationRunStatus } from "@/lib/evaluation/runStatus";
 import {
   parseEvaluationImport,
   parseRowsToEvaluation,
@@ -47,6 +54,7 @@ import {
   Upload,
   Download,
   ShieldCheck,
+  GitBranch,
 } from "lucide-react";
 
 /** 纯客户端统计（与服务端 computeStats 等价），用于本地编辑后实时更新面板。 */
@@ -89,6 +97,7 @@ const EMPTY_ITEM = (): EvaluationItem => ({
 });
 
 export function EvaluationManager() {
+  const { currentUser } = useKnowledgeUser();
   const [items, setItems] = useState<EvaluationItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
@@ -100,6 +109,8 @@ export function EvaluationManager() {
   const [isNew, setIsNew] = useState(false);
   // 查看系统回答
   const [viewing, setViewing] = useState<EvaluationItem | null>(null);
+  // 人工复核改分
+  const [review, setReview] = useState<ReviewDraft | null>(null);
   // 多选
   const [selected, setSelected] = useState<Set<string>>(new Set());
   // 导入题库
@@ -154,6 +165,51 @@ export function EvaluationManager() {
   function patchItem(id: string, patch: Partial<EvaluationItem>) {
     setItems((arr) => arr.map((it) => (it.id === id ? { ...it, ...patch } : it)));
     setDirty(true);
+  }
+
+  /** 采信自动判分：清空人工终判与复核记录。 */
+  function revertToAuto(it: EvaluationItem) {
+    patchItem(it.id, {
+      finalAnswerScore: undefined,
+      finalStatus: undefined,
+      reviewedBy: undefined,
+      reviewedAt: undefined,
+      reviewReason: undefined,
+      answerScore: it.autoAnswerScore,
+      status: it.autoStatus,
+    });
+  }
+
+  function changeScore(it: EvaluationItem, raw: string) {
+    if (raw === "") {
+      revertToAuto(it);
+      return;
+    }
+    const score = Number(raw) as 0 | 1 | 2;
+    if (score === it.autoAnswerScore) {
+      revertToAuto(it);
+      return;
+    }
+    setReview({ item: it, score, reason: it.reviewReason ?? "" });
+  }
+
+  function confirmReview() {
+    if (!review) return;
+    const reason = review.reason.trim();
+    if (!reason) {
+      alert("请填写改分理由，人工终判需要可追溯");
+      return;
+    }
+    patchItem(review.item.id, {
+      finalAnswerScore: review.score,
+      finalStatus: statusFromHumanScore(review.score),
+      answerScore: review.score,
+      status: statusFromHumanScore(review.score),
+      reviewedBy: currentUser.id,
+      reviewedAt: new Date().toISOString(),
+      reviewReason: reason,
+    });
+    setReview(null);
   }
 
   function removeItem(id: string) {
@@ -414,6 +470,7 @@ export function EvaluationManager() {
               <TableHead>进Top5</TableHead>
               <TableHead>引用正确</TableHead>
               <TableHead>正确拒答</TableHead>
+              <TableHead className="min-w-[86px]">状态</TableHead>
               <TableHead>答案得分</TableHead>
               <TableHead className="w-20">耗时</TableHead>
               <TableHead className="w-20">Token</TableHead>
@@ -497,16 +554,12 @@ export function EvaluationManager() {
                   )}
                 </TableCell>
                 <TableCell className="align-top">
+                  <StatusCell item={it} />
+                </TableCell>
+                <TableCell className="align-top">
                   <Select
                     value={it.answerScore === undefined ? "" : String(it.answerScore)}
-                    onChange={(e) =>
-                      patchItem(it.id, {
-                        answerScore:
-                          e.target.value === ""
-                            ? undefined
-                            : (Number(e.target.value) as 0 | 1 | 2),
-                      })
-                    }
+                    onChange={(e) => changeScore(it, e.target.value)}
                     className="h-7 w-16 text-xs"
                   >
                     <option value="">—</option>
@@ -533,6 +586,7 @@ export function EvaluationManager() {
                 </TableCell>
                 <TableCell className="align-top text-right">
                   <div className="flex justify-end gap-1">
+                    <AuditLinkButton traceId={it.workflowTraceId} />
                     {it.systemAnswer && (
                       <Button
                         size="sm"
@@ -566,7 +620,7 @@ export function EvaluationManager() {
             ))}
             {items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={13} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={14} className="py-8 text-center text-sm text-muted-foreground">
                   暂无题目，点击「新增题目」录入，或「导入题库」批量导入。
                 </TableCell>
               </TableRow>
@@ -685,6 +739,41 @@ export function EvaluationManager() {
         onClose={() => setImportOpen(false)}
         onImport={importItems}
       />
+
+      {/* 人工复核改分 */}
+      <Dialog open={!!review} onOpenChange={(o) => !o && setReview(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>人工复核改分</DialogTitle>
+          </DialogHeader>
+          {review && (
+            <div className="space-y-3">
+              <p className="text-xs text-muted-foreground">
+                自动判分 {review.item.autoAnswerScore ?? "—"}（
+                {review.item.autoStatus ?? "未运行"}）→ 人工终判 {review.score}（
+                {statusFromHumanScore(review.score)}）。自动分会原样保留，便于对比自动判定的偏差。
+              </p>
+              <Field label="改分理由（必填）">
+                <Textarea
+                  value={review.reason}
+                  onChange={(e) => setReview({ ...review, reason: e.target.value })}
+                  rows={3}
+                  placeholder="例：引用页码偏移 1 页，但正文内容与标准答案一致"
+                />
+              </Field>
+              <p className="text-xs text-muted-foreground">
+                复核人：{userLabel(currentUser)}
+              </p>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReview(null)}>
+              取消
+            </Button>
+            <Button onClick={confirmReview}>确认改分</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 查看系统回答 */}
       <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
@@ -972,6 +1061,76 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label>{label}</Label>
       {children}
     </div>
+  );
+}
+
+interface ReviewDraft {
+  item: EvaluationItem;
+  score: 0 | 1 | 2;
+  reason: string;
+}
+
+function statusFromHumanScore(score: 0 | 1 | 2): EvaluationRunStatus {
+  if (score === 2) return "PASS";
+  if (score === 0) return "FAIL";
+  return "REVIEW";
+}
+
+const STATUS_STYLE: Record<
+  EvaluationRunStatus,
+  { label: string; variant: "success" | "destructive" | "warning" | "secondary" }
+> = {
+  PASS: { label: "PASS", variant: "success" },
+  FAIL: { label: "FAIL", variant: "destructive" },
+  REVIEW: { label: "REVIEW", variant: "warning" },
+  ERROR: { label: "ERROR", variant: "secondary" },
+};
+
+function StatusCell({ item }: { item: EvaluationItem }) {
+  const status = resolveEvaluationRunStatus(item);
+  if (!status)
+    return <span className="text-xs text-muted-foreground">未运行</span>;
+  const style = STATUS_STYLE[status];
+  const overridden = item.finalStatus !== undefined;
+  return (
+    <div className="space-y-1">
+      <Badge variant={style.variant}>{style.label}</Badge>
+      {overridden && (
+        <div
+          className="text-[11px] leading-tight text-muted-foreground"
+          title={item.reviewReason}
+        >
+          人工终判（自动 {item.autoStatus ?? "—"}）
+        </div>
+      )}
+      {status === "ERROR" && (
+        <div className="text-[11px] leading-tight text-muted-foreground">
+          不计入质量分母
+        </div>
+      )}
+    </div>
+  );
+}
+
+function AuditLinkButton({ traceId }: { traceId?: string }) {
+  if (!traceId) {
+    return (
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled
+        title="该题尚未运行，暂无工作流审计记录"
+      >
+        <GitBranch className="h-3.5 w-3.5" />
+      </Button>
+    );
+  }
+  return (
+    <Button size="sm" variant="ghost" asChild title="查看该题的工作流审计">
+      <Link href={`/lab/audit?traceId=${encodeURIComponent(traceId)}`}>
+        <GitBranch className="h-3.5 w-3.5" />
+      </Link>
+    </Button>
   );
 }
 

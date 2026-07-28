@@ -14,6 +14,7 @@ import "./feedback.test.ts";
 import "./evaluationEnterpriseSamples.test.ts";
 import "./evaluationRunStatus.test.ts";
 import "./evaluationTraceLink.test.ts";
+import "./evaluationHumanReview.test.ts";
 import "./evaluationQualityMetrics.test.ts";
 import "./retrieveDebugSummary.test.ts";
 import "./tableDisplay.test.ts";
