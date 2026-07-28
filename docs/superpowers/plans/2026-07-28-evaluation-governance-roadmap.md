@@ -1,7 +1,7 @@
 # Evaluation Governance Roadmap (P0–P2)
 
 日期：2026-07-28  
-状态：P0 已完成；P1 / P2 待执行
+状态：P0 / P1 已完成；P2 待执行
 
 ## 背景
 
