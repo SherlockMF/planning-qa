@@ -428,13 +428,20 @@ function selectCitations(
 
   const kept: RetrievedChunk[] = [];
   const seenTables = new Set<string>();
+  const keepMultiCategoryScaleRows = isGeneralScaleMultiRowQuestion(question);
   for (const r of context) {
     const c = r.chunk;
     const isTable = TABLE_CHUNK_TYPES.has(c.chunkType);
     if (!topIsTable && isTable) continue; // 文字/计数题不挂表格行
-    if (isTable && c.tableId) {
+    if (isTable && c.tableId && !keepMultiCategoryScaleRows) {
       const key = `${c.documentId}__${c.tableId}`;
       if (seenTables.has(key)) continue; // 同表只留一条
+      seenTables.add(key);
+    }
+    if (keepMultiCategoryScaleRows && isTable && c.tableId) {
+      const category = scaleCategoryKey(r);
+      const key = `${c.documentId}__${c.tableId}__${category || c.id}`;
+      if (seenTables.has(key)) continue;
       seenTables.add(key);
     }
     const norm = normForDedup(cleanExcerpt(c.content));
@@ -454,14 +461,33 @@ function selectCitations(
     context,
     question
   );
-  const bestSupport = finalKept.reduce(
-    (m, r) => Math.max(m, conclusionSupport(conclusion, r.chunk.content)),
+  // 第一性原理：依据顺序 = 对已生成结论的支撑度，而不是检索粗分。
+  const ordered = [...finalKept].sort((a, b) => {
+    const supportDiff =
+      conclusionSupport(conclusion, citationSupportText(b)) -
+      conclusionSupport(conclusion, citationSupportText(a));
+    if (Math.abs(supportDiff) > 0.02) return supportDiff;
+    return b.rerankScore - a.rerankScore;
+  });
+  const bestSupport = ordered.reduce(
+    (m, r) => Math.max(m, conclusionSupport(conclusion, citationSupportText(r))),
     0
   );
   return {
-    citations: finalKept.slice(0, MAX_CITATIONS).map((r) => toCitation(r)),
+    citations: ordered.slice(0, MAX_CITATIONS).map((r) => toCitation(r)),
     bestSupport,
   };
+}
+
+function citationSupportText(item: RetrievedChunk): string {
+  const fields = item.chunk.fields
+    ? Object.entries(item.chunk.fields)
+        .map(([key, value]) => `${key}：${value}`)
+        .join("\n")
+    : "";
+  return [item.chunk.tableTitle, item.chunk.rowKey, item.chunk.itemName, fields, item.chunk.content]
+    .filter(Boolean)
+    .join("\n");
 }
 
 function selectServiceScaleRows(
@@ -483,7 +509,7 @@ function selectServiceScaleRows(
   const facility = serviceScaleFacilityKey(first);
   const seenCategories = new Set<string>();
   return rows.filter((item) => {
-    const category = item.chunk.fields?.["列4"]?.trim();
+    const category = scaleCategoryKey(item);
     if (
       !category ||
       seenCategories.has(category) ||
@@ -535,8 +561,28 @@ function includeServiceScaleSiblingCitations(
 
 function isCategorizedServiceScaleChunk(item: RetrievedChunk): boolean {
   return Boolean(
-    item.chunk.fields?.["服务规模"] &&
-      /^[ABC]类$/.test(item.chunk.fields?.["列4"]?.trim() ?? "")
+    item.chunk.fields?.["服务规模"] && scaleCategoryKey(item)
+  );
+}
+
+function scaleCategoryKey(item: RetrievedChunk): string {
+  const fields = item.chunk.fields ?? {};
+  for (const value of Object.values(fields)) {
+    const text = String(value ?? "").trim();
+    if (/^[ABC]类$/.test(text)) return text;
+    const flipped = text.match(/^类([ABC])$/);
+    if (flipped) return `${flipped[1]}类`;
+  }
+  const content = item.chunk.content ?? "";
+  const matched = content.match(/\b([ABC])类\b/) || content.match(/类([ABC])/);
+  return matched ? `${matched[1]}类` : "";
+}
+
+function isGeneralScaleMultiRowQuestion(question: string): boolean {
+  const q = question.trim();
+  return (
+    /一般规模|建筑面积|用地面积|多少面积|多大面积|多少.*(?:平方米|平米)|规模/.test(q) &&
+    !/服务规模|多少处|几处/.test(q)
   );
 }
 
@@ -551,7 +597,7 @@ function serviceScaleFacilityKey(item: RetrievedChunk): string {
 }
 
 function serviceScaleRowOrder(item: RetrievedChunk): number {
-  const category = item.chunk.fields?.["列4"]?.trim();
+  const category = scaleCategoryKey(item);
   if (category === "A类") return 1;
   if (category === "B类") return 2;
   if (category === "C类") return 3;

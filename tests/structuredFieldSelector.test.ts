@@ -56,6 +56,114 @@ test("structured field selector ranks matching citations before formatting", () 
   assert.match(ranked[0].excerpt ?? "", /一般规模：350/);
 });
 
+test("structured field selector tie-break prefers indicator table for general-scale questions", () => {
+  const ranked = rankStructuredEvidenceForQuestion(
+    [
+      citation([
+        "【结构化指标项】",
+        "指标对象：社区卫生服务中心",
+        "来源表格：表 — 医疗卫生类设施配置要求表",
+        "配置要求：指标使用说明",
+        "详细配置要求：原则上每个街道设置1处。",
+      ]),
+      citation([
+        "【结构化指标项】",
+        "指标对象：社区卫生服务中心",
+        "来源表格：表 — 医疗卫生类设施配置指标表",
+        "服务内容：类A",
+        "列6：5500",
+      ]),
+    ],
+    "社区卫生服务中心一般建筑面积是多少"
+  );
+
+  assert.match(ranked[0].excerpt ?? "", /配置指标表/);
+  assert.match(ranked[0].excerpt ?? "", /5500/);
+});
+
+test("structured field selector aggregates bed/area scale tiers without flattening", () => {
+  const recovered = recoverConclusionFromStructuredEvidence(
+    [
+      citation([
+        "【结构化指标项】",
+        "指标对象：机构养老设施",
+        "来源表格：表 — 社会福利类设施配置指标表",
+        "设施名称：机构养老设施",
+        "规模性指标.一般规模.分档：50-100床",
+        "规模性指标.一般规模.建筑面积(平方米/处)：2000-4000",
+        "服务规模：每个街道至少1处",
+      ]),
+      citation([
+        "【结构化指标项】",
+        "指标对象：机构养老设施",
+        "来源表格：表 — 社会福利类设施配置指标表",
+        "设施名称：机构养老设施",
+        "规模性指标.一般规模.分档：100-500床",
+        "规模性指标.一般规模.建筑面积(平方米/处)：4000-15000",
+        "服务规模：每个街道至少1处",
+      ]),
+    ],
+    "机构养老设施一般规模是多少"
+  );
+
+  assert.ok(recovered);
+  assert.match(recovered, /50-100床：建筑面积2000-4000/);
+  assert.match(recovered, /100-500床：建筑面积4000-15000/);
+  assert.doesNotMatch(recovered, /50-500床/);
+  assert.doesNotMatch(recovered, /2000-15000/);
+});
+
+test("structured field selector recovers tiers from per-facility area cells without 分档 field", () => {
+  const recovered = recoverConclusionFromStructuredEvidence(
+    [
+      citation([
+        "【结构化指标项】",
+        "指标对象：机构养老设施",
+        "来源表格：表 — 社会福利类设施配置指标表",
+        "设施名称：机构养老设施",
+        "建筑面积 (平方米/处)：50-100床\n2000-4000",
+        "建筑面积 (平方米)：300-400",
+        "用地面积 (平方米)：150-400",
+        "服务规模：每个街道至少1处",
+      ]),
+      citation([
+        "【结构化指标项】",
+        "指标对象：机构养老设施",
+        "来源表格：表 — 社会福利类设施配置指标表",
+        "设施名称：机构养老设施",
+        "建筑面积 (平方米/处)：100-500床\n4000-15000",
+        "建筑面积 (平方米)：300-400",
+        "用地面积 (平方米)：150-400",
+        "服务规模：每个街道至少1处",
+      ]),
+    ],
+    "机构养老设施一般规模是多少"
+  );
+
+  assert.ok(recovered);
+  assert.match(recovered, /配置指标表/);
+  assert.match(recovered, /50-100床：建筑面积2000-4000/);
+  assert.match(recovered, /100-500床：建筑面积4000-15000/);
+  assert.doesNotMatch(recovered, /建筑面积 \(平方米\)：300-400/);
+  assert.doesNotMatch(recovered, /50-100床(?!：)/);
+});
+
+test("structured field selector does not recover glued bed-area scale values", () => {
+  const recovered = recoverConclusionFromStructuredEvidence(
+    [
+      citation([
+        "【结构化指标项】",
+        "指标对象：机构养老设施",
+        "来源表格：表 — 社会福利类设施配置指标表",
+        "规模性指标.一般规模.建筑面积平方米/处( )：床50-1002000-4000",
+      ]),
+    ],
+    "机构养老设施一般建筑面积是多少"
+  );
+
+  assert.equal(recovered, null);
+});
+
 test("structured field selector aggregates service scale rows for the same facility", () => {
   const recovered = recoverConclusionFromStructuredEvidence(
     [

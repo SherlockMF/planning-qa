@@ -183,10 +183,16 @@ export function buildTableModel(
   };
 }
 
-/** 归一化单元格：null→""，去换行、压空白。 */
+/** 归一化单元格：null→""；保留格内视觉换行，只压缩同行空白。 */
 function normCell(c: string | null | undefined): string {
   if (c == null) return "";
-  return c.replace(/\n/g, "").replace(/\s+/g, " ").trim();
+  return c
+    .replace(/\r\n/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/[ \t\f\v]+/g, " ").trim())
+    .join("\n")
+    .replace(/^\n+|\n+$/g, "")
+    .trim();
 }
 
 /**

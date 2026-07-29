@@ -226,34 +226,40 @@ def char_in_bbox(ch, bbox, pad=0.8):
     return x0 - pad <= cx <= x1 + pad and top - pad <= line_anchor < bottom - pad
 
 
-def clean_cell_text(text):
-    text = re.sub(r"[ \t\r\f\v]+", " ", text)
-    text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", text)
-    text = re.sub(r"(?<=\d)\s+(?=[\u4e00-\u9fff%％])", "", text)
-    text = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=\d)", "", text)
-    text = re.sub(r"\s+([，。；：、,.!?;:%％）)])", r"\1", text)
-    text = re.sub(r"([（(])\s+", r"\1", text)
-    text = re.sub(r"([%％])([\u4e00-\u9fff])。", r"\1。\2", text)
-    text = re.sub(
-        r"([。；])([\u4e00-\u9fff][^。；]*?)(\d{1,2}[.．])。$",
-        r"\1\3\2。",
-        text,
-    )
-    text = re.sub(r"(\d+)\s*万\s*\.\s*(\d+)\s*人\s*(\d+)", r"\1.\2\3万人", text)
-    text = re.sub(r"万\s*(\d+)\s*\.\s*(\d+)\s*人", r"\1.\2万人", text)
-    text = re.sub(r"(\d+)\s*万\s*(\d+)\s*\.\s*人\s*(\d+)", r"\1\2.\3万人", text)
-    text = re.sub(r"岁\s*(\d+)\s*以下", r"\1岁以下", text)
-    text = re.sub(r"(\d+)\s*-\s*岁\s*(\d+)", r"\1-\2岁", text)
-    return text.strip()
-
-
 def extract_ordered_cell_text(page, bbox):
     """Rebuild one cell from glyph coordinates instead of pdfplumber's text stream."""
     chars = [ch for ch in page.chars if char_in_bbox(ch, bbox)]
     if not chars:
         return ""
     lines = [join_visual_line(row["chars"]) for row in group_chars_by_visual_row(chars)]
-    return clean_cell_text("".join(line for line in lines if line))
+    # Keep visual line breaks so multi-tier scale cells stay separable.
+    joined = "\n".join(line for line in lines if line and line.strip())
+    return clean_cell_text(joined)
+
+
+def clean_cell_text(text):
+    # Normalize spaces per visual line; never delete newlines that separate tiers.
+    parts = []
+    for line in text.replace("\r\n", "\n").split("\n"):
+        line = re.sub(r"[ \t\r\f\v]+", " ", line)
+        line = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=[\u4e00-\u9fff])", "", line)
+        line = re.sub(r"(?<=\d)\s+(?=[\u4e00-\u9fff%％])", "", line)
+        line = re.sub(r"(?<=[\u4e00-\u9fff])\s+(?=\d)", "", line)
+        line = re.sub(r"\s+([，。；：、,.!?;:%％）)])", r"\1", line)
+        line = re.sub(r"([（(])\s+", r"\1", line)
+        line = re.sub(r"([%％])([\u4e00-\u9fff])。", r"\1。\2", line)
+        line = re.sub(
+            r"([。；])([\u4e00-\u9fff][^。；]*?)(\d{1,2}[.．])。$",
+            r"\1\3\2。",
+            line,
+        )
+        line = re.sub(r"(\d+)\s*万\s*\.\s*(\d+)\s*人\s*(\d+)", r"\1.\2\3万人", line)
+        line = re.sub(r"万\s*(\d+)\s*\.\s*(\d+)\s*人", r"\1.\2万人", line)
+        line = re.sub(r"(\d+)\s*万\s*(\d+)\s*\.\s*人\s*(\d+)", r"\1\2.\3万人", line)
+        line = re.sub(r"岁\s*(\d+)\s*以下", r"\1岁以下", line)
+        line = re.sub(r"(\d+)\s*-\s*岁\s*(\d+)", r"\1-\2岁", line)
+        parts.append(line.strip())
+    return "\n".join(part for part in parts if part).strip()
 
 
 def extract_ordered_table_rows(page, table):

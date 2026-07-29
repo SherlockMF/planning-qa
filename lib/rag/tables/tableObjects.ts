@@ -14,6 +14,7 @@ import { classifyTable } from "./classifyTable.ts";
 import { flattenHeaders } from "./flattenHeaders.ts";
 import { mergeContinuationTables } from "./mergeTables.ts";
 import { normalizeFields } from "./normalizeCells.ts";
+import { expandScaleTierInRowFields } from "./scaleCellTiers.ts";
 
 export function buildStructuredTableObjects(
   docId: string,
@@ -37,19 +38,31 @@ export function buildStructuredTableObjects(
       tableIndex,
     ]);
 
-    const rowObjects: StructuredTableRowObject[] = merged.model.rows.map(
-      (row, rowIndex) => {
-        const fields: Record<string, string> = {};
-        headers.forEach((header, columnIndex) => {
-          const value = (row[columnIndex] ?? "").trim();
-          if (value) fields[header.name] = value;
-        });
-        const rowKey = rowKeyOf(row, headers.map((h) => h.name));
-        return {
+    const rowObjects: StructuredTableRowObject[] = [];
+    let logicalRowIndex = 0;
+    for (let sourceRowIndex = 0; sourceRowIndex < merged.model.rows.length; sourceRowIndex++) {
+      const row = merged.model.rows[sourceRowIndex];
+      const baseFields: Record<string, string> = {};
+      headers.forEach((header, columnIndex) => {
+        const value = (row[columnIndex] ?? "").trim();
+        if (value) baseFields[header.name] = value;
+      });
+      const expanded = expandScaleTierInRowFields(baseFields);
+      for (const fields of expanded.rows) {
+        const rowKey = rowKeyOf(
+          headers.map((header) => fields[header.name] ?? ""),
+          headers.map((h) => h.name)
+        );
+        const warnings = [
+          ...(classification.confidence < 0.55 ? ["low_confidence_table_row"] : []),
+          ...expanded.warnings,
+        ];
+        rowObjects.push({
           id: stableObjectId(docId, "structured_table_row", [
             tableObjectId,
-            rowIndex,
+            logicalRowIndex,
             rowKey,
+            fields["规模性指标.一般规模.分档"] ?? "",
           ]),
           docId,
           objectType: "structured_table_row",
@@ -62,27 +75,25 @@ export function buildStructuredTableObjects(
           sourcePages: pageSpanOf(merged.pageStart, merged.pageEnd),
           sourceBlockIds: merged.sourceBlockIds,
           sourceTableId: merged.model.tableId,
-          sourceRowIndex: rowIndex,
+          sourceRowIndex,
           parentObjectId: tableObjectId,
           tableObjectId,
           tableNo,
           tableTitle,
           tableType: classification.tableType,
-          rowIndex,
+          rowIndex: logicalRowIndex,
           rowKey,
           fields,
           normalizedFields: normalizeFields(fields),
           keywords: [rowKey, tableNo, tableTitle].filter(Boolean) as string[],
           aliases: [rowKey].filter(Boolean) as string[],
           confidence: classification.confidence,
-          warnings:
-            classification.confidence < 0.55
-              ? ["low_confidence_table_row"]
-              : undefined,
+          warnings: warnings.length ? warnings : undefined,
           raw: row,
-        };
+        });
+        logicalRowIndex += 1;
       }
-    );
+    }
 
     return {
       id: tableObjectId,

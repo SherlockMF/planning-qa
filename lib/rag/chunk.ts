@@ -661,6 +661,24 @@ function makeObjectDraft(
       "normativeLevel" in obj ? String(obj.normativeLevel ?? "") || undefined : undefined,
     mandatory: "mandatory" in obj ? obj.mandatory : undefined,
     versionInfo: versionInfo as unknown as Record<string, unknown> | undefined,
+    ...qualityFromObjectWarnings(obj.warnings),
+  };
+}
+
+function qualityFromObjectWarnings(
+  warnings: string[] | undefined
+): Pick<DraftChunk, "lowFidelity" | "extractionWarnings"> {
+  if (!warnings?.length) return {};
+  const extractionWarnings = warnings.filter(
+    (warning) =>
+      warning === "scrambled_numeric_unit" ||
+      warning === "noisy_extraction_text" ||
+      warning === "scale_tier_parse_failed"
+  );
+  if (!extractionWarnings.length) return {};
+  return {
+    lowFidelity: true,
+    extractionWarnings,
   };
 }
 

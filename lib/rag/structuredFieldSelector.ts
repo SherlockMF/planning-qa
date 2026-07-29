@@ -1,3 +1,5 @@
+import { parseScaleCellTiers } from "./tables/scaleCellTiers.ts";
+
 export interface StructuredEvidenceSignal {
   lowFidelity?: boolean;
   extractionWarnings?: string[];
@@ -14,6 +16,9 @@ export function recoverConclusionFromStructuredEvidence(
   if (aggregatedServiceScale) return aggregatedServiceScale;
   if (isSingleCategorizedServiceScaleRow(citations, question)) return null;
 
+  const aggregatedScaleTiers = aggregateScaleTierConclusion(citations, question);
+  if (aggregatedScaleTiers) return aggregatedScaleTiers;
+
   const candidates: Array<{ lines: string[]; score: number }> = [];
 
   for (const citation of citations) {
@@ -28,9 +33,114 @@ export function recoverConclusionFromStructuredEvidence(
 
   candidates.sort((a, b) => b.score - a.score);
   const best = candidates[0];
-  return best && (!question.trim() || best.score > 0)
-    ? joinAsConclusion(best.lines)
-    : null;
+  if (!best || (question.trim() && best.score <= 0)) return null;
+  // 脏规模值（粘连床位/面积、散文进规模字段）不得被提炼成确定性结论。
+  if (hasCorruptScaleLines(best.lines)) return null;
+  return joinAsConclusion(best.lines);
+}
+
+function aggregateScaleTierConclusion(
+  citations: StructuredEvidenceSignal[],
+  question: string
+): string | null {
+  const q = question.trim();
+  if (!isGeneralScaleQuestion(q) || /服务规模|多少处|几处|千人/.test(q)) return null;
+  if (isDetailedRequirementQuestion(q)) return null;
+
+  const paired = citations.flatMap((citation, index) => {
+    const lines = extractUsefulStructuredLines(citation);
+    if (lines.length === 0) return [];
+
+    const fromExplicit = extractExplicitScaleTier(lines);
+    if (fromExplicit.length > 0) {
+      return fromExplicit.map((item) => ({ ...item, index }));
+    }
+    return extractScaleTierFromAreaLines(lines).map((item) => ({ ...item, index }));
+  });
+  if (paired.length < 2) return null;
+
+  paired.sort((a, b) => a.sortValue - b.sortValue || a.index - b.index);
+  const unique = [...new Set(paired.map((item) => item.text))];
+  if (unique.length < 2) return null;
+
+  const firstMeta = citations
+    .map(extractUsefulStructuredLines)
+    .flat()
+    .filter((line) => /^(指标对象|来源表格|设施名称)：/.test(line));
+  const meta = [
+    ...new Map(
+      firstMeta
+        .filter((line) => /配置指标表|设施名称|指标对象/.test(line))
+        .map((line) => [line.split(/[：:]/, 1)[0], line] as const)
+    ).values(),
+  ].slice(0, 3);
+
+  const serviceScale = citations
+    .map(extractUsefulStructuredLines)
+    .flat()
+    .find((line) => /^服务规模：/.test(line));
+
+  const joined = joinAsConclusion(
+    [...meta, ...unique, serviceScale].filter(Boolean) as string[]
+  );
+  if (/50\s*[-—～~]\s*500\s*床/.test(joined) && /2000\s*[-—～~]\s*15000/.test(joined)) {
+    return null;
+  }
+  return joined;
+}
+
+function extractExplicitScaleTier(
+  lines: string[]
+): Array<{ text: string; sortValue: number }> {
+  if (!lines.some((line) => /分档：/.test(line))) return [];
+  const tier = lines.find((line) => /分档：/.test(line));
+  const area = lines.find(
+    (line) =>
+      /建筑面积/.test(line) &&
+      /平方米\s*\/\s*处|平米\s*\/\s*处|一般规模/.test(line) &&
+      !/千人|用地|分档/.test(line)
+  );
+  if (!tier || !area) return [];
+  const tierText = tier.replace(/^[^：:]+[：:]/, "").trim();
+  const areaText = area.replace(/^[^：:]+[：:]/, "").trim();
+  if (/床/.test(areaText) || !/\d/.test(areaText)) return [];
+  return [
+    {
+      text: `${tierText}：建筑面积${areaText}`,
+      sortValue: numericSortValue(tierText),
+    },
+  ];
+}
+
+function extractScaleTierFromAreaLines(
+  lines: string[]
+): Array<{ text: string; sortValue: number }> {
+  const areaLine = lines.find(
+    (line) =>
+      /建筑面积/.test(line) &&
+      (/平方米\s*\/\s*处|平米\s*\/\s*处|一般规模/.test(line) || /床/.test(line)) &&
+      !/千人|用地|分档/.test(line)
+  );
+  if (!areaLine) return [];
+  const raw = areaLine.replace(/^[^：:]+[：:]/, "").trim();
+  const parsed = parseScaleCellTiers(raw);
+  if (!parsed.ok) return [];
+  return parsed.tiers.map((tier) => ({
+    text: `${tier.bedRangeRaw}：建筑面积${tier.buildingAreaRaw}`,
+    sortValue: numericSortValue(tier.bedRangeRaw),
+  }));
+}
+
+function hasCorruptScaleLines(lines: string[]): boolean {
+  return lines.some((line) => {
+    if (!/一般规模|建筑面积|用地面积|规模性指标|服务规模/.test(line)) return false;
+    return (
+      /床\s*\d+\s*[-—～~]\s*\d{2,4}\d{3,}/.test(line) ||
+      /\d{2,4}\s*[-—～~]\s*\d{2,4}\d{3,5}\s*[-—～~]\s*\d{3,5}/.test(line) ||
+      /\d+\s*\/\s*户\s*\d{3,}/.test(line) ||
+      isProseScaleValue(line)
+    );
+  });
 }
 
 function aggregateServiceScaleConclusion(
@@ -90,9 +200,19 @@ export function rankStructuredEvidenceForQuestion<T extends StructuredEvidenceSi
   question: string
 ): T[] {
   return [...citations].sort(
-    (a, b) =>
-      structuredEvidenceQuestionScore(extractUsefulStructuredLines(b), question) -
-      structuredEvidenceQuestionScore(extractUsefulStructuredLines(a), question)
+    (a, b) => {
+      const scoreDiff =
+        structuredEvidenceQuestionScore(extractUsefulStructuredLines(b), question) -
+        structuredEvidenceQuestionScore(extractUsefulStructuredLines(a), question);
+      if (scoreDiff !== 0) return scoreDiff;
+      const tieDiff =
+        citationQuestionTieBreak(b, question) - citationQuestionTieBreak(a, question);
+      if (tieDiff !== 0) return tieDiff;
+      if (/服务规模|多少处|几处/.test(question.trim())) {
+        return citationServiceScaleSortValue(a) - citationServiceScaleSortValue(b);
+      }
+      return 0;
+    }
   );
 }
 
@@ -115,11 +235,29 @@ export function preferCleanStructuredCitations<T extends StructuredEvidenceSigna
 
   const filtered = citations.filter(isCleanCitation);
   if (filtered.length === 0) return citations;
-  if (!/服务规模|多少处|几处/.test(question.trim())) return filtered;
-  return [...filtered].sort(
-    (a, b) =>
-      citationServiceScaleSortValue(a) - citationServiceScaleSortValue(b)
-  );
+  const ranked = rankStructuredEvidenceForQuestion(filtered, question);
+  return preferIndicatorTableForGeneralScale(ranked, question);
+}
+
+function preferIndicatorTableForGeneralScale<T extends StructuredEvidenceSignal>(
+  citations: T[],
+  question: string
+): T[] {
+  const q = question.trim();
+  const asksGeneralScale =
+    isGeneralScaleQuestion(q) &&
+    !isDetailedRequirementQuestion(q) &&
+    !/服务规模|多少处|几处|千人/.test(q);
+  if (!asksGeneralScale) return citations;
+
+  const indicatorRows = citations.filter((citation) => {
+    const excerpt = citation.excerpt ?? "";
+    return (
+      /配置指标表/.test(excerpt) &&
+      (/平方米\s*\/\s*处|分档|一般规模/.test(excerpt) || /床/.test(excerpt))
+    );
+  });
+  return indicatorRows.length > 0 ? indicatorRows : citations;
 }
 
 function citationServiceScaleSortValue(citation: StructuredEvidenceSignal): number {
@@ -161,10 +299,18 @@ function extractUsefulStructuredLines(citation: StructuredEvidenceSignal): strin
 
   const excerpt = citation.excerpt?.trim() ?? "";
   if (!excerpt.startsWith("【结构化指标项】")) return [];
-  return excerpt
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && !/^【结构化/.test(line) && line.includes("："));
+  const merged: string[] = [];
+  for (const rawLine of excerpt.split(/\r?\n/)) {
+    const line = rawLine.trim();
+    if (!line || /^【结构化/.test(line)) continue;
+    if (line.includes("：") || line.includes(":")) {
+      merged.push(line);
+      continue;
+    }
+    // 格内换行续行（如面积数值）并回上一字段，避免丢掉「2000-4000」。
+    if (merged.length > 0) merged[merged.length - 1] += `\n${line}`;
+  }
+  return merged;
 }
 
 function selectStructuredConclusionLines(lines: string[], question: string): string[] {
@@ -194,7 +340,22 @@ function selectStructuredConclusionLines(lines: string[], question: string): str
     for (const line of lines) if (/服务规模/.test(line)) keep.add(line);
   } else if (asksGeneralScale) {
     for (const line of lines) {
-      if (/一般规模|建筑面积|用地面积|规模性指标/.test(line)) keep.add(line);
+      if (/千人/.test(line)) continue;
+      // 排除千人指标列「建筑面积 (平方米)」，只留「平方米/处」或分档。
+      if (
+        /^建筑面积[^：:]*：/.test(line) &&
+        !/平方米\s*\/\s*处|平米\s*\/\s*处|一般规模|分档/.test(line)
+      ) {
+        continue;
+      }
+      if (/^用地面积[^：:]*：/.test(line) && !/平方米\s*\/\s*处|一般规模/.test(line)) {
+        continue;
+      }
+      if (/分档|一般规模|规模性指标|平方米\s*\/\s*处|平米\s*\/\s*处/.test(line)) {
+        keep.add(line);
+      } else if (/建筑面积/.test(line) && /床|\n/.test(line)) {
+        keep.add(line);
+      }
     }
   } else {
     return lines;
@@ -226,10 +387,14 @@ function structuredEvidenceQuestionScore(lines: string[], question: string): num
     if (/规模性指标\.一般规模/.test(text)) score -= 4;
   }
   if (asksGeneralScale) {
-    if (/规模性指标\.一般规模/.test(text)) score += 5;
-    if (/建筑面积|用地面积/.test(text)) score += 2;
-    if (/配置指标表/.test(text)) score += 1;
-    if (/配置要求表/.test(text)) score -= 1;
+    // 问面积/一般规模时，数值指标表优先；使用说明/布局引导不能靠前。
+    if (/配置指标表/.test(text)) score += 6;
+    if (/配置要求表/.test(text)) score -= 4;
+    if (/指标使用说明|布局引导要求/.test(text)) score -= 6;
+    if (/详细配置要求/.test(text) && !hasConcreteScaleNumber(text)) score -= 5;
+    if (hasConcreteScaleNumber(text)) score += 8;
+    if (/规模性指标\.一般规模/.test(text) && !isProseScaleValue(text)) score += 5;
+    if (/建筑面积|用地面积|床/.test(text)) score += 2;
   }
   if (/一般/.test(q) && /一般规模/.test(text)) score += 4;
   if (asksThousandIndicator && /千人指标/.test(text)) score += 8;
@@ -239,6 +404,56 @@ function structuredEvidenceQuestionScore(lines: string[], question: string): num
   }
 
   return score;
+}
+
+function citationQuestionTieBreak(citation: StructuredEvidenceSignal, question: string): number {
+  const excerpt = citation.excerpt ?? "";
+  const asksDetailedRequirement = isDetailedRequirementQuestion(question);
+  const asksServiceScale = /服务规模|多少处|几处/.test(question.trim());
+  const asksGeneralScale =
+    isGeneralScaleQuestion(question.trim()) && !asksDetailedRequirement && !asksServiceScale;
+  let score = 0;
+
+  if (/来源表格：.*配置指标表/.test(excerpt)) {
+    if (asksGeneralScale || asksServiceScale) score += 5;
+    if (asksDetailedRequirement) score -= 1;
+  }
+  if (/来源表格：.*配置要求表/.test(excerpt)) {
+    if (asksDetailedRequirement) score += 3;
+    if (asksGeneralScale || asksServiceScale) score -= 4;
+  }
+  if (asksGeneralScale) {
+    if (hasConcreteScaleNumber(excerpt)) score += 4;
+    if (/指标使用说明|布局引导要求/.test(excerpt)) score -= 5;
+    if (/规模性指标|一般规模|建筑面积|用地面积/.test(excerpt)) score += 1;
+  }
+  if (asksServiceScale && /服务规模/.test(excerpt)) score += 1;
+  if (asksDetailedRequirement && /详细配置要求|配置要求/.test(excerpt)) score += 1;
+
+  return score;
+}
+
+/** 规模字段应是数值/区间，不应是科室说明长文。 */
+function isProseScaleValue(text: string): boolean {
+  const scaleLine = text
+    .split(/\r?\n/)
+    .find((line) => /规模性指标|一般规模/.test(line) && !/来源表格/.test(line));
+  if (!scaleLine) return false;
+  const value = scaleLine.replace(/^[^：:]+[：:]/, "").trim();
+  if (!value) return false;
+  if (/\d/.test(value) && value.replace(/[^\d]/g, "").length >= 3 && value.length <= 40) {
+    return false;
+  }
+  return /[一-龥]{12,}/.test(value);
+}
+
+function hasConcreteScaleNumber(text: string): boolean {
+  return (
+    /(?:建筑面积|用地面积|一般规模|列\d+)[^\n]{0,20}\d{3,5}/.test(text) ||
+    /[ABC]类[^\n]{0,30}\d{3,5}/.test(text) ||
+    /类[ABC][^\n]{0,30}\d{3,5}/.test(text) ||
+    /\b(?:3500|4500|5500|2000|4000|15000)\b/.test(text)
+  );
 }
 
 function isDetailedRequirementQuestion(question: string): boolean {

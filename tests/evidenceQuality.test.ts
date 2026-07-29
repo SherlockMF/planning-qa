@@ -94,6 +94,29 @@ test("numeric-unit scrambling blocks direct numeric conclusions", () => {
   assert.equal(quality.displayPolicy, "source_page_required");
 });
 
+test("service-scale slash contamination is treated as numeric corruption", () => {
+  const quality = classifyEvidenceQuality({
+    chunkType: "indicator",
+    text: "设施名称：综合通信机房。服务规模：20 /1000—5000户。",
+  });
+
+  assert.ok(quality.warnings.includes("scrambled_numeric_unit"));
+  assert.ok(quality.categories.includes("numeric_value_corruption"));
+  assert.equal(quality.blocksAnswer, true);
+  assert.equal(quality.displayPolicy, "source_page_required");
+});
+
+test("glued bed-count and building-area values are treated as numeric corruption", () => {
+  const quality = classifyEvidenceQuality({
+    chunkType: "indicator",
+    text: "设施名称：机构养老设施。规模性指标.一般规模.建筑面积平方米/处( )：床50-1002000-4000。",
+  });
+
+  assert.ok(quality.warnings.includes("scrambled_numeric_unit"));
+  assert.ok(quality.categories.includes("numeric_value_corruption"));
+  assert.equal(quality.blocksAnswer, true);
+});
+
 test("low fidelity citations replace numeric conclusion with source-page fallback", () => {
   const conclusion = "托幼服务规模为0万.9人6，服务范围为岁6以下。";
   const safe = applyLowFidelityFallback(conclusion, [

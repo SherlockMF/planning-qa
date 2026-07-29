@@ -100,7 +100,9 @@ export function DocumentTable({
       const response = await fetch(withUser(`/api/documents/${id}/process`), { method: "POST" });
       const body = await response.json().catch(() => ({}));
       let notice = body.error ?? "重新解析失败";
-      if (response.ok && body.auditArtifact?.status === "created") {
+      if (!response.ok && body.detail) {
+        notice = `${body.error ?? "重新解析失败"}：${String(body.detail).slice(0, 180)}`;
+      } else if (response.ok && body.auditArtifact?.status === "created") {
         notice = `解析入库成功；审核快照已生成（${auditModeLabel(body.auditArtifact.autoReviewMode)}）。`;
       } else if (response.ok && body.auditArtifact?.status === "failed") {
         notice = "解析入库成功；审核快照生成失败，可继续检索并稍后重试审核。";

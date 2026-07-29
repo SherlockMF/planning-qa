@@ -51,6 +51,22 @@ export function classifyEvidenceQuality(input: {
   const numberedListWithIdeographicComma = /\d+\.\s*、/.test(text);
   const brokenPercent = /[、，,]\s*[、，,]\s*\d+%/.test(text);
   const scrambledTenThousandPeople = /\d+万\.\d+人\d+/.test(text);
+  const suspiciousServiceScaleSlash =
+    /服务规模[:：]?[^\n]{0,40}\d+\s*\/\s*\d{3,}[^\n]{0,20}(户|人|处|个|㎡|平方米)?/.test(text) ||
+    /服务规模[:：]?[^\n]{0,40}\d{3,}[^\n]{0,20}\/\s*\d+/.test(text) ||
+    /用地面积[^\n]{0,30}\d+\s*\/\s*户\s*\d{3,}/.test(text) ||
+    /\d+\s*\/\s*户\s*\d{3,}[-—～~]\d{3,}/.test(text);
+  // 床位数与建筑面积被粘成「床50-1002000-4000」一类串列脏值。
+  // 按行检查，避免把「50-100床\n2000-4000」这种合法分行误判为粘连。
+  const gluedBedAndArea = text
+    .split(/\n+/)
+    .some((line) => {
+      const compact = line.replace(/\s+/g, "");
+      return (
+        /床\s*\d+\s*[-—～~]\s*\d{2,4}\d{3,}/.test(compact) ||
+        /^\d{2,4}[-—～~]\d{2,4}\d{3,5}[-—～~]\d{3,5}/.test(compact)
+      );
+    });
   const paragraphTableGlue =
     /[一-龥]\d{1,3}\s+\d?[一-龥]/.test(text) ||
     /含\s*\d+[一-龥]/.test(text) ||
@@ -58,6 +74,12 @@ export function classifyEvidenceQuality(input: {
 
   const categories: EvidenceIssueCategory[] = [];
   if (scrambledTenThousandPeople) {
+    categories.push("numeric_value_corruption");
+  }
+  if (suspiciousServiceScaleSlash) {
+    categories.push("numeric_value_corruption");
+  }
+  if (gluedBedAndArea) {
     categories.push("numeric_value_corruption");
   }
   if (paragraphTableGlue) {

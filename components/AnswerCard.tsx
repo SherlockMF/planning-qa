@@ -25,6 +25,15 @@ function parseSections(answer: string): { title: string; body: string }[] {
   return sections;
 }
 
+function citationsNeedSourceReview(response: ChatResponse): boolean {
+  return response.citations.some(
+    (citation) =>
+      citation.lowFidelity ||
+      citation.excerptDisplayPolicy === "source_page_required" ||
+      (citation.extractionWarnings?.length ?? 0) > 0
+  );
+}
+
 export function AnswerCard({
   response,
   selectedCitationId,
@@ -103,7 +112,8 @@ export function AnswerCard({
             </p>
           </div>
 
-          {response.answerDiagnostics?.wasReplaced && (
+          {response.answerDiagnostics?.wasReplaced &&
+            !citationsNeedSourceReview(response) && (
             <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
               <div className="mb-1 text-xs font-semibold text-slate-700">
                 自动提炼草稿（未作为确定结论输出）
