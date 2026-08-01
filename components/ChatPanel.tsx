@@ -378,7 +378,7 @@ export function ChatPanel() {
                     ask(ex);
                   }}
                   disabled={loading}
-                  className="rounded-full border bg-muted/40 px-3 py-1 text-xs text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground disabled:opacity-50"
+                  className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground shadow-sm transition-colors hover:border-primary-border hover:bg-primary-surface hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50"
                 >
                   {ex}
                 </button>

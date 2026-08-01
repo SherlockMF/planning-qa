@@ -191,7 +191,7 @@ export function CitationSourcePanel({
 
 function FallbackNotice() {
   return (
-    <p className="mb-2 text-xs text-warning">
+    <p className="mb-2 rounded-md border border-warning-border bg-warning-surface px-2.5 py-1.5 text-xs leading-relaxed text-warning-foreground">
       原始页面暂不可用（该文档可能无原始 PDF），已回退到提取片段。
     </p>
   );

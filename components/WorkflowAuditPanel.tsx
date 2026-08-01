@@ -404,7 +404,7 @@ export function WorkflowAuditPanel({
         <EmptyAudit />
       ) : (
         <div className="grid gap-4 xl:grid-cols-[minmax(0,1.16fr)_minmax(360px,.84fr)]">
-          <section className="overflow-hidden rounded-xl border bg-[#fbfcfd] shadow-sm">
+          <section className="overflow-hidden rounded-xl border border-border bg-muted/40 shadow-sm">
             <TraceSummary
               trace={selectedTrace}
               ingestionCount={displayedIngestion.length}
@@ -582,7 +582,7 @@ function PhaseCard({
   return (
     <article
       className={cn(
-        "overflow-hidden rounded-xl border bg-card shadow-[0_10px_30px_rgba(15,23,42,.04)]",
+        "overflow-hidden rounded-xl border bg-card shadow-sm",
         style.shell,
         group.requiresAttention && "ring-2 ring-warning-border"
       )}
@@ -704,7 +704,8 @@ function StepRow({
       onClick={onSelect}
       className={cn(
         "group flex w-full gap-3 bg-card/75 px-4 py-4 text-left transition-colors hover:bg-card md:px-5",
-        selected && "bg-info-surface/80 shadow-[inset_3px_0_0_#0ea5e9] hover:bg-info-surface"
+        selected &&
+          "bg-info-surface/80 shadow-[inset_3px_0_0_hsl(var(--info))] hover:bg-info-surface"
       )}
     >
       <span className="relative mt-0.5 flex h-7 w-7 shrink-0 justify-center">
@@ -735,7 +736,7 @@ function StepRow({
             {workflowStatusLabel(item.step.status)}
           </span>
           {item.step.source === "reconstructed" && (
-            <span className="rounded-full bg-warning-surface px-2 py-0.5 text-[10px] font-semibold text-warning">
+                <span className="rounded-full bg-warning-surface px-2 py-0.5 text-[10px] font-semibold text-warning-foreground">
               历史回溯
             </span>
           )}
