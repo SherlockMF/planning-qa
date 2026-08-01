@@ -8,7 +8,7 @@ export default function EvaluationPage() {
     // 用 100vw-1rem 而非 100vw，预留滚动条宽度，避免出现页面级横向滚动条。
     <div className="mx-[calc(50%-50vw+0.5rem)] w-[calc(100vw-1rem)] space-y-6 px-4 sm:px-6 lg:px-8">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-800 md:text-2xl">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
           评测
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

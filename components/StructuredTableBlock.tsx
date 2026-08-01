@@ -63,7 +63,7 @@ export function StructuredTableBlock({
     <div className={cn("space-y-1.5", className)}>
       {/* 表名 + 控件 */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-1.5 text-sm font-medium text-slate-700">
+        <div className="flex items-center gap-1.5 text-sm font-medium text-foreground">
           <Table2 className="h-4 w-4 text-primary" />
           {tableTitle}
         </div>
@@ -89,11 +89,11 @@ export function StructuredTableBlock({
       <div className="overflow-auto rounded-md border">
         <table className="w-full border-collapse text-xs">
           <thead>
-            <tr className="bg-sky-100/70">
+            <tr className="bg-info-surface">
               {headers.map((h, j) => (
                 <th
                   key={j}
-                  className="whitespace-nowrap border border-sky-200 px-2 py-1 text-left font-medium text-slate-700"
+                  className="whitespace-nowrap border border-info-border px-2 py-1 text-left font-medium text-foreground"
                 >
                   {h}
                 </th>
@@ -102,11 +102,11 @@ export function StructuredTableBlock({
           </thead>
           <tbody>
             {rows.map((r, i) => (
-              <tr key={r.rowId ?? i} className="even:bg-sky-50/40">
+              <tr key={r.rowId ?? i} className="even:bg-info-surface/50">
                 {headers.map((h, j) => (
                   <td
                     key={j}
-                    className="border border-sky-200 px-2 py-1 align-top text-slate-700"
+                    className="border border-info-border px-2 py-1 align-top text-foreground"
                   >
                     {r.cells[h] ?? ""}
                   </td>

@@ -196,7 +196,7 @@ export function AuditReviewWorkbench({
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <Link href="/documents" className="mb-2 inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"><ArrowLeft className="h-3.5 w-3.5" />返回文档管理</Link>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-800 md:text-2xl">自动审核优先 · 人工抽查工作台</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">自动审核优先 · 人工抽查工作台</h1>
           <p className="mt-1 text-sm text-muted-foreground">{manifest.documentFileName} · 快照 {formatTime(manifest.createdAt)}</p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -222,12 +222,12 @@ export function AuditReviewWorkbench({
       {message && <Alert variant={message.includes("失败") || message.includes("不能") ? "destructive" : "info"}><AlertDescription>{message}</AlertDescription></Alert>}
 
       <div className="grid min-h-[720px] overflow-hidden rounded-lg border bg-card shadow-sm lg:grid-cols-[290px_minmax(0,1fr)]">
-        <aside className="border-b bg-slate-50/80 lg:border-b-0 lg:border-r">
+        <aside className="border-b bg-muted/60 lg:border-b-0 lg:border-r">
           <div className="space-y-3 border-b p-3">
             <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="搜索标题、类型、页码、表格、备注" />
-            <div className="grid grid-cols-4 gap-1 rounded-md bg-slate-200/70 p-1">
+            <div className="grid grid-cols-4 gap-1 rounded-md bg-muted p-1">
               {FILTERS.map((entry) => (
-                <button key={entry.value} onClick={() => { setFilter(entry.value); setActiveId(""); }} className={`rounded px-1 py-1.5 text-xs font-medium transition ${filter === entry.value ? "bg-card text-primary shadow-sm" : "text-slate-600 hover:text-slate-900"}`}>
+                <button key={entry.value} onClick={() => { setFilter(entry.value); setActiveId(""); }} className={`rounded px-1 py-1.5 text-xs font-medium transition ${filter === entry.value ? "bg-card text-primary shadow-sm" : "text-muted-foreground hover:text-foreground"}`}>
                   {entry.label}
                 </button>
               ))}
@@ -241,9 +241,9 @@ export function AuditReviewWorkbench({
                 <button key={entry.item.auditItemId} onClick={() => choose(entry.item.auditItemId)} className={`mb-1 w-full rounded-md border p-3 text-left transition ${selected ? "border-primary/40 bg-primary/5 shadow-sm" : "border-transparent hover:border-border hover:bg-card"}`}>
                   <div className="flex items-center justify-between gap-2">
                     <RiskBadge entry={entry} />
-                    <span className={`text-[11px] ${reviewed ? "text-emerald-700" : "text-muted-foreground"}`}>{reviewed ? "已人工核对" : "未审核"}</span>
+                    <span className={`text-[11px] ${reviewed ? "text-success" : "text-muted-foreground"}`}>{reviewed ? "已人工核对" : "未审核"}</span>
                   </div>
-                  <p className="mt-2 line-clamp-2 text-sm font-medium text-slate-800">{entry.item.title || "未命名审核项"}</p>
+                  <p className="mt-2 line-clamp-2 text-sm font-medium text-foreground">{entry.item.title || "未命名审核项"}</p>
                   <p className="mt-1 text-[11px] text-muted-foreground">{sourceLabel(entry)}</p>
                 </button>
               );
@@ -251,23 +251,23 @@ export function AuditReviewWorkbench({
           </div>
         </aside>
 
-        <main className="min-w-0 bg-slate-100/40 p-3 md:p-5">
+        <main className="min-w-0 bg-muted/40 p-3 md:p-5">
           {active ? (
             <div className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">{active.item.objectType}</p>
-                  <h2 className="mt-1 text-lg font-semibold text-slate-900">{active.item.title || "未命名审核项"}</h2>
+                  <h2 className="mt-1 text-lg font-semibold text-foreground">{active.item.title || "未命名审核项"}</h2>
                 </div>
                 <span className="text-xs text-muted-foreground">{sourceLabel(active)}</span>
               </div>
 
               <div className="grid gap-4 xl:grid-cols-2">
-                <section className="overflow-hidden rounded-lg border bg-slate-900 shadow-sm">
-                  <div className="flex items-center justify-between border-b border-white/10 px-4 py-2 text-xs text-slate-200"><span className="flex items-center gap-1.5"><FileSearch className="h-3.5 w-3.5" />来源原页</span><span>第 {active.item.source.pageStart ?? "?"} 页</span></div>
-                  <div className="flex min-h-[420px] items-center justify-center bg-slate-800 p-2">
+                <section className="overflow-hidden rounded-lg border bg-inverse shadow-sm">
+                  <div className="flex items-center justify-between border-b border-inverse-border px-4 py-2 text-xs text-inverse-foreground"><span className="flex items-center gap-1.5"><FileSearch className="h-3.5 w-3.5" />来源原页</span><span>第 {active.item.source.pageStart ?? "?"} 页</span></div>
+                  <div className="flex min-h-[420px] items-center justify-center bg-inverse-muted p-2">
                     {sourceFailed || !active.item.source.pageStart ? (
-                      <div className="max-w-xs text-center text-sm text-amber-200"><ShieldAlert className="mx-auto mb-2 h-7 w-7" />原页加载失败，此项需人工核对并保留在未审核队列。</div>
+                      <div className="max-w-xs text-center text-sm text-warning-surface"><ShieldAlert className="mx-auto mb-2 h-7 w-7" />原页加载失败，此项需人工核对并保留在未审核队列。</div>
                     ) : (
                       <div className="relative h-[560px] w-full">
                         <Image
@@ -285,12 +285,12 @@ export function AuditReviewWorkbench({
                 </section>
 
                 <section className="rounded-lg border bg-card shadow-sm">
-                  <div className="border-b px-4 py-2 text-xs font-medium text-slate-600">当前解析结果</div>
+                  <div className="border-b px-4 py-2 text-xs font-medium text-muted-foreground">当前解析结果</div>
                   <div className="space-y-4 p-4">
-                    <pre className="max-h-[300px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-slate-950 p-4 text-xs leading-6 text-slate-100">{active.item.content}</pre>
+                    <pre className="max-h-[300px] overflow-auto whitespace-pre-wrap break-words rounded-md bg-inverse p-4 text-xs leading-6 text-inverse-foreground">{active.item.content}</pre>
                     {active.item.tableContext && (
                       <div className="space-y-2 text-xs">
-                        <p className="font-medium text-slate-700">表格上下文</p>
+                        <p className="font-medium text-foreground">表格上下文</p>
                         <TableRow label="表头" cells={active.item.tableContext.headers} />
                         {active.item.tableContext.previousRow && <TableRow label="上一行" cells={active.item.tableContext.previousRow} />}
                         <TableRow label="目标行" cells={active.item.tableContext.targetRow} emphasis />
@@ -356,23 +356,23 @@ function SummaryBoard({ summary, autoRun, round }: { summary: ReturnType<typeof 
 }
 
 function SummaryCell({ eyebrow, value, detail }: { eyebrow: string; value: string; detail: string }) {
-  return <div className="border-t p-4 first:border-t-0 md:border-l md:border-t-0 md:first:border-l-0"><p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{eyebrow}</p><p className="mt-2 text-base font-semibold text-slate-900">{value}</p><p className="mt-1 text-xs text-muted-foreground">{detail}</p></div>;
+  return <div className="border-t p-4 first:border-t-0 md:border-l md:border-t-0 md:first:border-l-0"><p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">{eyebrow}</p><p className="mt-2 text-base font-semibold text-foreground">{value}</p><p className="mt-1 text-xs text-muted-foreground">{detail}</p></div>;
 }
 
 function Conclusion({ label, value }: { label: string; value: string }) {
-  return <div className="p-3"><p className="text-[10px] font-medium text-muted-foreground">{label}</p><p className="mt-1 text-xs font-semibold text-slate-800">{value}</p></div>;
+  return <div className="p-3"><p className="text-[10px] font-medium text-muted-foreground">{label}</p><p className="mt-1 text-xs font-semibold text-foreground">{value}</p></div>;
 }
 
 function AutomaticEvidence({ entry, autoRun }: { entry: ReviewViewItem; autoRun: AutoReviewRun }) {
   const automatic = entry.automatic;
   return (
-    <section className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
-      <div className="flex items-center justify-between gap-2"><h3 className="font-semibold text-amber-950">自动审核疑似问题</h3><RiskBadge entry={entry} /></div>
-      <p className="mt-1 text-xs text-amber-800">{modeLabel(automatic?.mode ?? autoRun.mode)} · 风险分仅用于抽查排序</p>
-      <p className="mt-3 text-sm leading-6 text-slate-800">{automatic?.summary ?? "自动审核未完整完成，需人工核对。"}</p>
+    <section className="rounded-lg border border-warning-border bg-warning-surface/60 p-4">
+      <div className="flex items-center justify-between gap-2"><h3 className="font-semibold text-warning-foreground">自动审核疑似问题</h3><RiskBadge entry={entry} /></div>
+      <p className="mt-1 text-xs text-warning-foreground">{modeLabel(automatic?.mode ?? autoRun.mode)} · 风险分仅用于抽查排序</p>
+      <p className="mt-3 text-sm leading-6 text-foreground">{automatic?.summary ?? "自动审核未完整完成，需人工核对。"}</p>
       <div className="mt-3 flex flex-wrap gap-1.5">{automatic?.issueTypes.map((type) => <Badge key={type} variant="warning">{ISSUE_LABELS[type]}</Badge>)}</div>
-      <div className="mt-4 space-y-2">{automatic?.ruleSignals.map((signal) => <div key={signal.ruleId} className="rounded-md border border-amber-200 bg-card p-3 text-xs"><p className="font-medium text-slate-800">{signal.summary}</p><p className="mt-1 leading-5 text-muted-foreground">{signal.evidence}</p></div>)}</div>
-      {automatic?.modelAssessment?.sourceEvidence && <p className="mt-3 rounded-md bg-slate-900 p-3 text-xs leading-5 text-slate-100">模型来源证据：{automatic.modelAssessment.sourceEvidence}</p>}
+      <div className="mt-4 space-y-2">{automatic?.ruleSignals.map((signal) => <div key={signal.ruleId} className="rounded-md border border-warning-border bg-card p-3 text-xs"><p className="font-medium text-foreground">{signal.summary}</p><p className="mt-1 leading-5 text-muted-foreground">{signal.evidence}</p></div>)}</div>
+      {automatic?.modelAssessment?.sourceEvidence && <p className="mt-3 rounded-md bg-inverse p-3 text-xs leading-5 text-inverse-foreground">模型来源证据：{automatic.modelAssessment.sourceEvidence}</p>}
       <p className="mt-3 text-[11px] text-muted-foreground">{sourceLabel(entry)}</p>
     </section>
   );
@@ -380,18 +380,18 @@ function AutomaticEvidence({ entry, autoRun }: { entry: ReviewViewItem; autoRun:
 
 function HumanDecision({ item, readOnly, onChange }: { item?: HumanReviewItem; readOnly: boolean; onChange: (patch: Partial<HumanReviewItem>) => void }) {
   return (
-    <section className="rounded-lg border border-sky-200 bg-sky-50/40 p-4">
-      <div className="flex items-center justify-between"><h3 className="font-semibold text-sky-950">人工审核结论</h3>{readOnly && <Badge variant="secondary">已提交 · 只读</Badge>}</div>
+    <section className="rounded-lg border border-info-border bg-info-surface/50 p-4">
+      <div className="flex items-center justify-between"><h3 className="font-semibold text-info-foreground">人工审核结论</h3>{readOnly && <Badge variant="secondary">已提交 · 只读</Badge>}</div>
       <div className="mt-4 grid grid-cols-2 gap-2">
         <Button type="button" variant={item?.status === "passed" ? "default" : "outline"} disabled={readOnly} onClick={() => onChange({ status: "passed", issueTypes: [], comment: item?.comment ?? "" })}><CheckCircle2 />通过</Button>
         <Button type="button" variant={item?.status === "issue" ? "destructive" : "outline"} disabled={readOnly} onClick={() => onChange({ status: "issue", issueTypes: item?.issueTypes.length ? item.issueTypes : ["other"] })}><AlertTriangle />确认问题</Button>
       </div>
-      <label className="mt-4 grid gap-1.5 text-xs font-medium text-slate-700">问题类型
+      <label className="mt-4 grid gap-1.5 text-xs font-medium text-foreground">问题类型
         <Select disabled={readOnly || item?.status !== "issue"} value={item?.issueTypes[0] ?? "other"} onChange={(event) => onChange({ status: "issue", issueTypes: [event.target.value as AutoIssueType] })}>
           {Object.entries(ISSUE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
         </Select>
       </label>
-      <label className="mt-4 grid gap-1.5 text-xs font-medium text-slate-700">人工备注
+      <label className="mt-4 grid gap-1.5 text-xs font-medium text-foreground">人工备注
         <Textarea disabled={readOnly} value={item?.comment ?? ""} placeholder={item?.status === "issue" ? "问题项必须填写核对说明" : "可补充核对依据"} onChange={(event) => onChange({ comment: event.target.value })} />
       </label>
       {readOnly && <div className="mt-4 rounded-md border bg-card p-3 text-xs leading-5"><p><strong>类型：</strong>{item?.issueTypes.map((type) => ISSUE_LABELS[type]).join("、") || "无"}</p><p><strong>备注：</strong>{item?.comment || "无"}</p><p><strong>核对时间：</strong>{formatTime(item?.reviewedAt)}</p></div>}
@@ -407,7 +407,7 @@ function RiskBadge({ entry }: { entry: ReviewViewItem }) {
 }
 
 function TableRow({ label, cells, emphasis = false }: { label: string; cells: string[]; emphasis?: boolean }) {
-  return <div className={`rounded-md border p-2 ${emphasis ? "border-primary/30 bg-primary/5" : "bg-slate-50"}`}><span className="font-medium text-muted-foreground">{label}</span><div className="mt-1 flex flex-wrap gap-1">{cells.map((cell, index) => <span key={`${index}-${cell}`} className="rounded border bg-card px-2 py-1">{cell || "空"}</span>)}</div></div>;
+  return <div className={`rounded-md border p-2 ${emphasis ? "border-primary/30 bg-primary/5" : "bg-muted/50"}`}><span className="font-medium text-muted-foreground">{label}</span><div className="mt-1 flex flex-wrap gap-1">{cells.map((cell, index) => <span key={`${index}-${cell}`} className="rounded border bg-card px-2 py-1">{cell || "空"}</span>)}</div></div>;
 }
 
 function matchesSearch(entry: ReviewViewItem, humanItems: HumanReviewItem[], query: string): boolean {

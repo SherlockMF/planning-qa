@@ -17,7 +17,7 @@ export function AnswerBlocks({ blocks }: { blocks: AnswerBlock[] }) {
           return (
             <p
               key={i}
-              className="whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800"
+              className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground"
             >
               {block.content}
             </p>

@@ -57,7 +57,7 @@ export function EvaluationTable({ items }: { items: EvaluationItem[] }) {
         <TableBody>
           {items.map((it) => (
             <TableRow key={it.id}>
-              <TableCell className="align-top text-sm text-slate-800">
+              <TableCell className="align-top text-sm text-foreground">
                 {it.question}
                 <p className="mt-1 text-xs text-muted-foreground">
                   标准：{it.standardAnswer}
@@ -108,7 +108,7 @@ export function EvaluationTable({ items }: { items: EvaluationItem[] }) {
                         </DialogTitle>
                       </DialogHeader>
                       <div className="max-h-[60vh] overflow-auto rounded-md bg-muted/40 p-4">
-                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-800">
+                        <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
                           {it.systemAnswer}
                         </pre>
                       </div>
@@ -154,7 +154,7 @@ export function EvaluationStatsPanel({ stats }: { stats: EvaluationStats }) {
       </div>
 
       <div className="rounded-lg border bg-card p-4">
-        <div className="mb-2 text-sm font-medium text-slate-700">
+        <div className="mb-2 text-sm font-medium text-foreground">
           主要错误原因汇总
         </div>
         {errors.length === 0 ? (
@@ -184,7 +184,7 @@ export function QualityMetricsPanel({
     <div className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
-          <h2 className="text-base font-semibold text-slate-800">
+          <h2 className="text-base font-semibold text-foreground">
             AI 产品质量控制
           </h2>
           <p className="mt-1 text-xs text-muted-foreground">
@@ -206,7 +206,7 @@ export function QualityMetricsPanel({
           <div key={card.id} className="rounded-lg border bg-card p-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <div className="text-sm font-medium text-slate-700">
+                <div className="text-sm font-medium text-foreground">
                   {card.label}
                 </div>
                 <div className="mt-2 text-2xl font-semibold tabular-nums text-primary">
@@ -227,7 +227,7 @@ export function QualityMetricsPanel({
       </div>
 
       <div className="rounded-lg border bg-card p-4">
-        <div className="mb-2 text-sm font-medium text-slate-700">
+        <div className="mb-2 text-sm font-medium text-foreground">
           主要失败原因
         </div>
         {summary.topErrors.length === 0 ? (

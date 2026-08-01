@@ -4,7 +4,7 @@ export default function HomePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-800 md:text-2xl">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
           DesignBase AI 项目组知识工作台
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">

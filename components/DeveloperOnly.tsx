@@ -14,11 +14,11 @@ export function DeveloperOnly({ children }: { children: ReactNode }) {
   return (
     <Card className="border-dashed">
       <CardContent className="flex flex-col gap-3 py-10 text-center">
-        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-amber-50 text-amber-700">
+        <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-warning-surface text-warning">
           <ShieldAlert className="h-5 w-5" />
         </div>
         <div>
-          <h2 className="text-base font-semibold text-slate-800">
+          <h2 className="text-base font-semibold text-foreground">
             当前账号不可访问
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">

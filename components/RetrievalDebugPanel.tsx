@@ -40,7 +40,7 @@ function ChunkResultRow({
   return (
     <div className="rounded-lg border bg-card p-3">
       <div className="mb-2 flex items-start justify-between gap-2">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
           <span className="flex h-5 w-5 items-center justify-center rounded-full bg-primary text-[11px] text-primary-foreground">
             {rank}
           </span>
@@ -60,7 +60,7 @@ function ChunkResultRow({
         </Badge>
       </div>
 
-      <p className="mb-2 line-clamp-3 text-xs leading-relaxed text-slate-600">
+      <p className="mb-2 line-clamp-3 text-xs leading-relaxed text-muted-foreground">
         {c.content}
       </p>
 
@@ -81,7 +81,7 @@ function ChunkResultRow({
           {r.matchedKeywords.slice(0, 12).map((k) => (
             <span
               key={k}
-              className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] text-emerald-700"
+              className="rounded bg-success-surface px-1.5 py-0.5 text-[10px] text-success"
             >
               {k}
             </span>
@@ -157,7 +157,7 @@ export function RetrievalDebugPanel() {
                     {data.permissionSummary.riskLabel}
                   </Badge>
                 </div>
-                <p className="text-sm leading-relaxed text-slate-700">
+                <p className="text-sm leading-relaxed text-foreground">
                   {data.permissionSummary.explanation}
                 </p>
                 <div className="grid gap-3 md:grid-cols-2">
@@ -277,7 +277,7 @@ function DebugDocList({
 }) {
   return (
     <div className="rounded-md border bg-muted/30 p-3">
-      <div className="mb-2 text-xs font-medium text-slate-700">{title}</div>
+      <div className="mb-2 text-xs font-medium text-foreground">{title}</div>
       {docs.length === 0 ? (
         <p className="text-xs text-muted-foreground">无</p>
       ) : (

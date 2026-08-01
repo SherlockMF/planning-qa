@@ -66,12 +66,12 @@ export function AnswerCard({
         <AlertDescription className="space-y-3 pt-1">
           <p>{get("无法确定")}</p>
           <div>
-            <p className="font-medium text-amber-900">原因</p>
-            <p className="text-amber-800">{get("原因")}</p>
+            <p className="font-medium text-warning-foreground">原因</p>
+            <p className="text-warning-foreground">{get("原因")}</p>
           </div>
           <div>
-            <p className="font-medium text-amber-900">建议</p>
-            <p className="text-amber-800">{get("建议")}</p>
+            <p className="font-medium text-warning-foreground">建议</p>
+            <p className="text-warning-foreground">{get("建议")}</p>
           </div>
         </AlertDescription>
       </Alert>
@@ -96,29 +96,29 @@ export function AnswerCard({
             {hasBlocks ? (
               <AnswerBlocks blocks={response.answerBlocks!} />
             ) : (
-              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-slate-800">
+              <p className="whitespace-pre-wrap text-[15px] leading-relaxed text-foreground">
                 {get("结论")}
               </p>
             )}
           </div>
 
-          <div className="rounded-md border border-amber-200 bg-amber-50/70 p-3">
-            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-amber-800">
+          <div className="rounded-md border border-warning-border bg-warning-surface/70 p-3">
+            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-warning-foreground">
               <Info className="h-3.5 w-3.5" />
               注意
             </div>
-            <p className="text-xs leading-relaxed text-amber-900">
+            <p className="text-xs leading-relaxed text-warning-foreground">
               {get("注意")}
             </p>
           </div>
 
           {response.answerDiagnostics?.wasReplaced &&
             !citationsNeedSourceReview(response) && (
-            <div className="rounded-md border border-slate-200 bg-slate-50 p-3">
-              <div className="mb-1 text-xs font-semibold text-slate-700">
+            <div className="rounded-md border border-border bg-muted/50 p-3">
+              <div className="mb-1 text-xs font-semibold text-foreground">
                 自动提炼草稿（未作为确定结论输出）
               </div>
-              <p className="whitespace-pre-wrap text-xs leading-relaxed text-slate-700">
+              <p className="whitespace-pre-wrap text-xs leading-relaxed text-foreground">
                 {response.answerDiagnostics.sanitizedConclusion ||
                   response.answerDiagnostics.rawConclusion}
               </p>
@@ -135,7 +135,7 @@ export function AnswerCard({
 
       {response.citations.length > 0 && (
         <div>
-          <div className="mb-2 text-sm font-semibold text-slate-700">
+          <div className="mb-2 text-sm font-semibold text-foreground">
             依据（{response.citations.length}）
           </div>
           <div className="space-y-3">

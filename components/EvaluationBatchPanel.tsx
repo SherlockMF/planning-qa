@@ -264,7 +264,7 @@ export function EvaluationBatchPanel({
     <div className="space-y-3 rounded-lg border bg-card p-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h2 className="text-base font-semibold text-slate-800">评测批次</h2>
+          <h2 className="text-base font-semibold text-foreground">评测批次</h2>
           <p className="mt-1 text-xs text-muted-foreground">
             每次运行固化题库快照与索引指纹；长跑可轮询、可取消；仅指纹一致时才能做回归对比。
           </p>
@@ -337,7 +337,7 @@ export function EvaluationBatchPanel({
       )}
 
       <div className="space-y-2">
-        <div className="text-sm font-medium text-slate-700">历史批次</div>
+        <div className="text-sm font-medium text-foreground">历史批次</div>
         <div className="max-h-40 overflow-auto rounded border">
           <table className="w-full text-left text-xs">
             <thead className="sticky top-0 bg-muted/70">
@@ -393,7 +393,7 @@ export function EvaluationBatchPanel({
           {gate && (
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium text-slate-700">发布门槛</span>
+                <span className="font-medium text-foreground">发布门槛</span>
                 <Badge
                   variant={
                     gate.status === "passed"
@@ -419,7 +419,7 @@ export function EvaluationBatchPanel({
 
           {clusters.length > 0 && (
             <div className="space-y-2">
-              <div className="font-medium text-slate-700">失败簇</div>
+              <div className="font-medium text-foreground">失败簇</div>
               {clusters.map((cluster) => (
                 <div
                   key={cluster.id}
@@ -519,12 +519,12 @@ export function EvaluationBatchPanel({
                 不变 {compare.unchanged.length}
               </div>
               {compare.fixed.length > 0 && (
-                <div className="text-emerald-700">
+                <div className="text-success">
                   fixed: {compare.fixed.join(", ")}
                 </div>
               )}
               {compare.regressed.length > 0 && (
-                <div className="text-red-700">
+                <div className="text-destructive">
                   regressed: {compare.regressed.join(", ")}
                 </div>
               )}
@@ -536,7 +536,7 @@ export function EvaluationBatchPanel({
               )}
             </div>
           ) : (
-            <div className="space-y-1 text-amber-800">
+            <div className="space-y-1 text-warning-foreground">
               <div>不可比：</div>
               {compare.reasons.map((reason) => (
                 <div key={reason}>· {reason}</div>
@@ -547,7 +547,7 @@ export function EvaluationBatchPanel({
       )}
 
       {error && (
-        <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <div className="rounded border border-destructive-border bg-destructive-surface px-3 py-2 text-xs text-destructive">
           {error}
         </div>
       )}

@@ -58,13 +58,13 @@ type StreamPayload = {
 };
 
 const STATUS_STYLES: Record<WorkflowStepStatus, string> = {
-  completed: "border-emerald-500 bg-emerald-500 text-white",
+  completed: "border-success bg-success text-primary-foreground",
   running:
-    "border-sky-500 bg-sky-500 text-white shadow-[0_0_0_4px_rgba(14,165,233,.14)]",
-  blocked: "border-amber-500 bg-amber-500 text-white",
-  failed: "border-red-500 bg-red-500 text-white",
-  skipped: "border-slate-300 bg-slate-100 text-slate-400",
-  pending: "border-slate-300 bg-white text-slate-400",
+    "border-info bg-info text-primary-foreground shadow-[0_0_0_4px_hsl(var(--info)/0.16)]",
+  blocked: "border-warning bg-warning text-primary-foreground",
+  failed: "border-destructive bg-destructive text-destructive-foreground",
+  skipped: "border-border bg-muted text-muted-foreground",
+  pending: "border-border bg-card text-muted-foreground",
 };
 
 const PHASE_STYLES: Record<
@@ -72,28 +72,28 @@ const PHASE_STYLES: Record<
   { shell: string; eyebrow: string; icon: string; number: string }
 > = {
   document: {
-    shell: "border-emerald-200/80 bg-emerald-50/35",
-    eyebrow: "text-emerald-700",
-    icon: "border-emerald-200 bg-emerald-100 text-emerald-700",
-    number: "text-emerald-700",
+    shell: "border-success-border bg-success-surface/50",
+    eyebrow: "text-success",
+    icon: "border-success-border bg-success-surface text-success",
+    number: "text-success",
   },
   question: {
-    shell: "border-amber-200/80 bg-amber-50/35",
-    eyebrow: "text-amber-700",
-    icon: "border-amber-200 bg-amber-100 text-amber-700",
-    number: "text-amber-700",
+    shell: "border-warning-border bg-warning-surface/50",
+    eyebrow: "text-warning",
+    icon: "border-warning-border bg-warning-surface text-warning",
+    number: "text-warning",
   },
   evidence: {
-    shell: "border-sky-200/80 bg-sky-50/35",
-    eyebrow: "text-sky-700",
-    icon: "border-sky-200 bg-sky-100 text-sky-700",
-    number: "text-sky-700",
+    shell: "border-info-border bg-info-surface/50",
+    eyebrow: "text-info",
+    icon: "border-info-border bg-info-surface text-info",
+    number: "text-info",
   },
   answer: {
-    shell: "border-indigo-200/80 bg-indigo-50/35",
-    eyebrow: "text-indigo-700",
-    icon: "border-indigo-200 bg-indigo-100 text-indigo-700",
-    number: "text-indigo-700",
+    shell: "border-primary-border bg-primary-surface/60",
+    eyebrow: "text-primary",
+    icon: "border-primary-border bg-primary-surface text-primary",
+    number: "text-primary",
   },
 };
 
@@ -317,25 +317,25 @@ export function WorkflowAuditPanel({
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-hidden border-slate-800 bg-slate-950 text-slate-100 shadow-sm">
+      <Card className="overflow-hidden border-inverse-border bg-inverse text-inverse-foreground shadow-sm">
         <CardContent className="grid gap-4 p-5 lg:grid-cols-[1fr_240px_auto] lg:items-end">
           <div className="space-y-2">
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-sky-300">
+            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-inverse-foreground/70">
               <GitBranch className="h-3.5 w-3.5" /> 实时工作流审计
             </div>
             <Textarea
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
-              className="min-h-[78px] resize-none border-slate-700 bg-slate-900 text-slate-100 placeholder:text-slate-500"
-              placeholder="输入问题，实时查看安全、权限、召回、生成与兜底链路"
+              className="min-h-[78px] resize-none border-inverse-border bg-inverse-muted text-inverse-foreground placeholder:text-inverse-foreground/45 focus-visible:ring-inverse-foreground/30"
+              placeholder="输入问题，实时查看安全、权限、召回、生成与兜底��路"
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs text-slate-400">模拟提问账号</label>
+            <label className="text-xs text-inverse-foreground/70">模拟提问账号</label>
             <Select
               value={simulatedUserId}
               onChange={(event) => setSimulatedUserId(event.target.value)}
-              className="border-slate-700 bg-slate-900 text-slate-100"
+              className="border-inverse-border bg-inverse-muted text-inverse-foreground focus-visible:ring-inverse-foreground/30"
             >
               {KNOWLEDGE_USERS.map((user) => (
                 <option key={user.id} value={user.id}>
@@ -343,14 +343,14 @@ export function WorkflowAuditPanel({
                 </option>
               ))}
             </Select>
-            <p className="text-[11px] leading-relaxed text-slate-500">
+            <p className="text-[11px] leading-relaxed text-inverse-foreground/60">
               执行者始终是当前管理员；这里只改变权限过滤的被模拟身份。
             </p>
           </div>
           <Button
             onClick={runAudit}
             disabled={running || !question.trim()}
-            className="bg-sky-500 text-slate-950 hover:bg-sky-400"
+            className="bg-card text-foreground hover:bg-card/90"
           >
             {running ? (
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -362,9 +362,9 @@ export function WorkflowAuditPanel({
         </CardContent>
       </Card>
 
-      <div className="flex flex-col gap-3 rounded-lg border bg-white p-3 md:flex-row md:items-center">
-        <div className="flex items-center gap-2 text-sm font-medium text-slate-700">
-          <History className="h-4 w-4 text-slate-400" /> 历史回放
+      <div className="flex flex-col gap-3 rounded-lg border bg-card p-3 md:flex-row md:items-center">
+        <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+          <History className="h-4 w-4 text-muted-foreground" /> 历史回放
         </div>
         <Select
           value={selectedTrace?.id ?? ""}
@@ -395,7 +395,7 @@ export function WorkflowAuditPanel({
       </div>
 
       {error && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-md border border-destructive-border bg-destructive-surface px-4 py-3 text-sm text-destructive">
           {error}
         </div>
       )}
@@ -449,7 +449,7 @@ function TraceSummary({
     (step) => step.status !== "pending" && step.status !== "running"
   ).length;
   return (
-    <div className="border-b bg-white px-4 py-4 md:px-6">
+    <div className="border-b bg-card px-4 py-4 md:px-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
@@ -465,19 +465,19 @@ function TraceSummary({
               {workflowStatusLabel(trace.status)}
             </Badge>
           </div>
-          <p className="mt-2 max-w-2xl text-sm font-medium text-slate-800">
+          <p className="mt-2 max-w-2xl text-sm font-medium text-foreground">
             {workflowTraceLabel(trace)}
           </p>
         </div>
-        <div className="flex gap-5 text-right text-xs text-slate-500">
+        <div className="flex gap-5 text-right text-xs text-muted-foreground">
           <div>
-            <strong className="block text-lg text-slate-800">
+            <strong className="block text-lg text-foreground">
               {settled}/{trace.steps.length}
             </strong>
             {trace.kind === "query" ? "已处理步骤" : "文档步骤"}
           </div>
           <div>
-            <strong className="block text-lg text-slate-800">
+            <strong className="block text-lg text-foreground">
               {ingestionCount}
             </strong>
             关联文档
@@ -531,7 +531,7 @@ function WorkflowStages({
                 onSelect={onSelectDocument}
               />
             )}
-            <div className="divide-y divide-slate-200/80 border-t border-slate-200/80">
+            <div className="divide-y divide-border border-t border-border">
               {group.items.map((item) => {
                 const selected = itemKey(item) === selectedKey;
                 return (
@@ -542,7 +542,7 @@ function WorkflowStages({
                       onSelect={() => onSelect(item)}
                     />
                     {selected && (
-                      <div className="border-t border-sky-100 bg-sky-50/40 p-3 xl:hidden">
+                      <div className="border-t border-info-border/70 bg-info-surface/50 p-3 xl:hidden">
                         <StepInspector
                           item={item}
                           finalResponse={finalResponse}
@@ -582,16 +582,16 @@ function PhaseCard({
   return (
     <article
       className={cn(
-        "overflow-hidden rounded-xl border bg-white shadow-[0_10px_30px_rgba(15,23,42,.04)]",
+        "overflow-hidden rounded-xl border bg-card shadow-[0_10px_30px_rgba(15,23,42,.04)]",
         style.shell,
-        group.requiresAttention && "ring-2 ring-amber-300/60"
+        group.requiresAttention && "ring-2 ring-warning-border"
       )}
     >
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={open}
-        className="flex w-full items-center gap-3 bg-white/85 px-4 py-4 text-left transition-colors hover:bg-white md:px-5"
+        className="flex w-full items-center gap-3 bg-card/85 px-4 py-4 text-left transition-colors hover:bg-card md:px-5"
         title={
           group.requiresAttention
             ? "该阶段包含失败或拦截步骤，需要保持展开"
@@ -617,10 +617,10 @@ function PhaseCard({
           >
             阶段 {number}
           </span>
-          <span className="mt-0.5 block text-base font-semibold text-slate-900">
+          <span className="mt-0.5 block text-base font-semibold text-foreground">
             {group.phase.title}
           </span>
-          <span className="mt-1 block text-xs leading-relaxed text-slate-500">
+          <span className="mt-1 block text-xs leading-relaxed text-muted-foreground">
             {group.phase.subtitle}
           </span>
         </span>
@@ -632,13 +632,13 @@ function PhaseCard({
               {settled}/{group.items.length}
             </span>
           )}
-          <span className="mt-1 block text-[11px] text-slate-400">已处理</span>
+          <span className="mt-1 block text-[11px] text-muted-foreground">已处理</span>
         </span>
         <ChevronDown
           className={cn(
-            "h-4 w-4 shrink-0 text-slate-400 transition-transform",
+            "h-4 w-4 shrink-0 text-muted-foreground transition-transform",
             open && "rotate-180",
-            group.requiresAttention && "text-amber-500"
+            group.requiresAttention && "text-warning"
           )}
         />
       </button>
@@ -658,9 +658,9 @@ function DocumentContext({
 }) {
   const historical = isHistoricalTrace(selected);
   return (
-    <div className="border-t border-slate-200/80 bg-white/65 px-4 py-4 md:px-5">
+    <div className="border-t border-border bg-card/70 px-4 py-4 md:px-5">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <label className="shrink-0 text-xs font-semibold text-slate-600">
+        <label className="shrink-0 text-xs font-semibold text-muted-foreground">
           当前查看文档
         </label>
         <Select
@@ -676,11 +676,11 @@ function DocumentContext({
         </Select>
       </div>
       {historical && (
-        <div className="mt-3 flex gap-2.5 rounded-lg border border-amber-200 bg-amber-50 px-3 py-3 text-xs leading-relaxed text-amber-900">
-          <Info className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+        <div className="mt-3 flex gap-2.5 rounded-lg border border-warning-border bg-warning-surface px-3 py-3 text-xs leading-relaxed text-warning-foreground">
+          <Info className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
           <div>
             <p className="font-semibold">历史回溯（非当时日志）</p>
-            <p className="mt-1 text-amber-800">{HISTORICAL_RECONSTRUCTION_NOTICE}</p>
+            <p className="mt-1 text-warning-foreground">{HISTORICAL_RECONSTRUCTION_NOTICE}</p>
           </div>
         </div>
       )}
@@ -703,8 +703,8 @@ function StepRow({
       type="button"
       onClick={onSelect}
       className={cn(
-        "group flex w-full gap-3 bg-white/75 px-4 py-4 text-left transition-colors hover:bg-white md:px-5",
-        selected && "bg-sky-50/90 shadow-[inset_3px_0_0_#0ea5e9] hover:bg-sky-50"
+        "group flex w-full gap-3 bg-card/75 px-4 py-4 text-left transition-colors hover:bg-card md:px-5",
+        selected && "bg-info-surface/80 shadow-[inset_3px_0_0_#0ea5e9] hover:bg-info-surface"
       )}
     >
       <span className="relative mt-0.5 flex h-7 w-7 shrink-0 justify-center">
@@ -719,36 +719,36 @@ function StepRow({
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
-          <span className="text-sm font-semibold text-slate-900">
+          <span className="text-sm font-semibold text-foreground">
             {item.step.title}
           </span>
           <span
             className={cn(
               "rounded-full px-2 py-0.5 text-[10px] font-semibold",
               item.step.status === "blocked" || item.step.status === "failed"
-                ? "bg-amber-100 text-amber-800"
+                ? "bg-warning-surface text-warning-foreground"
                 : item.step.status === "completed"
-                  ? "bg-emerald-50 text-emerald-700"
-                  : "bg-slate-100 text-slate-600"
+                  ? "bg-success-surface text-success"
+                  : "bg-muted text-muted-foreground"
             )}
           >
             {workflowStatusLabel(item.step.status)}
           </span>
           {item.step.source === "reconstructed" && (
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+            <span className="rounded-full bg-warning-surface px-2 py-0.5 text-[10px] font-semibold text-warning">
               历史回溯
             </span>
           )}
         </span>
-        <span className="mt-1.5 block text-xs leading-relaxed text-slate-500">
+        <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
           {presentation.description}
         </span>
         <span
           className={cn(
             "mt-2 block text-xs font-medium leading-relaxed",
             item.step.status === "blocked" || item.step.status === "failed"
-              ? "text-amber-800"
-              : "text-slate-700"
+              ? "text-warning-foreground"
+              : "text-foreground"
           )}
         >
           {workflowStepResultSummary(item.step)}
@@ -771,7 +771,7 @@ function StepInspector({
 }) {
   if (!item) {
     return (
-      <div className="rounded-lg border bg-white p-8 text-sm text-slate-500">
+      <div className="rounded-lg border bg-card p-8 text-sm text-muted-foreground">
         选择步骤查看详情。
       </div>
     );
@@ -781,16 +781,16 @@ function StepInspector({
   return (
     <aside
       className={cn(
-        "overflow-hidden bg-white",
+        "overflow-hidden bg-card",
         embedded
-          ? "rounded-lg border border-sky-100"
+          ? "rounded-lg border border-info-border/70"
           : "self-start rounded-xl border shadow-sm xl:sticky xl:top-20"
       )}
     >
-      <div className="border-b bg-slate-950 px-5 py-4 text-white">
+      <div className="border-b bg-inverse px-5 py-4 text-inverse-foreground">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-400">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-inverse-foreground/65">
               第 {step.sequence} 步 · {phaseName(presentation.phase)}
             </p>
             <h2 className="mt-1 text-base font-semibold">{step.title}</h2>
@@ -816,13 +816,13 @@ function StepInspector({
           icon={<FileText className="h-4 w-4" />}
           title="这一步做什么"
           text={presentation.description}
-          tone="slate"
+          tone="neutral"
         />
         <BusinessExplanation
           icon={<ShieldCheck className="h-4 w-4" />}
           title="为什么需要这一步"
           text={presentation.purpose}
-          tone="sky"
+          tone="info"
         />
         <BusinessExplanation
           icon={<CheckCircle2 className="h-4 w-4" />}
@@ -830,17 +830,17 @@ function StepInspector({
           text={workflowStepResultSummary(step)}
           tone={
             step.status === "failed" || step.status === "blocked"
-              ? "amber"
-              : "emerald"
+              ? "warning"
+              : "success"
           }
         />
 
         {step.warnings.length > 0 && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-            <p className="flex items-center gap-2 text-xs font-semibold text-amber-900">
+          <div className="rounded-lg border border-warning-border bg-warning-surface p-3">
+            <p className="flex items-center gap-2 text-xs font-semibold text-warning-foreground">
               <AlertTriangle className="h-4 w-4" /> 需要留意
             </p>
-            <ul className="mt-2 space-y-1 text-xs leading-relaxed text-amber-800">
+            <ul className="mt-2 space-y-1 text-xs leading-relaxed text-warning-foreground">
               {step.warnings.map((warning) => (
                 <li key={warning}>• {warning}</li>
               ))}
@@ -848,16 +848,16 @@ function StepInspector({
           </div>
         )}
 
-        <details className="group overflow-hidden rounded-lg border border-slate-200 bg-slate-50/70">
-          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-3 text-xs font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
-            <Wrench className="h-4 w-4 text-slate-400" />
+        <details className="group overflow-hidden rounded-lg border border-border bg-muted/50">
+          <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-3 text-xs font-semibold text-foreground [&::-webkit-details-marker]:hidden">
+            <Wrench className="h-4 w-4 text-muted-foreground" />
             技术明细
-            <span className="ml-auto text-[11px] font-normal text-slate-400">
+            <span className="ml-auto text-[11px] font-normal text-muted-foreground">
               耗时、内部码、指标与脱敏数据
             </span>
-            <ChevronDown className="h-4 w-4 text-slate-400 transition-transform group-open:rotate-180" />
+            <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-open:rotate-180" />
           </summary>
-          <div className="space-y-4 border-t bg-white p-3">
+          <div className="space-y-4 border-t bg-card p-3">
             <DetailGrid step={step} traceId={item.traceId} />
             {step.decision && <JsonSection title="内部决策" value={step.decision} />}
             <JsonSection
@@ -894,13 +894,13 @@ function BusinessExplanation({
   icon: React.ReactNode;
   title: string;
   text: string;
-  tone: "slate" | "sky" | "emerald" | "amber";
+  tone: "neutral" | "info" | "success" | "warning";
 }) {
   const tones = {
-    slate: "border-slate-200 bg-slate-50 text-slate-700",
-    sky: "border-sky-100 bg-sky-50 text-sky-800",
-    emerald: "border-emerald-100 bg-emerald-50 text-emerald-800",
-    amber: "border-amber-200 bg-amber-50 text-amber-900",
+    neutral: "border-border bg-muted/50 text-foreground",
+    info: "border-info-border/70 bg-info-surface text-info-foreground",
+    success: "border-success-border/70 bg-success-surface text-success-foreground",
+    warning: "border-warning-border bg-warning-surface text-warning-foreground",
   };
   return (
     <section className={cn("rounded-lg border p-3", tones[tone])}>
@@ -923,11 +923,11 @@ function DetailGrid({ step, traceId }: { step: WorkflowStep; traceId: string }) 
     ["步骤 Key", step.key],
   ];
   return (
-    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-slate-200">
+    <div className="grid grid-cols-2 gap-px overflow-hidden rounded-md border bg-border">
       {items.map(([label, value]) => (
-        <div key={label} className="bg-white p-3">
-          <p className="text-[11px] text-slate-400">{label}</p>
-          <p className="mt-1 break-all text-xs font-medium text-slate-700">
+        <div key={label} className="bg-card p-3">
+          <p className="text-[11px] text-muted-foreground">{label}</p>
+          <p className="mt-1 break-all text-xs font-medium text-foreground">
             {value}
           </p>
         </div>
@@ -939,11 +939,11 @@ function DetailGrid({ step, traceId }: { step: WorkflowStep; traceId: string }) 
 function JsonSection({ title, value }: { title: string; value: unknown }) {
   return (
     <section>
-      <div className="mb-1.5 flex items-center gap-2 text-xs font-medium text-slate-600">
-        <Database className="h-3.5 w-3.5 text-slate-400" />
+      <div className="mb-1.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Database className="h-3.5 w-3.5 text-muted-foreground" />
         {title}
       </div>
-      <pre className="max-h-72 overflow-auto rounded-md bg-slate-950 p-3 font-mono text-[11px] leading-relaxed text-slate-300">
+      <pre className="max-h-72 overflow-auto rounded-md border border-inverse-border bg-inverse p-3 font-mono text-[11px] leading-relaxed text-inverse-foreground/85">
         {JSON.stringify(value, null, 2)}
       </pre>
     </section>
@@ -952,12 +952,12 @@ function JsonSection({ title, value }: { title: string; value: unknown }) {
 
 function EmptyAudit() {
   return (
-    <div className="rounded-lg border border-dashed bg-slate-50 px-6 py-16 text-center">
-      <GitBranch className="mx-auto h-8 w-8 text-slate-300" />
-      <h2 className="mt-3 text-sm font-semibold text-slate-700">
+    <div className="rounded-lg border border-dashed bg-muted/50 px-6 py-16 text-center">
+      <GitBranch className="mx-auto h-8 w-8 text-muted-foreground" />
+      <h2 className="mt-3 text-sm font-semibold text-foreground">
         尚未选择审计链路
       </h2>
-      <p className="mt-1 text-xs text-slate-500">
+      <p className="mt-1 text-xs text-muted-foreground">
         运行一个问题，或从历史回放中选择已有记录。
       </p>
     </div>

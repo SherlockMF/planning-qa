@@ -55,9 +55,9 @@ export function ReviewArtifactControl({
 
   const selected = artifacts.find((artifact) => artifact.artifactId === selectedId) ?? artifacts[0];
   return (
-    <div className="grid gap-2 rounded-md border bg-slate-50/70 p-2">
+    <div className="grid gap-2 rounded-md border bg-muted/50 p-2">
       <div className="flex items-center justify-between gap-2">
-        <span className="text-[11px] font-medium text-slate-600">审核快照</span>
+        <span className="text-[11px] font-medium text-muted-foreground">审核快照</span>
         <div className="flex gap-1">
           <Badge variant={selected.suspectedCount > 0 ? "warning" : "success"}>
             疑似 {selected.suspectedCount}

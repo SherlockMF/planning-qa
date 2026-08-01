@@ -125,7 +125,7 @@ export function ChunkViewer() {
                     {c.keywords.slice(0, 20).map((k) => (
                       <span
                         key={k}
-                        className="rounded bg-sky-50 px-1.5 py-0.5 text-[10px] text-sky-700"
+                        className="rounded bg-info-surface px-1.5 py-0.5 text-[10px] text-info"
                       >
                         {k}
                       </span>

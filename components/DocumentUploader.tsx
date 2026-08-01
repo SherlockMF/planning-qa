@@ -267,38 +267,38 @@ export function DocumentUploader({
                 key={item.key}
                 className={`flex items-center gap-2 px-3 py-2 ${
                   item.status === "done"
-                    ? "bg-green-50/60"
+                    ? "bg-success-surface/60"
                     : item.status === "error"
-                    ? "bg-red-50/60"
+                    ? "bg-destructive-surface/70"
                     : item.status === "uploading" || item.status === "processing"
-                    ? "bg-sky-50/60"
+                    ? "bg-info-surface/60"
                     : ""
                 }`}
               >
                 {/* 状态图标 */}
                 <span className="shrink-0 w-4">
                   {(item.status === "uploading" || item.status === "processing") && (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin text-sky-600" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-info" />
                   )}
                   {item.status === "done" && (
-                    <CheckCircle2 className="h-3.5 w-3.5 text-green-600" />
+                    <CheckCircle2 className="h-3.5 w-3.5 text-success" />
                   )}
                   {item.status === "error" && (
-                    <AlertCircle className="h-3.5 w-3.5 text-red-600" />
+                    <AlertCircle className="h-3.5 w-3.5 text-destructive" />
                   )}
                 </span>
 
                 {/* 文件名 */}
-                <span className="flex-1 min-w-0 truncate text-slate-700" title={item.file.name}>
+                <span className="flex-1 min-w-0 truncate text-foreground" title={item.file.name}>
                   {item.file.name}
                   {item.status === "uploading" && (
-                    <span className="ml-2 text-xs text-sky-600">上传中…</span>
+                    <span className="ml-2 text-xs text-info">上传中…</span>
                   )}
                   {item.status === "processing" && (
-                    <span className="ml-2 text-xs text-sky-600">解析中…</span>
+                    <span className="ml-2 text-xs text-info">解析中…</span>
                   )}
                   {item.error && (
-                    <span className="ml-2 text-xs text-red-600">{item.error}</span>
+                    <span className="ml-2 text-xs text-destructive">{item.error}</span>
                   )}
                 </span>
 
@@ -343,7 +343,7 @@ export function DocumentUploader({
                 {(item.status === "pending" || item.status === "error") && (
                   <button
                     onClick={() => removeItem(item.key)}
-                    className="shrink-0 text-slate-400 hover:text-red-500 transition-colors"
+                    className="shrink-0 text-muted-foreground hover:text-destructive transition-colors"
                     aria-label="移除"
                   >
                     <X className="h-3.5 w-3.5" />
@@ -358,10 +358,10 @@ export function DocumentUploader({
         {(doneCount > 0 || errorCount > 0) && (
           <p className="text-xs text-muted-foreground">
             {doneCount > 0 && (
-              <span className="text-green-700 mr-3">✓ {doneCount} 个已入库</span>
+              <span className="text-success mr-3">✓ {doneCount} 个已入库</span>
             )}
             {errorCount > 0 && (
-              <span className="text-red-600">{errorCount} 个失败</span>
+              <span className="text-destructive">{errorCount} 个失败</span>
             )}
           </p>
         )}

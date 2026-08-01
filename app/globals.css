@@ -4,23 +4,58 @@
 
 @layer base {
   :root {
-    --background: 210 20% 98%;
-    --foreground: 215 25% 18%;
+    /* Neutral surfaces */
+    --background: 210 24% 97%;
+    --foreground: 215 28% 17%;
     --card: 0 0% 100%;
-    --card-foreground: 215 25% 18%;
-    --primary: 215 60% 28%;
+    --card-foreground: 215 28% 17%;
+
+    /* Brand: deep navy */
+    --primary: 215 58% 26%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 213 30% 92%;
-    --secondary-foreground: 215 35% 25%;
-    --muted: 213 25% 94%;
-    --muted-foreground: 215 16% 47%;
-    --accent: 210 35% 90%;
-    --accent-foreground: 215 35% 25%;
-    --destructive: 0 72% 45%;
+    --primary-surface: 214 46% 96%;
+    --primary-border: 214 32% 86%;
+
+    --secondary: 213 28% 93%;
+    --secondary-foreground: 215 32% 24%;
+    --muted: 214 24% 95%;
+    --muted-foreground: 215 15% 45%;
+    --accent: 212 32% 91%;
+    --accent-foreground: 215 32% 24%;
+
+    /* Informational (same blue family as brand, lighter) */
+    --info: 208 72% 42%;
+    --info-foreground: 210 60% 26%;
+    --info-surface: 207 70% 96%;
+    --info-border: 207 48% 86%;
+
+    /* Positive */
+    --success: 158 62% 34%;
+    --success-foreground: 160 55% 24%;
+    --success-surface: 152 52% 95%;
+    --success-border: 152 36% 82%;
+
+    /* Caution */
+    --warning: 34 88% 44%;
+    --warning-foreground: 28 62% 28%;
+    --warning-surface: 40 88% 95%;
+    --warning-border: 38 62% 82%;
+
+    /* Negative */
+    --destructive: 0 66% 44%;
     --destructive-foreground: 0 0% 100%;
-    --border: 214 20% 86%;
-    --input: 214 20% 86%;
-    --ring: 215 60% 28%;
+    --destructive-surface: 0 72% 97%;
+    --destructive-border: 0 52% 86%;
+
+    /* Inverted surfaces (source previews, code, terminals) */
+    --inverse: 215 34% 12%;
+    --inverse-muted: 215 28% 17%;
+    --inverse-foreground: 210 26% 92%;
+    --inverse-border: 215 22% 26%;
+
+    --border: 214 22% 88%;
+    --input: 214 22% 86%;
+    --ring: 215 58% 26%;
     --radius: 0.5rem;
   }
 }
@@ -32,5 +67,6 @@
   body {
     @apply bg-background text-foreground;
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
   }
 }

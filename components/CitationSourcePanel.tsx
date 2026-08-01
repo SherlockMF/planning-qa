@@ -48,7 +48,7 @@ export function CitationSourcePanel({
   if (!citation) {
     return (
       <div className="rounded-lg border border-dashed bg-card p-5 text-sm text-muted-foreground">
-        <div className="mb-2 flex items-center gap-2 font-medium text-slate-700">
+        <div className="mb-2 flex items-center gap-2 font-medium text-foreground">
           <BookOpen className="h-4 w-4" />
           引用原文
         </div>
@@ -96,7 +96,7 @@ export function CitationSourcePanel({
             相关度{citation.relevance}
           </Badge>
         </div>
-        <h3 className="break-words text-sm font-semibold leading-6 text-slate-900">
+        <h3 className="break-words text-sm font-semibold leading-6 text-foreground">
           {citation.fileName}
         </h3>
         {sourceMeta.length > 0 && (
@@ -111,14 +111,14 @@ export function CitationSourcePanel({
       <div className="space-y-4 p-4">
         {canPage && !pageFailed && (
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <div className="inline-flex rounded-md border border-sky-200 p-0.5 text-xs">
+            <div className="inline-flex rounded-md border border-info-border p-0.5 text-xs">
               <button
                 type="button"
                 onClick={() => setView("page")}
                 className={`flex items-center gap-1 rounded px-2.5 py-1 transition-colors ${
                   view === "page"
-                    ? "bg-sky-600 text-white"
-                    : "text-slate-600 hover:bg-sky-50"
+                    ? "bg-info text-primary-foreground"
+                    : "text-muted-foreground hover:bg-info-surface"
                 }`}
               >
                 <ImageIcon className="h-3.5 w-3.5" />
@@ -129,8 +129,8 @@ export function CitationSourcePanel({
                 onClick={() => setView("text")}
                 className={`flex items-center gap-1 rounded px-2.5 py-1 transition-colors ${
                   view === "text"
-                    ? "bg-sky-600 text-white"
-                    : "text-slate-600 hover:bg-sky-50"
+                    ? "bg-info text-primary-foreground"
+                    : "text-muted-foreground hover:bg-info-surface"
                 }`}
               >
                 <FileType2 className="h-3.5 w-3.5" />
@@ -141,7 +141,7 @@ export function CitationSourcePanel({
               <button
                 type="button"
                 onClick={() => setIsPageZoomed((value) => !value)}
-                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-600 transition-colors hover:bg-slate-50"
+                className="inline-flex items-center gap-1 rounded-md border border-border bg-card px-2.5 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted/50"
                 aria-pressed={isPageZoomed}
                 title={isPageZoomed ? "缩小原文页面" : "放大原文页面"}
               >
@@ -157,7 +157,7 @@ export function CitationSourcePanel({
         )}
 
         {canPage && view === "page" && !pageFailed ? (
-          <div className="max-h-[68vh] overflow-auto rounded-lg border border-sky-200 bg-slate-50 p-2">
+          <div className="max-h-[68vh] overflow-auto rounded-lg border border-info-border bg-muted/50 p-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={pageSrc}
@@ -173,14 +173,14 @@ export function CitationSourcePanel({
             />
           </div>
         ) : isTable ? (
-          <div className="max-h-[68vh] overflow-auto rounded-lg border border-sky-200 bg-white p-2">
+          <div className="max-h-[68vh] overflow-auto rounded-lg border border-info-border bg-card p-2">
             {pageFailed && <FallbackNotice />}
             <TableBlock text={citation.excerpt} />
           </div>
         ) : (
-          <div className="max-h-[68vh] overflow-auto rounded-lg border border-sky-200 bg-sky-50/70 p-4 text-sm leading-7 text-slate-800">
+          <div className="max-h-[68vh] overflow-auto rounded-lg border border-info-border bg-info-surface/70 p-4 text-sm leading-7 text-foreground">
             {pageFailed && <FallbackNotice />}
-            <FileText className="mb-2 h-4 w-4 text-sky-700" />
+            <FileText className="mb-2 h-4 w-4 text-info" />
             {citation.excerpt}
           </div>
         )}
@@ -191,7 +191,7 @@ export function CitationSourcePanel({
 
 function FallbackNotice() {
   return (
-    <p className="mb-2 text-xs text-amber-600">
+    <p className="mb-2 text-xs text-warning">
       原始页面暂不可用（该文档可能无原始 PDF），已回退到提取片段。
     </p>
   );

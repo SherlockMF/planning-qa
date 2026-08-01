@@ -40,7 +40,7 @@ export default function LabHomePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-800 md:text-2xl">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
           测试台
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
@@ -53,7 +53,7 @@ export default function LabHomePage() {
           <div className="rounded-lg border bg-card p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <h2 className="text-sm font-semibold text-slate-800">
+                <h2 className="text-sm font-semibold text-foreground">
                   质量概览
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
@@ -116,7 +116,7 @@ export default function LabHomePage() {
 
             {overview.topClusters.length > 0 && (
               <div className="mt-4">
-                <div className="mb-2 text-xs font-medium text-slate-700">
+                <div className="mb-2 text-xs font-medium text-foreground">
                   Top 失败簇
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -150,7 +150,7 @@ export default function LabHomePage() {
                 href={href}
                 className="rounded-lg border bg-card p-5 transition-colors hover:border-primary/40 hover:bg-muted/30"
               >
-                <div className="flex items-center gap-2 text-slate-800">
+                <div className="flex items-center gap-2 text-foreground">
                   <Icon className="h-4 w-4" />
                   <h2 className="text-sm font-semibold">{title}</h2>
                 </div>
@@ -178,7 +178,7 @@ function Metric({
   return (
     <div className="rounded border bg-background px-3 py-2">
       <div className="text-[11px] text-muted-foreground">{label}</div>
-      <div className="mt-1 truncate text-sm font-semibold text-slate-800">
+      <div className="mt-1 truncate text-sm font-semibold text-foreground">
         {value}
       </div>
       <div className="mt-1 text-[11px] leading-snug text-muted-foreground">

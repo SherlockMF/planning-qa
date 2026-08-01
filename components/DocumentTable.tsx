@@ -258,7 +258,7 @@ export function DocumentTable({
             已选 {selectedIds.length} 个
           </span>
           {batchProgress ? (
-            <span className="flex items-center gap-1.5 text-sky-600">
+            <span className="flex items-center gap-1.5 text-info">
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
               {batchProgress}
             </span>
@@ -353,7 +353,7 @@ export function DocumentTable({
                   <div className="flex items-start gap-2">
                     <FileText className="mt-0.5 h-4 w-4 shrink-0 text-primary" />
                     <div className="min-w-0">
-                      <p className="break-words text-sm font-semibold leading-5 text-slate-800">
+                      <p className="break-words text-sm font-semibold leading-5 text-foreground">
                         {doc.fileName}
                       </p>
                       <p className="mt-1 text-xs text-muted-foreground">
@@ -496,7 +496,7 @@ export function DocumentTable({
                   重新解析
                 </Button>
                 {processNotices[doc.id] && (
-                  <p className={`rounded-md px-2 py-1.5 text-[11px] leading-4 ${processNotices[doc.id].ok ? "bg-emerald-50 text-emerald-800" : "bg-red-50 text-destructive"}`}>
+                  <p className={`rounded-md px-2 py-1.5 text-[11px] leading-4 ${processNotices[doc.id].ok ? "bg-success-surface text-success-foreground" : "bg-destructive-surface text-destructive"}`}>
                     {processNotices[doc.id].text}
                   </p>
                 )}

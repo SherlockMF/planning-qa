@@ -469,7 +469,7 @@ export function EvaluationManager() {
                 <TableCell className="align-top text-xs text-muted-foreground">
                   {it.seq || idx + 1}
                 </TableCell>
-                <TableCell className="align-top text-sm text-slate-800">
+                <TableCell className="align-top text-sm text-foreground">
                   {it.question || <span className="text-muted-foreground">（空）</span>}
                   {(it.scenario || it.userId) && (
                     <div className="mt-1 flex flex-wrap gap-1">
@@ -758,7 +758,7 @@ export function EvaluationManager() {
             <DialogTitle className="text-base">系统回答</DialogTitle>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-auto rounded-md bg-muted/40 p-4">
-            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-slate-800">
+            <pre className="whitespace-pre-wrap font-sans text-sm leading-relaxed text-foreground">
               {viewing?.systemAnswer}
             </pre>
           </div>
@@ -918,7 +918,7 @@ function ImportDialog({
             <span className="text-xs text-muted-foreground">或在下方粘贴</span>
           </div>
           {xlsxName && (
-            <p className="text-xs text-emerald-600">
+            <p className="text-xs text-success">
               已读取 Excel 文件：{xlsxName}
             </p>
           )}
@@ -942,7 +942,7 @@ function ImportDialog({
             className="font-mono text-xs"
           />
 
-          <label className="flex items-center gap-2 text-sm text-slate-700">
+          <label className="flex items-center gap-2 text-sm text-foreground">
             <input
               type="checkbox"
               className="h-4 w-4 accent-primary"
@@ -967,7 +967,7 @@ function ImportDialog({
                 <span>共 {result.rows.length} 题</span>
               </div>
               {result.warnings.map((w, i) => (
-                <p key={i} className="text-amber-600">
+                <p key={i} className="text-warning">
                   · {w}
                 </p>
               ))}

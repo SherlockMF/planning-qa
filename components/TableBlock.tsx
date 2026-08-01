@@ -134,11 +134,11 @@ function Grid({ table }: { table: MarkdownTable }) {
       <table className="w-full border-collapse text-xs">
         {table.header && (
           <thead>
-            <tr className="bg-sky-100/70">
+            <tr className="bg-info-surface">
               {Array.from({ length: colCount }).map((_, j) => (
                 <th
                   key={j}
-                  className="border border-sky-200 px-2 py-1 text-left font-medium text-slate-700"
+                  className="border border-info-border px-2 py-1 text-left font-medium text-foreground"
                 >
                   {table.header![j] ?? ""}
                 </th>
@@ -148,11 +148,11 @@ function Grid({ table }: { table: MarkdownTable }) {
         )}
         <tbody>
           {table.rows.map((r, i) => (
-            <tr key={i} className="even:bg-sky-50/40">
+            <tr key={i} className="even:bg-info-surface/50">
               {Array.from({ length: colCount }).map((_, j) => (
                 <td
                   key={j}
-                  className="border border-sky-200 px-2 py-1 align-top text-slate-700"
+                  className="border border-info-border px-2 py-1 align-top text-foreground"
                 >
                   {r[j] ?? ""}
                 </td>
@@ -186,17 +186,17 @@ function TabGrid({ text }: { text: string }) {
               <tr key={i}>
                 <td
                   colSpan={cols}
-                  className="border border-sky-200 bg-sky-100/70 px-2 py-1 font-medium text-slate-700"
+                  className="border border-info-border bg-info-surface px-2 py-1 font-medium text-foreground"
                 >
                   {r[0]}
                 </td>
               </tr>
             ) : (
-              <tr key={i} className="even:bg-sky-50/40">
+              <tr key={i} className="even:bg-info-surface/50">
                 {Array.from({ length: cols }).map((_, j) => (
                   <td
                     key={j}
-                    className="border border-sky-200 px-2 py-1 align-top text-slate-700"
+                    className="border border-info-border px-2 py-1 align-top text-foreground"
                   >
                     {r[j] ?? ""}
                   </td>
@@ -228,7 +228,7 @@ export function TableBlock({
           ) : (
             <div
               key={i}
-              className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-slate-700"
+              className="whitespace-pre-wrap text-sm font-medium leading-relaxed text-foreground"
             >
               {seg.text}
             </div>
@@ -252,7 +252,7 @@ export function TableBlock({
   return (
     <div
       className={cn(
-        "whitespace-pre-wrap text-sm leading-relaxed text-slate-700",
+        "whitespace-pre-wrap text-sm leading-relaxed text-foreground",
         className
       )}
     >
