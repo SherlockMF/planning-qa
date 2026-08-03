@@ -28,12 +28,12 @@ export default function DocumentsPage() {
   }, [load]);
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground md:text-2xl">
+    <div className="space-y-8">
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground md:text-3xl">
           文档管理
         </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
+        <p className="text-base leading-relaxed text-muted-foreground">
           上传并管理知识库文档。仅「已入库」且「参与检索」的文档会被问答与检索使用。
         </p>
       </div>

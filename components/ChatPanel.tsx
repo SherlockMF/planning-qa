@@ -378,7 +378,7 @@ export function ChatPanel() {
                     ask(ex);
                   }}
                   disabled={loading}
-                  className="rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground shadow-sm transition-colors hover:border-primary-border hover:bg-primary-surface hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50"
+                  className="rounded-full border border-border/60 bg-card px-4 py-1.5 text-xs font-medium text-muted-foreground shadow-card transition-smooth hover:border-primary/50 hover:bg-primary-surface hover:text-primary hover:shadow-card-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/30 disabled:opacity-50"
                 >
                   {ex}
                 </button>
@@ -398,7 +398,7 @@ export function ChatPanel() {
           <EmptyState
             icon={<MessageSquareQuote className="h-8 w-8" />}
             title="输入问题后，这里将显示带依据的回答"
-            description="系统会从知识库检索相关条文，并给出结论、文件、章节、条款、页码与原文片段；若无明确依据将明确拒答。"
+            description="系统会从知识库检索相关条文，并给出结论、文件、章节、条款、页码与原文片��；若无明确依据将明确拒答。"
           />
         )}
 
