@@ -5,6 +5,10 @@ import path from "node:path";
 
 import { extractBlocksWithTables } from "../lib/parse/tablesSidecar.ts";
 
+// de37669 起抽表层保留单元格内视觉行换行（分档解析需要）；
+// 本 gold 锁「表头语义 + 行内容 + 行序」，拍平空白后比对。
+const flat = (value: string): string => value.replace(/\s+/g, "");
+
 test("table parsing gold: page 14 preserves six independent merged-cell rows", async () => {
   const pdfPath = path.join(
     process.cwd(),
@@ -22,11 +26,11 @@ test("table parsing gold: page 14 preserves six independent merged-cell rows", a
       block.table?.rows.some((row) => row[0] === "更新维护要求")
   )?.table;
   assert.ok(table, "missing page 14 implementation-requirements table");
-  assert.deepEqual(table.headers, [
+  assert.deepEqual(table.headers.map(flat), [
     "高质量、精细化引导要求",
     "管控分区、建筑风貌、色彩、第五立面、街道空间绿色空间等。智慧城市、绿色建筑、综合节能等。",
   ]);
-  assert.deepEqual(table.rows.slice(2), [
+  assert.deepEqual(table.rows.slice(2).map((row) => row.map(flat)), [
     ["土地整理及供应", "土地整理、土地供应方式、征地拆迁安置等内容"],
     ["实施时序安排", "实施时序、项目清单等"],
     ["实施建议", "实施举措、建议、应对方案等"],

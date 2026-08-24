@@ -5,6 +5,11 @@ import path from "node:path";
 
 import { extractBlocksWithTables } from "../lib/parse/tablesSidecar.ts";
 
+// de37669 起抽表层保留单元格内视觉行换行（复杂规模分档解析依赖行分隔，禁止无缝拼接）。
+// 本 gold 锁「分类码/名称内容 + 行级页码归属」，与格内换行无关，故拍平空白后比对。
+const flat = (value: string | null | undefined): string =>
+  (value ?? "").replace(/\s+/g, "");
+
 test("table parsing gold: classification continuation rows keep source pages 17 and 18", async () => {
   const pdfPath = path.join(
     process.cwd(),
@@ -28,8 +33,8 @@ test("table parsing gold: classification continuation rows keep source pages 17 
     const row = blocks.find(
       (block) =>
         block.type === "table_row" &&
-        block.rowCells?.[1] === item.code &&
-        block.rowCells?.[2] === item.name
+        flat(block.rowCells?.[1]) === item.code &&
+        flat(block.rowCells?.[2]) === item.name
     );
     assert.ok(row, `missing classification row ${item.code} ${item.name}`);
     assert.equal(row.pageStart, item.page);
