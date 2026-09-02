@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import { SiteNav } from "@/components/SiteNav";
 import { KnowledgeUserProvider } from "@/components/KnowledgeUserProvider";
+import { RootRouteShell } from "@/components/RootRouteShell";
 
 export const metadata: Metadata = {
   title: "规划设计院企业知识库",
@@ -18,15 +18,7 @@ export default function RootLayout({
     <html lang="zh-CN" className="bg-background">
       <body className="flex min-h-screen flex-col bg-background text-foreground antialiased">
         <KnowledgeUserProvider>
-          <SiteNav />
-          <main className="mx-auto w-full max-w-[1800px] flex-1 px-4 py-8 md:py-10">
-            {children}
-          </main>
-          <footer className="border-t border-border/60 bg-muted/30">
-            <div className="mx-auto max-w-[1800px] px-4 py-5 text-xs leading-relaxed text-muted-foreground">
-              本系统仅基于当前账号可访问的企业知识库作答；项目资料、技术标准与成果要求以正式发布文件和项目授权为准。
-            </div>
-          </footer>
+          <RootRouteShell>{children}</RootRouteShell>
         </KnowledgeUserProvider>
       </body>
     </html>
