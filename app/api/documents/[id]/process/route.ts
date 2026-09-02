@@ -7,7 +7,8 @@ import {
 import { processDocument } from "@/lib/db/chunks";
 import { getStore } from "@/lib/db/store";
 import { extractText } from "@/lib/parse/extractText";
-import { extractBlocksWithTables } from "@/lib/parse/tablesSidecar";
+import { parseDocument } from "@/lib/parse/parseDocument";
+import type { DocumentParserBackend } from "@/lib/parse/documentParser";
 import type { Block } from "@/lib/types";
 import {
   createReviewArtifact,
@@ -131,11 +132,18 @@ export async function POST(
 
     let blocks: Block[] | undefined;
     let text: string | undefined;
+    let parserBackend: DocumentParserBackend | undefined;
     let extractedChars = 0;
     recorder.start("content_parsing");
 
     if (doc.fileName.toLowerCase().endsWith(".pdf")) {
-      blocks = await extractBlocksWithTables(buf);
+      const parsed = await parseDocument({
+        buffer: buf,
+        fileName: doc.fileName,
+        mimeType: "application/pdf",
+      });
+      blocks = parsed.blocks;
+      parserBackend = parsed.backend;
       extractedChars = blocks.reduce(
         (s, b) => s + b.normalizedText.length,
         0
@@ -150,6 +158,7 @@ export async function POST(
       extractedChars,
       blocks,
       text,
+      parserBackend,
     });
     const processResult = await processDocument(doc, { blocks, text }, recorder);
     const updated = await updateDocument(doc.id, { status: "indexed" });

@@ -6,7 +6,7 @@ import {
   buildRagTablesFromObjects,
 } from "../rag/ragTable.ts";
 import { extractText } from "../parse/extractText.ts";
-import { extractBlocksWithTables } from "../parse/tablesSidecar.ts";
+import { parseDocument } from "../parse/parseDocument.ts";
 import { getStore } from "../db/store.ts";
 import { saveChunksStrict, saveRagTablesStrict } from "../db/persist.ts";
 import {
@@ -73,7 +73,12 @@ async function buildDocumentIndex(
 ): Promise<ReprocessBuildResult> {
   let input: { blocks?: Block[]; text?: string };
   if (document.fileName.toLowerCase().endsWith(".pdf")) {
-    input = { blocks: await extractBlocksWithTables(sourceBuffer) };
+    const parsed = await parseDocument({
+      buffer: sourceBuffer,
+      fileName: document.fileName,
+      mimeType: "application/pdf",
+    });
+    input = { blocks: parsed.blocks };
   } else {
     input = { text: await extractText(sourceBuffer, document.fileName) };
   }

@@ -1,4 +1,5 @@
 import type { Block, Document } from "../types.ts";
+import type { DocumentParserBackend } from "../parse/documentParser.ts";
 import { WorkflowTraceRecorder } from "./trace.ts";
 
 export function recordUploadRegistration(
@@ -36,6 +37,7 @@ export function recordContentParsing(
     extractedChars: number;
     blocks?: Block[];
     text?: string;
+    parserBackend?: DocumentParserBackend;
   },
   at = new Date().toISOString()
 ): void {
@@ -58,6 +60,9 @@ export function recordContentParsing(
       inputSummary: { fileName: input.fileName },
       outputSummary: {
         parseMode: input.blocks ? "block_ir" : "plain_text",
+        ...(input.parserBackend
+          ? { parserBackend: input.parserBackend }
+          : {}),
         blockTypes,
         textLength: input.text?.length ?? 0,
       },

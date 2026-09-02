@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { Block, Document } from "../lib/types.ts";
+import type { DocumentParserBackend } from "../lib/parse/documentParser.ts";
 import { WorkflowTraceRecorder, createWorkflowTrace } from "../lib/workflow/trace.ts";
 import {
   recordContentParsing,
@@ -52,7 +53,12 @@ test("content parsing records block and table counts for PDF IR", () => {
   recorder.start("content_parsing", "2026-07-14T10:00:00.000Z");
   recordContentParsing(
     recorder,
-    { fileName: "公共服务设施标准.pdf", extractedChars: 18, blocks },
+    {
+      fileName: "公共服务设施标准.pdf",
+      extractedChars: 18,
+      blocks,
+      parserBackend: "native" satisfies DocumentParserBackend,
+    },
     "2026-07-14T10:00:00.250Z"
   );
 
@@ -61,6 +67,7 @@ test("content parsing records block and table counts for PDF IR", () => {
   assert.equal(step.durationMs, 250);
   assert.equal(step.metrics?.blockCount, 3);
   assert.equal(step.metrics?.tableCount, 1);
+  assert.equal(step.outputSummary?.parserBackend, "native");
   assert.deepEqual(step.outputSummary?.blockTypes, {
     heading: 1,
     paragraph: 1,
